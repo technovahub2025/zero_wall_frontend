@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { authService } from '../services/authService';
 import { getHomePathForRole } from '../utils/roleUtils';
+import { clearStoredAccessToken, getStoredAccessToken, setStoredAccessToken } from '../lib/authToken';
 
 const emptyState = {
   user: null,
-  accessToken: null,
+  accessToken: getStoredAccessToken(),
   isAuthenticated: false,
   loading: true,
   initialized: false,
@@ -29,7 +30,7 @@ export const useAuthStore = create((set, get) => ({
       const meResponse = await authService.me();
       set({
         user: normalizeUser(meResponse),
-        accessToken: normalizeAccessToken(meResponse),
+        accessToken: normalizeAccessToken(meResponse) || getStoredAccessToken(),
         isAuthenticated: true,
         loading: false,
         initialized: true,
@@ -38,11 +39,15 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       if (error?.response?.status === 401) {
         try {
-          await authService.refreshToken();
+          const refreshResponse = await authService.refreshToken();
+          const refreshedToken = normalizeAccessToken(refreshResponse);
+          if (refreshedToken) {
+            setStoredAccessToken(refreshedToken);
+          }
           const retry = await authService.me();
           set({
             user: normalizeUser(retry),
-            accessToken: normalizeAccessToken(retry),
+            accessToken: normalizeAccessToken(retry) || getStoredAccessToken(),
             isAuthenticated: true,
             loading: false,
             initialized: true,
@@ -62,13 +67,17 @@ export const useAuthStore = create((set, get) => ({
   },
 
   setAuth: (payload) =>
-    set({
-      user: normalizeUser(payload),
-      accessToken: normalizeAccessToken(payload),
-      isAuthenticated: true,
-      loading: false,
-      initialized: true,
-    }),
+    {
+      const accessToken = normalizeAccessToken(payload);
+      setStoredAccessToken(accessToken);
+      set({
+        user: normalizeUser(payload),
+        accessToken,
+        isAuthenticated: true,
+        loading: false,
+        initialized: true,
+      });
+    },
 
   login: async ({ email, password }) => {
     const response = await authService.login({ email, password });
@@ -92,6 +101,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       await authService.logout();
     } finally {
+      clearStoredAccessToken();
       set({
         ...emptyState,
         loading: false,

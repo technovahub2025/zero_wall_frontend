@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { timerService } from '../services/timerService';
@@ -23,6 +23,7 @@ export function useTimer() {
   const activeLog = useTimerStore((state) => state.activeLog);
   const isRunning = useTimerStore((state) => state.isRunning);
   const elapsedSeconds = useTimerStore((state) => state.elapsedSeconds);
+  const warningLevel = useTimerStore((state) => state.warningLevel);
   const syncing = useTimerStore((state) => state.syncing);
   const setSyncing = useTimerStore((state) => state.setSyncing);
   const setActiveLog = useTimerStore((state) => state.setActiveLog);
@@ -30,6 +31,7 @@ export function useTimer() {
   const startTicker = useTimerStore((state) => state.startTicker);
   const stopTicker = useTimerStore((state) => state.stopTicker);
   const tick = useTimerStore((state) => state.tick);
+  const lastWarningLevel = useRef(0);
 
   const activeQuery = useQuery({
     queryKey: ['timer-active', userId || 'guest'],
@@ -47,6 +49,23 @@ export function useTimer() {
       stopTicker();
     }
   }, [activeQuery.data, activeQuery.isLoading, setSyncing, setActiveLog, clearActiveLog, startTicker, stopTicker, tick]);
+
+  useEffect(() => {
+    if (!isRunning) {
+      lastWarningLevel.current = 0;
+      return;
+    }
+
+    if (warningLevel > lastWarningLevel.current) {
+      const messages = {
+        1: 'Timer running past 30 minutes',
+        2: 'Timer running past 1 hour',
+        3: 'Timer running past 2 hours',
+      };
+      toast.error(messages[warningLevel] || 'Timer warning');
+      lastWarningLevel.current = warningLevel;
+    }
+  }, [isRunning, warningLevel]);
 
   const startMutation = useMutation({
     mutationFn: ({ taskId, projectId, stageId, note }) =>
@@ -106,6 +125,7 @@ export function useTimer() {
       activeLog,
       isRunning,
       elapsedSeconds,
+      warningLevel,
       syncing,
       logs: logsQuery.data?.logs || [],
       grouped: logsQuery.data?.grouped || {},

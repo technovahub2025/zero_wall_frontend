@@ -18,7 +18,7 @@ export function useSocket() {
     }
 
     socket.emit('join:user', user.id);
-    if (['superadmin', 'admin'].includes(user.role)) {
+    if (['superadmin', 'admin', 'project_manager'].includes(user.role)) {
       socket.emit('join:admin');
     }
 
@@ -43,6 +43,7 @@ export function useSocket() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       queryClient.invalidateQueries({ queryKey: ['billing'] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['activity-logs'] });
     };
 
@@ -51,6 +52,9 @@ export function useSocket() {
     socket.on('project:created', handleProjectChanged);
     socket.on('project:updated', handleProjectChanged);
     socket.on('billing:updated', handleProjectChanged);
+    socket.on('client:created', handleProjectChanged);
+    socket.on('client:updated', handleProjectChanged);
+    socket.on('client:deleted', handleProjectChanged);
     socket.on('task:updated', handleProjectChanged);
     socket.on('stage:approved', handleProjectChanged);
     socket.on('activity:created', handleProjectChanged);
@@ -61,11 +65,14 @@ export function useSocket() {
       socket.off('project:created', handleProjectChanged);
       socket.off('project:updated', handleProjectChanged);
       socket.off('billing:updated', handleProjectChanged);
+      socket.off('client:created', handleProjectChanged);
+      socket.off('client:updated', handleProjectChanged);
+      socket.off('client:deleted', handleProjectChanged);
       socket.off('task:updated', handleProjectChanged);
       socket.off('stage:approved', handleProjectChanged);
       socket.off('activity:created', handleProjectChanged);
       socket.emit('leave:user', user.id);
-      if (['superadmin', 'admin'].includes(user.role)) {
+      if (['superadmin', 'admin', 'project_manager'].includes(user.role)) {
         socket.emit('leave:admin');
       }
     };

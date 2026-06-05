@@ -21,6 +21,7 @@ const Projects = lazy(() => import('./pages/Projects'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const Kanban = lazy(() => import('./pages/Kanban'));
 const StageDetail = lazy(() => import('./pages/StageDetail'));
+const StageGuidePage = lazy(() => import('./pages/StageGuidePage'));
 const CeoDashboard = lazy(() => import('./pages/CeoDashboard'));
 const MyTasksPage = lazy(() => import('./pages/MyTasksPage'));
 const MyTimesheetsPage = lazy(() => import('./pages/MyTimesheetsPage'));
@@ -29,6 +30,7 @@ const Employees = lazy(() => import('./pages/Employees'));
 const EmployeeProfile = lazy(() => import('./pages/EmployeeProfile'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const Notifications = lazy(() => import('./pages/Notifications'));
+const Clients = lazy(() => import('./pages/Clients'));
 const TeamPage = lazy(() => import('./pages/TeamPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
@@ -76,7 +78,7 @@ export default function App() {
                 <Route
                   path="/dashboard"
                   element={
-                    <RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}>
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
                       <Dashboard />
                     </RoleGuard>
                   }
@@ -84,7 +86,7 @@ export default function App() {
                 <Route
                   path="/projects"
                   element={
-                    <RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}>
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
                       <Projects />
                     </RoleGuard>
                   }
@@ -92,7 +94,7 @@ export default function App() {
                 <Route
                   path="/projects/:id"
                   element={
-                    <RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}>
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
                       <ProjectDetail />
                     </RoleGuard>
                   }
@@ -100,7 +102,7 @@ export default function App() {
                 <Route
                   path="/kanban"
                   element={
-                    <RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}>
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager', 'employee']} fallback={<Navigate to="/my-tasks" replace />}>
                       <Kanban />
                     </RoleGuard>
                   }
@@ -108,8 +110,16 @@ export default function App() {
                 <Route
                   path="/stages"
                   element={
-                    <RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}>
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
                       <StageDetail />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/stage-guide"
+                  element={
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager', 'employee']} fallback={<Navigate to="/my-tasks" replace />}>
+                      <StageGuidePage />
                     </RoleGuard>
                   }
                 />
@@ -125,12 +135,14 @@ export default function App() {
                 <Route path="/my-timesheets" element={<MyTimesheetsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<Notifications />} />
-                <Route path="/employees" element={<RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}><Employees /></RoleGuard>} />
-                <Route path="/employees/:id" element={<RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}><EmployeeProfile /></RoleGuard>} />
+                <Route path="/clients" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager', 'employee']} fallback={<Navigate to="/my-tasks" replace />}><Clients /></RoleGuard>} />
+                <Route path="/clients/:id" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager', 'employee']} fallback={<Navigate to="/my-tasks" replace />}><Clients /></RoleGuard>} />
+                <Route path="/employees" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}><Employees /></RoleGuard>} />
+                <Route path="/employees/:id" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}><EmployeeProfile /></RoleGuard>} />
                 <Route
                   path="/team"
                   element={
-                    <RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}>
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
                       <TeamPage />
                     </RoleGuard>
                   }
@@ -146,7 +158,7 @@ export default function App() {
                 <Route
                   path="/reports"
                   element={
-                    <RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}>
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
                       <ReportsPage />
                     </RoleGuard>
                   }

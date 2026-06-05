@@ -11,6 +11,7 @@ const schema = z.object({
   amountTotal: z.coerce.number().min(0),
   amountReceived: z.coerce.number().min(0),
   dueDate: z.string().optional().default(''),
+  paidDate: z.string().optional().default(''),
   remarks: z.string().optional().default(''),
 });
 
@@ -24,6 +25,7 @@ export function BillingForm({ initialValues, projects = [], onSubmit, onCancel }
       amountTotal: initialValues?.amountTotal || 0,
       amountReceived: initialValues?.amountReceived || 0,
       dueDate: initialValues?.dueDate ? String(initialValues.dueDate).slice(0, 10) : '',
+      paidDate: initialValues?.paidDate ? String(initialValues.paidDate).slice(0, 10) : '',
       remarks: initialValues?.remarks || '',
     },
   });
@@ -37,6 +39,7 @@ export function BillingForm({ initialValues, projects = [], onSubmit, onCancel }
       amountTotal: initialValues?.amountTotal || 0,
       amountReceived: initialValues?.amountReceived || 0,
       dueDate: initialValues?.dueDate ? String(initialValues.dueDate).slice(0, 10) : '',
+      paidDate: initialValues?.paidDate ? String(initialValues.paidDate).slice(0, 10) : '',
       remarks: initialValues?.remarks || '',
     });
   }, [initialValues, form]);
@@ -48,6 +51,7 @@ export function BillingForm({ initialValues, projects = [], onSubmit, onCancel }
         onSubmit({
           ...values,
           dueDate: values.dueDate || undefined,
+          paidDate: values.paidDate || undefined,
         }),
       )}
     >
@@ -81,6 +85,9 @@ export function BillingForm({ initialValues, projects = [], onSubmit, onCancel }
       </Field>
       <Field label="Due Date">
         <input className="input" type="date" {...form.register('dueDate')} />
+      </Field>
+      <Field label="Paid Date">
+        <input className="input" type="date" {...form.register('paidDate')} />
       </Field>
       <Field label="Remarks" className="sm:col-span-2">
         <textarea className="input min-h-24" {...form.register('remarks')} />

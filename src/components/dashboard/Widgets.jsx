@@ -486,7 +486,7 @@ export function ActionItemsCard({ items = [], showActions = false }) {
                 <th className="px-4 py-3">Priority</th>
                 <th className="px-4 py-3">Stage</th>
                 <th className="px-4 py-3">Next Action</th>
-                <th className="px-4 py-3">Responsible</th>
+                <th className="px-4 py-3">Responsible Engineer</th>
                 <th className="px-4 py-3">Target</th>
                 <th className="px-4 py-3">Decision Required</th>
                 {showActions ? <th className="px-4 py-3">Actions</th> : null}

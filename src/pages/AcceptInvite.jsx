@@ -57,7 +57,7 @@ export default function AcceptInvite() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
-          <img src={logo} alt="ZEROWALL" className="mb-5 h-12 w-12" />
+          <img src={logo} alt="PG Infrastructure logo" className="mb-5 h-12 w-12 object-contain" />
           {error ? (
             <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-6 text-center">
               <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-[#F05252]" />
@@ -66,7 +66,7 @@ export default function AcceptInvite() {
             </div>
           ) : (
             <>
-              <h1 className="font-display text-3xl font-bold tracking-tight text-white">Join ZEROWALL</h1>
+              <h1 className="font-display text-3xl font-bold tracking-tight text-white">Join PG Infrastructure</h1>
               <p className="mt-2 text-sm text-slate-400">Complete your account setup to continue.</p>
               <div className="mt-8">
                 <AcceptInviteForm invite={invite} token={token} />

@@ -16,7 +16,7 @@ export function ActionItemsTable({ tasks = [], showApproveButtons = false, onApp
         { key: 'priority', label: 'Priority', render: (row) => <TaskPriorityBadge value={row.priority} /> },
         { key: 'projectStage', label: 'Stage' },
         { key: 'nextAction', label: 'Next Action', render: (row) => row.description || row.nextAction || '-' },
-        { key: 'assigneeName', label: 'Responsible', render: (row) => row.assigneeName || row.projectEngineer || 'Unassigned' },
+        { key: 'assigneeName', label: 'Responsible Engineer', render: (row) => row.assigneeName || row.projectEngineer || 'Unassigned' },
         { key: 'dueDate', label: 'Target', render: (row) => row.dueDate || row.targetDate || '-' },
         { key: 'decision', label: 'Decision Needed', render: (row) => row.decision || row.comment || 'Pending' },
         {

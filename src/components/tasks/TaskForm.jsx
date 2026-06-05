@@ -11,11 +11,14 @@ const schema = z.object({
   stage: z.string().optional(),
   priority: z.string().optional(),
   status: z.string().optional(),
+  startDate: z.string().optional(),
   dueDate: z.string().optional(),
   assignee: z.string().optional(),
+  nextAction: z.string().optional(),
+  tags: z.string().optional(),
 });
 
-export function TaskForm({ initialValues, projects = [], assignee = '', onSubmit, onCancel }) {
+export function TaskForm({ initialValues, projects = [], employees = [], assignee = '', onSubmit, onCancel }) {
   const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -25,8 +28,11 @@ export function TaskForm({ initialValues, projects = [], assignee = '', onSubmit
       stage: '',
       priority: 'Medium',
       status: 'todo',
+      startDate: '',
       dueDate: '',
       assignee,
+      nextAction: '',
+      tags: '',
     },
   });
 
@@ -39,8 +45,11 @@ export function TaskForm({ initialValues, projects = [], assignee = '', onSubmit
         stage: initialValues.stageId || initialValues.stage?.id || initialValues.stage?._id || initialValues.stage || '',
         priority: initialValues.priority || 'Medium',
         status: initialValues.status || 'todo',
+        startDate: (initialValues.startDate || '').slice?.(0, 10) || '',
         dueDate: (initialValues.dueDate || '').slice?.(0, 10) || '',
         assignee: initialValues.assigneeId || initialValues.assignee?._id || initialValues.assignee?.id || initialValues.assignee || assignee || '',
+        nextAction: initialValues.nextAction || '',
+        tags: Array.isArray(initialValues.tags) ? initialValues.tags.join(', ') : initialValues.tags || '',
       });
     }
   }, [assignee, initialValues, reset]);
@@ -65,7 +74,23 @@ export function TaskForm({ initialValues, projects = [], assignee = '', onSubmit
       <Field label="Stage"><input className="input" {...register('stage')} /></Field>
       <Field label="Priority"><input className="input" {...register('priority')} /></Field>
       <Field label="Status"><input className="input" {...register('status')} /></Field>
+      <Field label="Start Date"><input className="input" type="date" {...register('startDate')} /></Field>
       <Field label="Due Date"><input className="input" type="date" {...register('dueDate')} /></Field>
+      <Field label="Assignee">
+        <select className="input" {...register('assignee')}>
+          <option value="">Unassigned</option>
+          {employees.map((employee) => {
+            const employeeId = employee.id || employee._id;
+            return (
+              <option key={employeeId} value={employeeId}>
+                {employee.name || employee.label || employee.email}
+              </option>
+            );
+          })}
+        </select>
+      </Field>
+      <Field label="Next Action" className="sm:col-span-2"><input className="input" {...register('nextAction')} /></Field>
+      <Field label="Tags" className="sm:col-span-2"><input className="input" {...register('tags')} /></Field>
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting}>Save Task</Button>

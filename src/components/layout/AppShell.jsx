@@ -89,13 +89,14 @@ export function AppShell() {
           )}
         >
           <div className="flex h-full flex-col lg:overflow-y-auto">
-            <div className="flex items-center gap-3 border-b border-[rgb(var(--line)/0.16)] px-5 py-5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[rgb(var(--panel-2)/0.92)] ring-1 ring-[rgb(var(--line)/0.14)]">
-                <img src={logo} alt="zerowall logo" className="h-full w-full object-cover" />
-              </div>
-              <div className={cn('min-w-0', sidebarCollapsed && 'lg:hidden')}>
-                <div className="font-display text-[15px] font-bold tracking-wide">zerowall</div>
-                <div className="text-xs text-slate-400">built for those who never miss</div>
+            <div className="flex items-center justify-center border-b border-[rgb(var(--line)/0.16)] px-5 py-5">
+              <div
+                className={cn(
+                  'flex shrink-0 items-center justify-center overflow-hidden rounded-[28px] bg-white ring-1 ring-[rgb(var(--line)/0.14)]',
+                  sidebarCollapsed ? 'h-16 w-16' : 'h-[76px] w-full max-w-[236px]',
+                )}
+              >
+                <img src={logo} alt="PG Infrastructure logo" className="h-full w-full object-contain p-2" />
               </div>
             </div>
 
@@ -110,10 +111,14 @@ export function AppShell() {
                     <SidebarLink item={{ label: 'My Timesheets', path: '/my-timesheets', icon: 'BarChart3' }} collapsed={sidebarCollapsed} />
                     <SidebarLink item={{ label: 'Profile', path: '/profile', icon: 'Users' }} collapsed={sidebarCollapsed} />
                     <SidebarLink item={{ label: 'Notifications', path: '/notifications', icon: 'Bell' }} collapsed={sidebarCollapsed} />
+                    <SidebarLink item={{ label: 'Clients', path: '/clients', icon: 'Users' }} collapsed={sidebarCollapsed} />
+                    <RoleGuard roles={['employee']}>
+                      <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} />
+                    </RoleGuard>
                   </div>
                 </div>
 
-                <RoleGuard roles={['superadmin', 'admin']}>
+                <RoleGuard roles={['superadmin', 'admin', 'project_manager']}>
                   <div>
                     <p className={cn('mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500', sidebarCollapsed && 'lg:hidden')}>
                       Operations
@@ -125,8 +130,18 @@ export function AppShell() {
                       <SidebarLink item={{ label: 'Stage Detail', path: '/stages', icon: 'Route' }} collapsed={sidebarCollapsed} />
                       <SidebarLink item={{ label: 'Employees', path: '/employees', icon: 'Users' }} collapsed={sidebarCollapsed} />
                       <SidebarLink item={{ label: 'Team', path: '/team', icon: 'Users' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Billing', path: '/billing', icon: 'ReceiptText' }} collapsed={sidebarCollapsed} />
                       <SidebarLink item={{ label: 'Reports', path: '/reports', icon: 'BarChart3' }} collapsed={sidebarCollapsed} />
+                    </div>
+                  </div>
+                </RoleGuard>
+
+                <RoleGuard roles={['superadmin', 'admin']}>
+                  <div>
+                    <p className={cn('mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500', sidebarCollapsed && 'lg:hidden')}>
+                      Finance
+                    </p>
+                    <div className="space-y-1">
+                      <SidebarLink item={{ label: 'Billing', path: '/billing', icon: 'ReceiptText' }} collapsed={sidebarCollapsed} />
                     </div>
                   </div>
                 </RoleGuard>
@@ -202,11 +217,9 @@ export function AppShell() {
 
               <div className="min-w-0 flex-1">
                 <div className="font-display text-base font-semibold tracking-wide text-[rgb(var(--text))] sm:text-lg">
-                  zerowall
+                  PG Infrastructure
                 </div>
-                <p className="truncate text-xs text-slate-500 sm:text-sm">
-                  built for those who never miss
-                </p>
+                <p className="truncate text-xs text-slate-500 sm:text-sm">Project master tracker</p>
               </div>
 
               <div className="hidden min-w-[260px] max-w-[420px] flex-1 items-center gap-2 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.82)] px-3 py-2 text-sm text-slate-500 md:flex">

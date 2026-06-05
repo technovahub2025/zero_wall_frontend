@@ -8,7 +8,7 @@ import { ModalShell } from '../shared/ModalShell';
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Valid email required'),
-  role: z.enum(['employee', 'admin']),
+  role: z.enum(['employee', 'admin', 'project_manager']),
   phone: z.string().optional().default(''),
   designation: z.string().optional().default(''),
   department: z.string().optional().default(''),
@@ -51,6 +51,7 @@ export function InviteModal({ open, onClose, onSubmit, initialValues }) {
           <select className="input" {...form.register('role')}>
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>
+            <option value="project_manager">Project Manager</option>
           </select>
         </Field>
         <Field label="Phone"><input className="input" {...form.register('phone')} /></Field>

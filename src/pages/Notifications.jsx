@@ -118,15 +118,27 @@ function Metric({ label, value, hint }) {
 
 function NotificationRow({ notification, onMarkRead, onDelete }) {
   return (
-    <button
-      type="button"
-      className="w-full rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)] p-4 text-left transition hover:bg-[rgb(var(--panel-2)/0.9)]"
+    <div
+      role="button"
+      tabIndex={0}
+      className="w-full rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)] p-4 text-left transition hover:bg-[rgb(var(--panel-2)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
       onClick={() => {
         if (notification.link) {
           window.location.assign(notification.link);
         }
         if (!notification.isRead) {
           onMarkRead.mutate(notification.id);
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          if (notification.link) {
+            window.location.assign(notification.link);
+          }
+          if (!notification.isRead) {
+            onMarkRead.mutate(notification.id);
+          }
         }
       }}
     >
@@ -166,6 +178,6 @@ function NotificationRow({ notification, onMarkRead, onDelete }) {
           </Button>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

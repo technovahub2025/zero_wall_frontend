@@ -1,20 +1,20 @@
 import { useMemo, useState } from 'react';
 import { Clock3, PauseCircle, PlayCircle, RefreshCw, Shuffle } from 'lucide-react';
 import { useProjects } from '../../hooks/useProjects';
-import { useTasks } from '../../hooks/useTasks';
+import { useMyTasks } from '../../hooks/useTasks';
 import { useTimer } from '../../hooks/useTimer';
 import { formatDuration } from '../../store/timerStore';
 import { ModalShell } from '../shared/ModalShell';
 import { Button } from '../ui/button';
 
 export function TimerWidget() {
-  const { activeLog, isRunning, elapsedSeconds, startTimer, stopTimer } = useTimer();
+  const { activeLog, isRunning, elapsedSeconds, warningLevel, startTimer, stopTimer } = useTimer();
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [projectId, setProjectId] = useState(activeLog?.project?.id || activeLog?.project?._id || '');
   const [taskId, setTaskId] = useState(activeLog?.task?.id || activeLog?.task?._id || '');
   const [note, setNote] = useState('');
   const projectsQuery = useProjects();
-  const tasksQuery = useTasks();
+  const tasksQuery = useMyTasks();
   const projects = projectsQuery.data || [];
   const tasks = useMemo(() => {
     if (!projectId) return tasksQuery.data || [];
@@ -23,6 +23,7 @@ export function TimerWidget() {
 
   const runningLabel = isRunning ? formatDuration(elapsedSeconds) : 'No timer running';
   const taskLabel = isRunning ? `${activeLog?.task?.title || 'Tracking task'} · ${activeLog?.project?.projectName || 'Project'}` : 'Ready to start';
+  const warningLabel = warningLevel === 3 ? '2h+' : warningLevel === 2 ? '1h+' : warningLevel === 1 ? '30m+' : '';
 
   return (
     <>
@@ -61,6 +62,11 @@ export function TimerWidget() {
           </div>
           <div className="mt-1 truncate text-sm font-semibold text-[rgb(var(--text))]">{runningLabel}</div>
           <div className="truncate text-[11px] text-slate-400">{taskLabel}</div>
+          {warningLabel ? (
+            <div className="mt-1 inline-flex rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300 ring-1 ring-amber-400/20">
+              {warningLabel} warning
+            </div>
+          ) : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-1">

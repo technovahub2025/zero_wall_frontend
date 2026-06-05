@@ -2,9 +2,10 @@ import { create } from 'zustand';
 
 const initialFilters = {
   search: '',
-  status: '',
-  segment: '',
-  priority: '',
+  status: 'all',
+  segment: 'all',
+  priority: 'all',
+  sort: 'oldest',
 };
 
 export const useProjectStore = create((set) => ({
@@ -19,7 +20,7 @@ export const useProjectStore = create((set) => ({
         [key]: value,
       },
     })),
-  resetFilters: () => set({ filters: initialFilters }),
+  resetFilters: () => set({ filters: { ...initialFilters } }),
   setSelectedProjectId: (selectedProjectId) => set({ selectedProjectId }),
   openProjectForm: (formMode = 'create', formRecord = null) => set({ formMode, formRecord }),
   closeProjectForm: () => set({ formMode: null, formRecord: null }),

@@ -84,6 +84,7 @@ export function useCreateProject() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['kanban-overview'] });
     },
   });
 }
@@ -109,6 +110,7 @@ export function useUpdateProject() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project', variables?.id] });
       queryClient.invalidateQueries({ queryKey: ['project-summary', variables?.id] });
+      queryClient.invalidateQueries({ queryKey: ['kanban-overview'] });
     },
   });
 }
@@ -129,6 +131,7 @@ export function useDeleteProject() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['kanban-overview'] });
     },
   });
 }
@@ -137,7 +140,10 @@ export function useReorderProjects() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (items) => projectService.reorder(items),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['projects'] }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['kanban-overview'] });
+    },
   });
 }
 

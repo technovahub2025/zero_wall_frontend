@@ -30,7 +30,7 @@ export default function ForgotPassword() {
             Back to login
           </Link>
           <div className="mt-5">
-            <img src={logo} alt="ZEROWALL" className="mb-5 h-12 w-12" />
+            <img src={logo} alt="PG Infrastructure logo" className="mb-5 h-12 w-12 object-contain" />
             <h1 className="font-display text-3xl font-bold tracking-tight text-white">Forgot your password?</h1>
             <p className="mt-2 text-sm text-slate-400">Enter your email and we will send you a reset link.</p>
           </div>

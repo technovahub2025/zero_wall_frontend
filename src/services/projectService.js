@@ -53,5 +53,10 @@ export const projectService = {
     const payload = unwrap(response);
     return payload.data || payload || [];
   },
-};
 
+  async kanbanOverview(params = {}) {
+    const response = await api.get('/projects/kanban-overview', { params });
+    const payload = unwrap(response);
+    return payload.data || payload || {};
+  },
+};

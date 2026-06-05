@@ -7,13 +7,24 @@ import { Button } from '../ui/button';
 const schema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
-  role: z.enum(['admin', 'employee']),
+  role: z.enum(['admin', 'project_manager', 'employee']),
   phone: z.string().optional(),
   designation: z.string().optional(),
   department: z.string().optional(),
   joiningDate: z.string().optional(),
+  avatar: z.string().optional(),
+  isActive: z.boolean().optional(),
   password: z.string().optional(),
+  confirmPassword: z.string().optional(),
   sendInvite: z.boolean().optional(),
+}).superRefine((values, ctx) => {
+  if (values.password && values.password !== values.confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['confirmPassword'],
+      message: 'Passwords do not match',
+    });
+  }
 });
 
 export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
@@ -33,7 +44,10 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
       designation: '',
       department: '',
       joiningDate: '',
+      avatar: '',
+      isActive: true,
       password: '',
+      confirmPassword: '',
       sendInvite: false,
     },
   });
@@ -50,7 +64,10 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
         designation: initialValues.designation || '',
         department: initialValues.department || '',
         joiningDate: (initialValues.joiningDate || '').slice?.(0, 10) || '',
+        avatar: initialValues.avatar || '',
+        isActive: Boolean(initialValues.isActive ?? true),
         password: '',
+        confirmPassword: '',
         sendInvite: Boolean(initialValues.sendInvite),
       });
     }
@@ -67,6 +84,7 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
         <select className="input" {...register('role')}>
           <option value="employee">Employee</option>
           <option value="admin">Admin</option>
+          <option value="project_manager">Project Manager</option>
         </select>
       </Field>
       <Field label="Phone"><input className="input" {...register('phone')} /></Field>
@@ -82,6 +100,13 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
         </select>
       </Field>
       <Field label="Joining Date"><input type="date" className="input" {...register('joiningDate')} /></Field>
+      <Field label="Avatar URL"><input className="input" {...register('avatar')} /></Field>
+      <Field label="Active">
+        <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+          <input type="checkbox" {...register('isActive')} />
+          Active account
+        </label>
+      </Field>
       <Field label="Send Invite">
         <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
           <input type="checkbox" {...register('sendInvite')} />
@@ -91,6 +116,11 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
       {!sendInvite ? (
         <Field label="Password">
           <input type="password" className="input" {...register('password')} />
+        </Field>
+      ) : null}
+      {!sendInvite ? (
+        <Field label="Confirm Password">
+          <input type="password" className="input" {...register('confirmPassword')} />
         </Field>
       ) : null}
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">

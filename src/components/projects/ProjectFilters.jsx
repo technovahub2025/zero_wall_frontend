@@ -1,33 +1,52 @@
-import { Check, ChevronDown, Filter } from 'lucide-react';
-import { useState } from 'react';
+import { Check, ChevronDown, Filter, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import { SearchInput } from '../shared/SearchInput';
+import { cn } from '../../lib/utils';
 
 const STATUS_OPTIONS = [
-  { label: 'All', value: 'all', tone: 'slate' },
-  { label: 'In Progress', value: 'In Progress', tone: 'blue' },
-  { label: 'Completed', value: 'Completed', tone: 'green' },
-  { label: 'On Hold', value: 'On Hold', tone: 'amber' },
+  { label: 'All', value: 'all' },
+  { label: 'In Progress', value: 'In Progress' },
+  { label: 'Completed', value: 'Completed' },
+  { label: 'On Hold', value: 'On Hold' },
+  { label: 'Cancelled', value: 'Cancelled' },
 ];
 
 const SEGMENT_OPTIONS = [
-  { label: 'All Segments', value: 'all', tone: 'slate' },
-  { label: 'Residential', value: 'Residential', tone: 'sky' },
-  { label: 'Commercial', value: 'Commercial', tone: 'amber' },
-  { label: 'Industrial', value: 'Industrial', tone: 'green' },
-  { label: 'Manufacturing', value: 'Manufacturing', tone: 'rose' },
+  { label: 'All Segments', value: 'all' },
+  { label: 'Residential', value: 'Residential' },
+  { label: 'Commercial', value: 'Commercial' },
+  { label: 'Industrial', value: 'Industrial' },
+  { label: 'Manufacturing', value: 'Manufacturing' },
 ];
 
 const PRIORITY_OPTIONS = [
-  { label: 'All Priorities', value: 'all', tone: 'slate' },
-  { label: 'Critical', value: 'Critical', tone: 'rose' },
-  { label: 'High', value: 'High', tone: 'amber' },
-  { label: 'Medium', value: 'Medium', tone: 'blue' },
-  { label: 'Low', value: 'Low', tone: 'green' },
+  { label: 'All Priorities', value: 'all' },
+  { label: 'Critical', value: 'Critical' },
+  { label: 'High', value: 'High' },
+  { label: 'Medium', value: 'Medium' },
+  { label: 'Low', value: 'Low' },
 ];
 
-export function ProjectFilters({ search, onSearchChange, filters, onChange, showFilters, onToggleFilters }) {
-  const [expanded, setExpanded] = useState('');
+export function ProjectFilters({
+  search,
+  onSearchChange,
+  filters,
+  onChange,
+  showFilters,
+  onToggleFilters,
+  selectedCount = 0,
+  allSelected = false,
+  onToggleAllSelection,
+  onDeleteSelected,
+}) {
+  const [openField, setOpenField] = useState(null);
+
+  useEffect(() => {
+    if (!showFilters) {
+      setOpenField(null);
+    }
+  }, [showFilters]);
 
   return (
     <div className="space-y-3">
@@ -39,6 +58,7 @@ export function ProjectFilters({ search, onSearchChange, filters, onChange, show
             placeholder="Search projects, clients, stages..."
             className="min-w-0"
           />
+          <SortToggle value={filters.sort} onChange={(value) => onChange('sort', value)} />
           <Button
             type="button"
             variant={showFilters ? 'primary' : 'secondary'}
@@ -52,84 +72,67 @@ export function ProjectFilters({ search, onSearchChange, filters, onChange, show
           </Button>
         </div>
       </div>
-      {showFilters ? (
-        <div className="grid gap-3 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] p-3 lg:grid-cols-3">
-          <FilterGroup
-            label="Status"
-            summary={formatSummary(filters.status, 'Select status')}
-            value={filters.status}
-            options={STATUS_OPTIONS}
-            onChange={(value) => onChange('status', value)}
-            expanded={expanded === 'status'}
-            onToggle={() => setExpanded((current) => (current === 'status' ? '' : 'status'))}
-          />
-          <FilterGroup
-            label="Segment"
-            summary={formatSummary(filters.segment, 'Select segment')}
-            value={filters.segment}
-            options={SEGMENT_OPTIONS}
-            onChange={(value) => onChange('segment', value)}
-            expanded={expanded === 'segment'}
-            onToggle={() => setExpanded((current) => (current === 'segment' ? '' : 'segment'))}
-          />
-          <FilterGroup
-            label="Priority"
-            summary={formatSummary(filters.priority, 'Select priority')}
-            value={filters.priority}
-            options={PRIORITY_OPTIONS}
-            onChange={(value) => onChange('priority', value)}
-            expanded={expanded === 'priority'}
-            onToggle={() => setExpanded((current) => (current === 'priority' ? '' : 'priority'))}
-          />
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
-function FilterGroup({ label, summary, value, options, onChange, expanded, onToggle }) {
-  return (
-    <div className="rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.9)] p-3">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center justify-between gap-3 rounded-xl px-1 py-1 text-left transition hover:bg-[rgb(var(--panel-2)/0.5)]"
-      >
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</div>
-          <div className="mt-1 text-sm font-medium text-[rgb(var(--text))]">{summary}</div>
-        </div>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition ${expanded ? 'rotate-180' : ''}`} />
-      </button>
-      {expanded ? (
-        <div className="mt-3 max-h-40 overflow-y-auto pr-1">
-          <div className="space-y-1">
-            {options.map((option) => {
-              const active = value === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => onChange(option.value)}
-                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
-                    active
-                      ? 'bg-sky-500/10 text-sky-300 ring-1 ring-sky-400/20'
-                      : 'text-[rgb(var(--text))] hover:bg-[rgb(var(--panel-2)/0.82)]'
-                  }`}
-                >
-                  <span className="truncate">{option.label}</span>
-                  <span
-                    className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ring-1 ${
-                      active
-                        ? 'bg-sky-500 text-slate-950 ring-sky-300/40'
-                        : 'bg-transparent text-transparent ring-[rgb(var(--line)/0.16)]'
-                    }`}
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </span>
-                </button>
-              );
-            })}
+      {showFilters ? (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.86)] px-4 py-3">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--line)/0.16)] bg-white/70 px-3 py-2 text-sm font-medium text-[rgb(var(--text))] transition hover:bg-slate-50"
+              onClick={() => onToggleAllSelection?.(allSelected)}
+            >
+              <span className={`inline-flex h-4 w-4 items-center justify-center rounded border ${allSelected ? 'border-sky-500 bg-sky-500' : selectedCount ? 'border-sky-400 bg-sky-100' : 'border-slate-300 bg-white'}`}>
+                {allSelected ? <CheckMark /> : selectedCount ? <MinusMark /> : null}
+              </span>
+              {allSelected ? 'Unselect all' : 'Select all'}
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-[0.18em] text-slate-500">{selectedCount} selected</span>
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={onDeleteSelected}
+                disabled={!selectedCount}
+                title="Delete selected projects permanently"
+                aria-label="Delete selected projects permanently"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] p-3 lg:grid-cols-3">
+            <FilterField
+              label="Status"
+              value={filters.status}
+              options={STATUS_OPTIONS}
+              onChange={(value) => onChange('status', value)}
+              placeholder="Select status"
+              isOpen={openField === 'status'}
+              onToggle={() => setOpenField((current) => (current === 'status' ? null : 'status'))}
+              onClose={() => setOpenField(null)}
+            />
+            <FilterField
+              label="Segment"
+              value={filters.segment}
+              options={SEGMENT_OPTIONS}
+              onChange={(value) => onChange('segment', value)}
+              placeholder="Select segment"
+              isOpen={openField === 'segment'}
+              onToggle={() => setOpenField((current) => (current === 'segment' ? null : 'segment'))}
+              onClose={() => setOpenField(null)}
+            />
+            <FilterField
+              label="Priority"
+              value={filters.priority}
+              options={PRIORITY_OPTIONS}
+              onChange={(value) => onChange('priority', value)}
+              placeholder="Select priority"
+              isOpen={openField === 'priority'}
+              onToggle={() => setOpenField((current) => (current === 'priority' ? null : 'priority'))}
+              onClose={() => setOpenField(null)}
+            />
           </div>
         </div>
       ) : null}
@@ -137,7 +140,123 @@ function FilterGroup({ label, summary, value, options, onChange, expanded, onTog
   );
 }
 
-function formatSummary(value, fallback) {
-  if (!value || value === 'all') return fallback;
-  return value;
+function CheckMark() {
+  return <span className="block h-2 w-2 rounded-[2px] bg-white" />;
+}
+
+function MinusMark() {
+  return <span className="block h-0.5 w-2 rounded-full bg-sky-500" />;
+}
+
+function SortToggle({ value, onChange }) {
+  const isNewest = value !== 'oldest';
+
+  return (
+    <div className="relative inline-grid shrink-0 grid-cols-2 overflow-hidden rounded-full border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.86)] p-1 shadow-sm">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-sky-500 shadow-sm transition-transform duration-300 ease-out motion-reduce:transition-none"
+        style={{ transform: isNewest ? 'translateX(100%)' : 'translateX(0%)' }}
+      />
+      <button
+        type="button"
+        className={cn(
+          'relative z-10 rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-300 ease-out motion-reduce:transition-none',
+          !isNewest ? 'text-white' : 'text-slate-500 hover:text-slate-700',
+        )}
+        onClick={() => onChange('oldest')}
+      >
+        Oldest
+      </button>
+      <button
+        type="button"
+        className={cn(
+          'relative z-10 rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-300 ease-out motion-reduce:transition-none',
+          isNewest ? 'text-white' : 'text-slate-500 hover:text-slate-700',
+        )}
+        onClick={() => onChange('newest')}
+      >
+        Newest
+      </button>
+    </div>
+  );
+}
+
+function FilterField({ label, value, options, onChange, placeholder, isOpen, onToggle, onClose }) {
+  const rootRef = useRef(null);
+  const currentOption = useMemo(() => options.find((option) => option.value === value) || null, [options, value]);
+  const isAllSelected = value === 'all';
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
+        onClose();
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('pointerdown', handlePointerDown);
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('pointerdown', handlePointerDown);
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+
+    return undefined;
+  }, [isOpen, onClose]);
+
+  return (
+    <div ref={rootRef} className="relative rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-[0_1px_0_rgba(255,255,255,0.5)_inset]">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</div>
+      <button
+        type="button"
+        className={cn(
+          'input flex w-full items-center justify-between gap-3 bg-[rgb(var(--panel)/0.98)] pr-3 text-left text-[rgb(var(--text))] shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-colors',
+          isOpen && 'ring-2 ring-sky-400/50',
+        )}
+        onClick={onToggle}
+      >
+        <span className={cn('truncate', currentOption || isAllSelected ? 'text-[rgb(var(--text))]' : 'text-slate-500')}>
+          {currentOption?.label || placeholder}
+        </span>
+        <ChevronDown className={cn('h-4 w-4 shrink-0 text-slate-500 transition-transform', isOpen && 'rotate-180')} />
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-4 right-4 top-[calc(100%-0px)] z-30 mt-2 overflow-hidden rounded-none border border-[rgb(var(--line)/0.22)] bg-white shadow-[0_18px_36px_rgba(15,23,42,0.14)]">
+          {options.map((option) => {
+            const selected = option.value === value || (option.value === 'all' && isAllSelected);
+            return (
+              <button
+                key={option.value || 'empty'}
+                type="button"
+                className={cn(
+                  'flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition-colors',
+                  selected ? 'bg-sky-100 text-sky-700' : 'text-slate-700 hover:bg-slate-50',
+                )}
+                onClick={() => {
+                  if (option.value === 'all') {
+                    onChange(isAllSelected ? null : 'all');
+                  } else {
+                    onChange(option.value);
+                  }
+                  onClose();
+                }}
+              >
+                <span>{option.label}</span>
+                {selected ? <Check className="h-4 w-4 text-sky-600" /> : <span className="h-4 w-4" />}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
 }

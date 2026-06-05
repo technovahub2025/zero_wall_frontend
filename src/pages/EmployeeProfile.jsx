@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { pageVariants } from '../utils/motionVariants';
 import { useAuthStore } from '../store/authStore';
+import { useEmployees } from '../hooks/useEmployees';
 import { useEmployee, useEmployeeTasks, useEmployeeWorkload, useUpdateEmployee, useUpdateEmployeeRole } from '../hooks/useEmployees';
 import { useCreateTask, useDeleteTask, useUpdateTask } from '../hooks/useTasks';
 import { AvatarUpload } from '../components/upload/AvatarUpload';
@@ -30,6 +31,7 @@ export default function EmployeeProfile() {
   const navigate = useNavigate();
   const currentUser = useAuthStore((state) => state.user);
   const employeeQuery = useEmployee(id);
+  const employeesQuery = useEmployees();
   const tasksQuery = useEmployeeTasks(id);
   const workloadQuery = useEmployeeWorkload(id);
   const projectsQuery = useProjects();
@@ -50,6 +52,7 @@ export default function EmployeeProfile() {
   const employee = employeeQuery.data;
   const taskData = tasksQuery.data || {};
   const projects = employee?.projects?.length ? employee.projects : projectsQuery.data || [];
+  const employees = employeesQuery.data || [];
   const tasks = taskData.tasks || [];
   const filteredTasks = useMemo(() => {
     if (taskFilter === 'all') return tasks;
@@ -205,6 +208,7 @@ export default function EmployeeProfile() {
             initialValues={editingTask || { assignee: employee.id }}
             assignee={employee.id}
             projects={projects}
+            employees={employees}
             onCancel={() => {
               setTaskOpen(false);
               setEditingTask(null);
@@ -267,6 +271,7 @@ function RoleChangeForm({ role, onSubmit, onCancel }) {
         <select className="input" value={nextRole} onChange={(e) => setNextRole(e.target.value)}>
           <option value="employee">Employee</option>
           <option value="admin">Admin</option>
+          <option value="project_manager">Project Manager</option>
         </select>
       </Field>
       <div className="flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">

@@ -10,9 +10,12 @@ export function TaskTable({ rows = [], onEdit, onDelete, onComment }) {
         { key: 'title', label: 'Task' },
         { key: 'projectName', label: 'Project' },
         { key: 'assigneeName', label: 'Assignee' },
+        { key: 'startDate', label: 'Start', hideOnMobile: true, render: (row) => row.startDate || '-' },
         { key: 'dueDate', label: 'Due', render: (row) => row.dueDate || '-' },
         { key: 'priority', label: 'Priority', render: (row) => <TaskPriorityBadge value={row.priority} /> },
         { key: 'status', label: 'Status', render: (row) => <TaskStatusBadge value={row.status} /> },
+        { key: 'nextAction', label: 'Next Action', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate">{row.nextAction || '-'}</span> },
+        { key: 'tags', label: 'Tags', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate">{Array.isArray(row.tags) ? row.tags.join(', ') : row.tags || '-'}</span> },
         { key: 'timer', label: 'Timer', render: (row) => <TaskCountdown dueDate={row.dueDate} /> },
         {
           key: 'actions',
@@ -32,4 +35,3 @@ export function TaskTable({ rows = [], onEdit, onDelete, onComment }) {
     />
   );
 }
-

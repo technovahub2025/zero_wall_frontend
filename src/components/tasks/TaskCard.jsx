@@ -2,13 +2,15 @@ import { Card, CardBody } from '../ui/card';
 import { TaskCountdown } from './TaskCountdown';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
-import { Clock3, PauseCircle, PlayCircle } from 'lucide-react';
+import { CalendarDays, Clock3, FolderKanban, PauseCircle, PlayCircle, UserRound } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useTimer } from '../../hooks/useTimer';
 import { Badge } from '../ui/badge';
 import { formatDuration } from '../../store/timerStore';
+import { cn } from '../../lib/utils';
+import { format, parseISO } from 'date-fns';
 
-export function TaskCard({ task, onClick, showProject = false }) {
+export function TaskCard({ task, onClick, showProject = false, selected = false, compact = false }) {
   const user = useAuthStore((state) => state.user);
   const { isRunning, activeLog, elapsedSeconds, startTimer, stopTimer } = useTimer();
   const taskId = task.id || task._id;
@@ -17,19 +19,47 @@ export function TaskCard({ task, onClick, showProject = false }) {
   const assigneeId = task.assignee?._id || task.assignee?.id || task.assignee;
   const canStart = ['superadmin', 'admin'].includes(user?.role) || String(assigneeId) === String(user?.id);
   const isThisTaskActive = isRunning && String(activeLog?.task?.id || activeLog?.task?._id || activeLog?.task) === String(taskId);
+  const assigneeName = task.assignee?.name || task.assigneeName || 'Unassigned';
+  const dueDateLabel = formatTaskDate(task.dueDate);
 
   return (
-    <Card className="cursor-pointer transition hover:translate-y-[-1px]" onClick={onClick}>
-      <CardBody>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="font-semibold text-[rgb(var(--text))]">{task.title}</div>
-            <div className="mt-1 text-xs text-slate-400">{showProject ? task.projectName || task.project?.projectName : task.projectName}</div>
+    <Card
+      className={cn(
+        'cursor-pointer overflow-hidden transition',
+        selected
+          ? 'border-sky-400/40 bg-sky-500/5 ring-1 ring-sky-400/20 shadow-lg shadow-sky-400/10'
+          : 'border-white/10 bg-white/75 hover:-translate-y-[1px] hover:border-sky-200/40 hover:shadow-md',
+        compact ? 'shadow-sm' : '',
+      )}
+      onClick={onClick}
+    >
+      <CardBody className={cn(compact ? 'p-3 sm:p-4' : 'p-4 sm:p-5')}>
+        <div className={cn('flex items-start justify-between gap-3', compact ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_auto]' : '')}>
+          <div className="min-w-0 flex-1">
+            <div className={cn('font-semibold text-[rgb(var(--text))]', compact ? 'text-[15px]' : 'text-base')}>{task.title}</div>
+            <div className={cn('mt-1 text-sm text-slate-400', compact ? 'line-clamp-2 max-w-3xl' : '')}>{task.description}</div>
+            <div className={cn('mt-3 flex flex-wrap gap-2', compact ? 'gap-1.5' : 'gap-2')}>
+              {showProject ? (
+                <Badge tone="slate">
+                  <FolderKanban className="h-3.5 w-3.5" />
+                  {task.projectName || task.project?.projectName}
+                </Badge>
+              ) : null}
+              <Badge tone="slate">
+                <UserRound className="h-3.5 w-3.5" />
+                {assigneeName}
+              </Badge>
+              <Badge tone="slate">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {dueDateLabel}
+              </Badge>
+            </div>
           </div>
-          <TaskStatusBadge value={task.status} />
+          <div className={cn('flex shrink-0 items-start gap-2', compact ? 'xl:flex-col xl:items-end' : '')}>
+            <TaskStatusBadge value={task.status} />
+          </div>
         </div>
-        <div className="mt-3 text-sm text-slate-300">{task.description}</div>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className={cn('mt-4 flex flex-wrap gap-2', compact ? 'mt-3 items-center' : '')}>
           <TaskPriorityBadge value={task.priority} />
           <TaskCountdown dueDate={task.dueDate} />
           {Number(task.totalTimeLogged || 0) > 0 ? (
@@ -72,4 +102,11 @@ export function TaskCard({ task, onClick, showProject = false }) {
       </CardBody>
     </Card>
   );
+}
+
+function formatTaskDate(dateValue) {
+  if (!dateValue) return 'No due date';
+  const parsed = typeof dateValue === 'string' ? parseISO(dateValue) : new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) return 'No due date';
+  return format(parsed, 'dd MMM yyyy');
 }

@@ -4,6 +4,7 @@ import { AlertCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { pageVariants } from '../utils/motionVariants';
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from '../hooks/useProjects';
+import { useEmployees } from '../hooks/useEmployees';
 import { useProjectStore } from '../store/projectStore';
 import { useUiStore } from '../store/uiStore';
 import { exportProjectsToExcel } from '../lib/export';
@@ -22,13 +23,15 @@ export default function Projects() {
   const location = useLocation();
   const navigate = useNavigate();
   const projectsQuery = useProjects();
+  const employeesQuery = useEmployees();
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
-  const { filters, setFilter } = useProjectStore();
+  const { filters, setFilter, resetFilters } = useProjectStore();
   const { activeModal, modalData, openModal, closeModal, openConfirm } = useUiStore();
   const [searchInput, setSearchInput] = useState(filters.search);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedProjectIds, setSelectedProjectIds] = useState([]);
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const deferredSearch = useDeferredValue(filters.search);
 
@@ -43,9 +46,18 @@ export default function Projects() {
     setFilter('search', debouncedSearch);
   }, [debouncedSearch, setFilter]);
 
+  useEffect(() => {
+    resetFilters();
+    setSearchInput('');
+  }, [resetFilters]);
+
+  useEffect(() => {
+    setSelectedProjectIds((current) => current.filter((id) => (projectsQuery.data || []).some((project) => project.id === id)));
+  }, [projectsQuery.data]);
+
   const filtered = useMemo(() => {
     const q = deferredSearch.trim().toLowerCase();
-    return (projectsQuery.data || []).filter((project) => {
+    const rows = (projectsQuery.data || []).filter((project) => {
       const matchesSearch =
         !q ||
         [project.projectName, project.clientName, project.location, project.currentStage, project.companySegment, ...(project.projectType || [])]
@@ -57,7 +69,13 @@ export default function Projects() {
       const matchesPriority = !filters.priority || filters.priority === 'all' || project.priority === filters.priority;
       return matchesSearch && matchesStatus && matchesSegment && matchesPriority;
     });
+    return rows.sort((a, b) => {
+      const aDate = new Date(a.createdAt || a.updatedAt || 0).getTime();
+      const bDate = new Date(b.createdAt || b.updatedAt || 0).getTime();
+      return filters.sort === 'oldest' ? aDate - bDate : bDate - aDate;
+    });
   }, [deferredSearch, filters, projectsQuery.data]);
+  const employees = employeesQuery.data || [];
 
   async function handleSave(values) {
     if (modalData?.id) {
@@ -75,6 +93,30 @@ export default function Projects() {
       confirmLabel: 'Delete',
       tone: 'rose',
       onConfirm: () => deleteProject.mutateAsync(project.id),
+    });
+  }
+
+  function handleToggleProjectSelection(projectId) {
+    setSelectedProjectIds((current) =>
+      current.includes(projectId) ? current.filter((id) => id !== projectId) : [...current, projectId],
+    );
+  }
+
+  function handleToggleAllProjects(allSelected) {
+    setSelectedProjectIds(allSelected ? [] : filtered.map((project) => project.id));
+  }
+
+  function handleDeleteSelected() {
+    if (!selectedProjectIds.length) return;
+    openConfirm({
+      title: 'Delete selected projects',
+      message: `Delete ${selectedProjectIds.length} selected project${selectedProjectIds.length === 1 ? '' : 's'} permanently? This removes the projects and related data.`,
+      confirmLabel: 'Delete',
+      tone: 'rose',
+      onConfirm: async () => {
+        await Promise.all(selectedProjectIds.map((projectId) => deleteProject.mutateAsync(projectId)));
+        setSelectedProjectIds([]);
+      },
     });
   }
 
@@ -115,6 +157,10 @@ export default function Projects() {
             onChange={(key, value) => setFilter(key, value)}
             showFilters={showFilters}
             onToggleFilters={() => setShowFilters((current) => !current)}
+            selectedCount={selectedProjectIds.length}
+            allSelected={filtered.length > 0 && selectedProjectIds.length === filtered.length}
+            onToggleAllSelection={(allSelected) => handleToggleAllProjects(allSelected)}
+            onDeleteSelected={handleDeleteSelected}
           />
 
           {projectsQuery.isLoading ? (
@@ -124,6 +170,9 @@ export default function Projects() {
               rows={filtered}
               onEdit={(project) => openModal('project', project)}
               onDelete={handleDelete}
+              selectedIds={selectedProjectIds}
+              onToggleRowSelection={handleToggleProjectSelection}
+              showSelection={showFilters}
             />
           ) : (
             <EmptyState title="No matching projects" description="Try adjusting search or filters." />
@@ -137,7 +186,7 @@ export default function Projects() {
           description="Create or update a project record."
           onClose={closeModal}
         >
-          <ProjectForm initialValues={modalData} onSubmit={handleSave} onCancel={closeModal} />
+        <ProjectForm initialValues={modalData} employees={employees} onSubmit={handleSave} onCancel={closeModal} />
         </ModalShell>
       ) : null}
     </motion.div>

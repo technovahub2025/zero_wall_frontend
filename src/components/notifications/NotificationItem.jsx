@@ -4,9 +4,16 @@ import { cn } from '../../lib/utils';
 
 export function NotificationItem({ notification, onRead, onDelete, onClick }) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick?.();
+        }
+      }}
       className={cn(
         'w-full rounded-2xl border p-4 text-left transition',
         notification?.isRead
@@ -59,6 +66,6 @@ export function NotificationItem({ notification, onRead, onDelete, onClick }) {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

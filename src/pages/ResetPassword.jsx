@@ -24,7 +24,7 @@ export default function ResetPassword() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
-          <img src={logo} alt="ZEROWALL" className="mb-5 h-12 w-12" />
+          <img src={logo} alt="PG Infrastructure logo" className="mb-5 h-12 w-12 object-contain" />
           <h1 className="font-display text-3xl font-bold tracking-tight text-white">Reset your password</h1>
           <p className="mt-2 text-sm text-slate-400">Create a new password to continue.</p>
           <div className="mt-8">

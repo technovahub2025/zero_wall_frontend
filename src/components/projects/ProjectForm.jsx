@@ -4,6 +4,20 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 
+const STATUS_OPTIONS = ['In Progress', 'Completed', 'On Hold', 'Cancelled'];
+const PRIORITY_OPTIONS = ['Critical', 'High', 'Medium', 'Low'];
+const INVOICE_STATUS_OPTIONS = [
+  'Not Started',
+  'Advance Received',
+  '50% Received',
+  'Final Invoice Pending',
+  'Invoice Submitted',
+  'Mobilisation Advance Received',
+  '1st Running Bill Submitted',
+  'Retention Refund Pending',
+  'LOI Received',
+];
+
 const schema = z.object({
   projectName: z.string().min(2, 'Project name is required'),
   clientName: z.string().min(2, 'Client name is required'),
@@ -17,14 +31,20 @@ const schema = z.object({
   currentStage: z.string().optional(),
   stageCompletion: z.string().optional(),
   clientApprovalStatus: z.string().optional(),
+  clientApprovalDate: z.string().optional(),
+  actualEnd: z.string().optional(),
   nextActionRequired: z.string().optional(),
+  responsibleEngineer: z.string().optional(),
+  remarksOrBlockers: z.string().optional(),
+  ceoMdReview: z.string().optional(),
+  estimatedCompletion: z.string().optional(),
   priority: z.string().optional(),
   invoiceStatus: z.string().optional(),
   recv: z.string().optional(),
   balance: z.string().optional(),
 });
 
-export function ProjectForm({ initialValues, onSubmit, onCancel }) {
+export function ProjectForm({ initialValues, employees = [], onSubmit, onCancel }) {
   const {
     register,
     handleSubmit,
@@ -40,12 +60,18 @@ export function ProjectForm({ initialValues, onSubmit, onCancel }) {
       location: '',
       startDate: '',
       targetDate: '',
+      actualEnd: '',
       projectValue: '',
       overallStatus: 'In Progress',
       currentStage: 'Concept Design',
       stageCompletion: '0',
       clientApprovalStatus: 'Not Submitted',
+      clientApprovalDate: '',
       nextActionRequired: '',
+      responsibleEngineer: '',
+      remarksOrBlockers: '',
+      ceoMdReview: '',
+      estimatedCompletion: '0',
       priority: 'Medium',
       invoiceStatus: '',
       recv: '',
@@ -63,12 +89,18 @@ export function ProjectForm({ initialValues, onSubmit, onCancel }) {
         location: initialValues.location || '',
         startDate: (initialValues.startDate || '').slice?.(0, 10) || '',
         targetDate: (initialValues.targetDate || '').slice?.(0, 10) || '',
+        actualEnd: (initialValues.actualEnd || initialValues.actualEndDate || '').slice?.(0, 10) || '',
         projectValue: String(initialValues.projectValue ?? ''),
         overallStatus: initialValues.overallStatus || 'In Progress',
         currentStage: initialValues.currentStage || 'Concept Design',
         stageCompletion: String(initialValues.stageCompletion ?? 0),
         clientApprovalStatus: initialValues.clientApprovalStatus || 'Not Submitted',
+        clientApprovalDate: (initialValues.clientApprovalDate || '').slice?.(0, 10) || '',
         nextActionRequired: initialValues.nextActionRequired || '',
+        responsibleEngineer: initialValues.responsibleEngineer?._id || initialValues.responsibleEngineer?.id || initialValues.responsibleEngineer || '',
+        remarksOrBlockers: initialValues.remarksOrBlockers || [initialValues.remarks, initialValues.blockers].filter(Boolean).join(' | '),
+        ceoMdReview: initialValues.ceoMdReview || '',
+        estimatedCompletion: String(initialValues.estimatedCompletion ?? 0),
         priority: initialValues.priority || 'Medium',
         invoiceStatus: initialValues.invoiceStatus || '',
         recv: String(initialValues.recv ?? ''),
@@ -83,6 +115,12 @@ export function ProjectForm({ initialValues, onSubmit, onCancel }) {
       projectType: values.projectType ? values.projectType.split(',').map((item) => item.trim()).filter(Boolean) : [],
       projectValue: Number(values.projectValue || 0),
       stageCompletion: Number(values.stageCompletion || 0),
+      clientApprovalDate: values.clientApprovalDate || undefined,
+      actualEnd: values.actualEnd || undefined,
+      responsibleEngineer: values.responsibleEngineer || undefined,
+      remarksOrBlockers: values.remarksOrBlockers || '',
+      ceoMdReview: values.ceoMdReview || '',
+      estimatedCompletion: Number(values.estimatedCompletion || 0),
       recv: Number(values.recv || 0),
       balance: Number(values.balance || 0),
     });
@@ -111,11 +149,21 @@ export function ProjectForm({ initialValues, onSubmit, onCancel }) {
       <Field label="Start Date">
         <input className="input" type="date" {...register('startDate')} />
       </Field>
-      <Field label="Target Date">
+      <Field label="Planned End">
         <input className="input" type="date" {...register('targetDate')} />
       </Field>
+      <Field label="Actual End">
+        <input className="input" type="date" {...register('actualEnd')} />
+      </Field>
       <Field label="Overall Status">
-        <input className="input" {...register('overallStatus')} />
+        <select className="input" {...register('overallStatus')}>
+          <option value="">Select project status</option>
+          {STATUS_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
       </Field>
       <Field label="Current Stage">
         <input className="input" {...register('currentStage')} />
@@ -126,14 +174,53 @@ export function ProjectForm({ initialValues, onSubmit, onCancel }) {
       <Field label="Client Approval">
         <input className="input" {...register('clientApprovalStatus')} />
       </Field>
+      <Field label="Client Approval Date">
+        <input className="input" type="date" {...register('clientApprovalDate')} />
+      </Field>
+      <Field label="Responsible Engineer">
+        <select className="input" {...register('responsibleEngineer')}>
+          <option value="">Select responsible engineer</option>
+          {employees.map((employee) => {
+            const employeeId = employee.id || employee._id;
+            return (
+              <option key={employeeId} value={employeeId}>
+                {employee.name || employee.label || employee.email}
+              </option>
+            );
+          })}
+        </select>
+      </Field>
       <Field label="Next Action">
         <input className="input" {...register('nextActionRequired')} />
       </Field>
+      <Field label="Remarks / Blockers" className="sm:col-span-2">
+        <textarea className="input min-h-[96px]" {...register('remarksOrBlockers')} />
+      </Field>
+      <Field label="CEO / MD Review">
+        <input className="input" {...register('ceoMdReview')} />
+      </Field>
+      <Field label="Estimated Completion">
+        <input className="input" type="number" min="0" max="100" {...register('estimatedCompletion')} />
+      </Field>
       <Field label="Priority">
-        <input className="input" {...register('priority')} />
+        <select className="input" {...register('priority')}>
+          <option value="">Select priority</option>
+          {PRIORITY_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
       </Field>
       <Field label="Invoice Status">
-        <input className="input" {...register('invoiceStatus')} />
+        <select className="input" {...register('invoiceStatus')}>
+          <option value="">Select billing status</option>
+          {INVOICE_STATUS_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
       </Field>
       <Field label="Received">
         <input className="input" type="number" step="0.01" {...register('recv')} />

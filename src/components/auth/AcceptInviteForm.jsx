@@ -64,7 +64,7 @@ export function AcceptInviteForm({ invite, token }) {
   const onSubmit = async (values) => {
     try {
       await acceptInvite(token, values);
-      toast.success('Welcome to ZEROWALL');
+      toast.success('Welcome to PG Infrastructure');
       navigate(homePath() || getHomePathForRole(invite?.role || 'employee'), { replace: true });
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Could not join');
@@ -150,7 +150,7 @@ export function AcceptInviteForm({ invite, token }) {
         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2E83F5] px-4 text-sm font-semibold text-white transition hover:bg-[#1d6fe0] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-        Join ZEROWALL
+        Join PG Infrastructure
       </button>
     </form>
   );

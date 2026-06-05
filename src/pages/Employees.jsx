@@ -13,6 +13,7 @@ import { SkeletonCard } from '../components/shared/SkeletonCard';
 import { SkeletonTable } from '../components/shared/SkeletonTable';
 import { EmptyState } from '../components/shared/EmptyState';
 import { Button } from '../components/ui/button';
+import { Card, CardBody } from '../components/ui/card';
 import { useUiStore } from '../store/uiStore';
 import { useDebouncedValue } from '../utils/performance';
 

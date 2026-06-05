@@ -23,7 +23,7 @@ export function PWAInstallBanner() {
         <Download className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold text-[rgb(var(--text))]">Install ZEROWALL</div>
+        <div className="text-sm font-semibold text-[rgb(var(--text))]">Install PG Infrastructure</div>
         <div className="text-xs text-slate-400">Add the app to your device for faster access.</div>
       </div>
       <Button

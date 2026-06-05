@@ -25,6 +25,7 @@ export function normalizeProject(record = {}) {
   const responsibleEngineer = record.responsibleEngineer || null;
   const createdBy = record.createdBy || null;
   const tasks = Array.isArray(record.tasks) ? record.tasks.map(normalizeTask) : [];
+  const taskCount = Number(record.taskCount ?? record.taskCountValue ?? 0);
 
   return {
     id: String(record.id || record._id || record.projectId || record.name || ''),
@@ -35,6 +36,7 @@ export function normalizeProject(record = {}) {
     location: record.location || '',
     startDate: toIsoDate(record.startDate || record.start) || record.start || null,
     targetDate: toIsoDate(record.targetDate || record.end) || record.end || null,
+    actualEnd: toIsoDate(record.actualEnd || record.actualEndDate) || record.actualEnd || null,
     projectValue: value,
     overallStatus: record.overallStatus || record.status || 'In Progress',
     currentStage: record.currentStage || record.stage || '',
@@ -46,10 +48,12 @@ export function normalizeProject(record = {}) {
     assignedTeam: Array.isArray(record.assignedTeam) ? record.assignedTeam : [],
     remarks: record.remarks || '',
     blockers: record.blockers || '',
+    remarksOrBlockers: record.remarksOrBlockers || record.remarksOrBlockersCombined || [record.remarks, record.blockers].filter(Boolean).join(' | '),
     ceoMdReview: record.ceoMdReview || '',
     priority: record.priority || 'Medium',
     invoiceStatus: record.invoiceStatus || record.billing || '',
     estimatedCompletion: Number(record.estimatedCompletion || 0),
+    taskCount,
     recv,
     balance,
     isArchived: Boolean(record.isArchived),
@@ -62,6 +66,7 @@ export function normalizeProject(record = {}) {
     typeShort: pickFirst(projectType),
     start: record.startDate || record.start || null,
     end: record.targetDate || record.end || null,
+    actualEnd: record.actualEnd || record.actualEndDate || null,
     value,
     status: record.overallStatus || record.status || 'In Progress',
     stage: record.currentStage || record.stage || '',
@@ -69,6 +74,7 @@ export function normalizeProject(record = {}) {
     engineer: responsibleEngineer?.name || record.engineer || '',
     approval: record.clientApprovalStatus || record.approval || '',
     billing: record.invoiceStatus || record.billing || '',
+    taskCount,
     tasks,
   };
 }
@@ -92,6 +98,10 @@ export function normalizeStage(record = {}) {
     clientApprovalDate: record.clientApprovalDate || null,
     clientComments: record.clientComments || '',
     nextAction: record.nextAction || '',
+    responsibleEngineer: record.responsibleEngineer || null,
+    approvalRequired: record.approvalRequired || '',
+    disciplines: record.disciplines || '',
+    duration: record.duration || '',
     completionPct: Number(record.completionPct || 0),
     assignedTo: record.assignedTo || null,
     approvedBy: record.approvedBy || null,
@@ -118,6 +128,7 @@ export function normalizeTask(record = {}) {
     id: String(record.id || record._id || ''),
     title: record.title || '',
     description: record.description || '',
+    startDate: record.startDate || null,
     project,
     projectId: typeof record.project === 'string' ? record.project : record.project?._id || record.project?.id || null,
     stage,
@@ -128,6 +139,8 @@ export function normalizeTask(record = {}) {
     status,
     dueDate: record.dueDate || null,
     completedAt: record.completedAt || null,
+    nextAction: record.nextAction || '',
+    tags: Array.isArray(record.tags) ? record.tags : typeof record.tags === 'string' ? record.tags.split(',').map((item) => item.trim()).filter(Boolean) : [],
     attachments: Array.isArray(record.attachments) ? record.attachments : [],
     comments,
     order: Number(record.order || 0),
@@ -142,6 +155,31 @@ export function normalizeTask(record = {}) {
     projectEngineer: record.projectEngineer || project?.engineer || '',
     assigneeName: record.assignee?.name || record.assigneeName || '',
     backupReviewerName: record.backupReviewer?.name || record.backupReviewerName || '',
+  };
+}
+
+export function normalizeClient(record = {}) {
+  const projectIds = Array.isArray(record.projectIds) ? record.projectIds : [];
+  const projects = Array.isArray(record.projects) ? record.projects : [];
+  return {
+    id: String(record.id || record._id || ''),
+    clientName: record.clientName || '',
+    contactPerson: record.contactPerson || '',
+    email: record.email || '',
+    phone: record.phone || '',
+    companyName: record.companyName || '',
+    segment: record.segment || '',
+    address: record.address || '',
+    city: record.city || '',
+    status: record.status || 'Active',
+    notes: record.notes || '',
+    projectIds,
+    projectCount: Number(record.projectCount || projectIds.length || projects.length || 0),
+    projects,
+    createdBy: record.createdBy || null,
+    updatedBy: record.updatedBy || null,
+    createdAt: record.createdAt || null,
+    updatedAt: record.updatedAt || null,
   };
 }
 

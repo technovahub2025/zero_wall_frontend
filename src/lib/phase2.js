@@ -115,6 +115,15 @@ export function normalizeTask(record = {}) {
   const project = record.project && typeof record.project === 'object' ? normalizeProject(record.project) : record.project || null;
   const stage = record.stage && typeof record.stage === 'object' ? record.stage : record.stage || null;
   const comments = Array.isArray(record.comments) ? record.comments : [];
+  const team = record.team && typeof record.team === 'object' ? record.team : record.team || null;
+  const teamMembers = Array.isArray(team?.members) ? team.members : [];
+  const assignedTeam = Array.isArray(record.assignedTeam) ? record.assignedTeam : [];
+  const assignedTeamNames = Array.isArray(record.assignedTeamNames)
+    ? record.assignedTeamNames
+    : assignedTeam
+        .map((member) => member?.name || member?.label || '')
+        .filter(Boolean);
+  const reporter = record.reporter || record.createdBy || null;
   const statusMap = {
     pending: 'todo',
     todo: 'todo',
@@ -134,6 +143,9 @@ export function normalizeTask(record = {}) {
     stage,
     stageId: typeof record.stage === 'string' ? record.stage : record.stage?._id || record.stage?.id || null,
     assignee: record.assignee || null,
+    team,
+    teamName: team?.name || record.teamName || '',
+    teamMembers,
     backupReviewer: record.backupReviewer || null,
     priority: record.priority || 'Medium',
     status,
@@ -154,6 +166,13 @@ export function normalizeTask(record = {}) {
     projectStatus: record.projectStatus || project?.overallStatus || record.project?.overallStatus || '',
     projectEngineer: record.projectEngineer || project?.engineer || '',
     assigneeName: record.assignee?.name || record.assigneeName || '',
+    reporter,
+    reporterName: reporter?.name || record.reporterName || record.createdBy?.name || '',
+    teamMemberNames: Array.isArray(record.teamMemberNames)
+      ? record.teamMemberNames
+      : teamMembers.map((member) => member?.name || member?.label || '').filter(Boolean),
+    assignedTeam,
+    assignedTeamNames,
     backupReviewerName: record.backupReviewer?.name || record.backupReviewerName || '',
   };
 }

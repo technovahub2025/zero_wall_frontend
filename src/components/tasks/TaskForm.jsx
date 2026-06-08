@@ -1,26 +1,50 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Check, ChevronDown } from 'lucide-react';
 import { Button } from '../ui/button';
+import { DropdownField } from '../shared/DropdownField';
 
 const schema = z.object({
   title: z.string().min(2, 'Task title is required'),
   description: z.string().optional(),
   project: z.string().min(1, 'Project is required'),
   stage: z.string().optional(),
+  team: z.string().optional(),
   priority: z.string().optional(),
   status: z.string().optional(),
   startDate: z.string().optional(),
   dueDate: z.string().optional(),
   assignee: z.string().optional(),
+  reporter: z.string().optional(),
+  assignedTeam: z.array(z.string()).optional(),
   nextAction: z.string().optional(),
   tags: z.string().optional(),
 });
 
-export function TaskForm({ initialValues, projects = [], employees = [], assignee = '', onSubmit, onCancel }) {
+function extractId(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value.id || value._id || '';
+}
+
+function extractIds(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => extractId(item)).filter(Boolean);
+}
+
+export function TaskForm({
+  initialValues,
+  projects = [],
+  teams = [],
+  employees = [],
+  currentUser = null,
+  assignee = '',
+  reporter = '',
+  assignedTeam = [],
+  onSubmit,
+  onCancel,
+}) {
   const {
     register,
     handleSubmit,
@@ -35,17 +59,23 @@ export function TaskForm({ initialValues, projects = [], employees = [], assigne
       description: '',
       project: '',
       stage: '',
+      team: '',
       priority: 'Medium',
       status: 'todo',
       startDate: '',
       dueDate: '',
       assignee,
+      reporter,
+      assignedTeam: extractIds(assignedTeam),
       nextAction: '',
       tags: '',
     },
   });
   const projectValue = watch('project');
+  const teamValue = watch('team');
   const assigneeValue = watch('assignee');
+  const reporterValue = watch('reporter');
+  const assignedTeamValue = watch('assignedTeam');
 
   useEffect(() => {
     if (initialValues) {
@@ -54,25 +84,92 @@ export function TaskForm({ initialValues, projects = [], employees = [], assigne
         description: initialValues.description || '',
         project: initialValues.projectId || initialValues.project?.id || initialValues.project?._id || initialValues.project || '',
         stage: initialValues.stageId || initialValues.stage?.id || initialValues.stage?._id || initialValues.stage || '',
+        team: extractId(initialValues.team) || '',
         priority: initialValues.priority || 'Medium',
         status: initialValues.status || 'todo',
         startDate: (initialValues.startDate || '').slice?.(0, 10) || '',
         dueDate: (initialValues.dueDate || '').slice?.(0, 10) || '',
-        assignee: initialValues.assigneeId || initialValues.assignee?._id || initialValues.assignee?.id || initialValues.assignee || assignee || '',
+        assignee: extractId(initialValues.assignee) || assignee || '',
+        reporter: extractId(initialValues.reporter) || extractId(initialValues.createdBy) || reporter || '',
+        assignedTeam: extractIds(initialValues.assignedTeam),
         nextAction: initialValues.nextAction || '',
         tags: Array.isArray(initialValues.tags) ? initialValues.tags.join(', ') : initialValues.tags || '',
       });
     }
-  }, [assignee, initialValues, reset]);
+  }, [assignee, assignedTeam, initialValues, reporter, reset]);
 
   const selectedProject = useMemo(
     () => projects.find((project) => String(project.id || project._id) === String(projectValue)),
     [projectValue, projects],
   );
+  const employeeOptionsSource = useMemo(() => {
+    const list = Array.isArray(employees) ? [...employees] : [];
+    const currentUserId = currentUser?.id || currentUser?._id || '';
+    if (currentUserId && !list.some((employee) => String(employee.id || employee._id) === String(currentUserId))) {
+      list.unshift(currentUser);
+    }
+    return list;
+  }, [currentUser, employees]);
   const selectedAssignee = useMemo(
-    () => employees.find((employee) => String(employee.id || employee._id) === String(assigneeValue)),
-    [assigneeValue, employees],
+    () => employeeOptionsSource.find((employee) => String(employee.id || employee._id) === String(assigneeValue)),
+    [assigneeValue, employeeOptionsSource],
   );
+  const selectedReporter = useMemo(
+    () => employeeOptionsSource.find((employee) => String(employee.id || employee._id) === String(reporterValue)),
+    [employeeOptionsSource, reporterValue],
+  );
+  const selectedAssignedTeam = useMemo(
+    () =>
+      employeeOptionsSource.filter((employee) =>
+        Array.isArray(assignedTeamValue) && assignedTeamValue.some((item) => String(item) === String(employee.id || employee._id)),
+      ),
+    [assignedTeamValue, employeeOptionsSource],
+  );
+  const projectOptions = useMemo(
+    () =>
+      projects.map((project) => {
+        const projectId = project.id || project._id;
+        return {
+          value: projectId,
+          label: project.projectName || project.name || 'Untitled project',
+        };
+      }),
+    [projects],
+  );
+  const assigneeOptions = useMemo(
+    () =>
+      employeeOptionsSource.map((employee) => {
+        const employeeId = employee.id || employee._id;
+        return {
+          value: employeeId,
+          label: employee.name || employee.label || employee.email || 'Unnamed user',
+        };
+      }),
+    [employeeOptionsSource],
+  );
+  const teamOptions = useMemo(
+    () =>
+      Array.isArray(teams)
+        ? teams.map((team) => ({
+            value: team.id || team._id,
+            label: team.name || team.label || 'Untitled team',
+          }))
+        : [],
+    [teams],
+  );
+  const selectedTeam = useMemo(
+    () => teams.find((team) => String(team.id || team._id) === String(teamValue)),
+    [teamValue, teams],
+  );
+  const teamMembersLabel = selectedTeam
+    ? `${selectedTeam.name || selectedTeam.label || 'Team'}${Array.isArray(selectedTeam.members) && selectedTeam.members.length ? ` • ${selectedTeam.members.length} members` : ''}`
+    : 'No team selected';
+  const assignedTeamLabel = selectedAssignedTeam.length
+    ? `${selectedAssignedTeam
+        .slice(0, 2)
+        .map((employee) => employee.name || employee.label || employee.email || 'Unnamed user')
+        .join(', ')}${selectedAssignedTeam.length > 2 ? ` +${selectedAssignedTeam.length - 2}` : ''}`
+    : 'No team selected';
 
   return (
     <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
@@ -83,13 +180,33 @@ export function TaskForm({ initialValues, projects = [], employees = [], assigne
         onChange={(nextValue) => setValue('project', nextValue, { shouldValidate: true, shouldDirty: true })}
         placeholder="Select project"
         selectedLabel={selectedProject ? (selectedProject.projectName || selectedProject.name || 'Select project') : 'Select project'}
-        options={projects.map((project) => {
-          const projectId = project.id || project._id;
-          return {
-            value: projectId,
-            label: project.projectName || project.name || 'Untitled project',
-          };
-        })}
+        options={projectOptions}
+        searchable
+        searchPlaceholder="Search projects..."
+        className="sm:col-span-1"
+      />
+      <DropdownField
+        label="Team"
+        value={teamValue}
+        onChange={(nextValue) => setValue('team', nextValue, { shouldValidate: true, shouldDirty: true })}
+        placeholder="No team"
+        selectedLabel={selectedTeam ? teamMembersLabel : 'No team'}
+        options={teamOptions}
+        searchable
+        searchPlaceholder="Search teams..."
+        emptyValue=""
+        className="sm:col-span-1"
+      />
+      <DropdownField
+        label="Raised By"
+        value={reporterValue}
+        onChange={(nextValue) => setValue('reporter', nextValue, { shouldValidate: true, shouldDirty: true })}
+        placeholder="Raised by"
+        selectedLabel={selectedReporter ? (selectedReporter.name || selectedReporter.label || selectedReporter.email || 'Raised by') : 'Raised by'}
+        options={assigneeOptions}
+        searchable
+        searchPlaceholder="Search reporter..."
+        emptyValue=""
         className="sm:col-span-1"
       />
       <Field label="Description" className="sm:col-span-2"><textarea className="input min-h-[96px]" {...register('description')} /></Field>
@@ -104,14 +221,22 @@ export function TaskForm({ initialValues, projects = [], employees = [], assigne
         onChange={(nextValue) => setValue('assignee', nextValue, { shouldValidate: true, shouldDirty: true })}
         placeholder="Unassigned"
         selectedLabel={selectedAssignee ? (selectedAssignee.name || selectedAssignee.label || selectedAssignee.email || 'Unassigned') : 'Unassigned'}
-        options={employees.map((employee) => {
-          const employeeId = employee.id || employee._id;
-          return {
-            value: employeeId,
-            label: employee.name || employee.label || employee.email || 'Unnamed user',
-          };
-        })}
+        options={assigneeOptions}
+        searchable
+        searchPlaceholder="Search employees..."
         emptyValue=""
+        className="sm:col-span-1"
+      />
+      <DropdownField
+        label="Team Members"
+        value={assignedTeamValue}
+        onChange={(nextValue) => setValue('assignedTeam', nextValue, { shouldValidate: true, shouldDirty: true })}
+        placeholder="Select team"
+        selectedLabel={assignedTeamLabel}
+        options={assigneeOptions}
+        multiple
+        searchable
+        searchPlaceholder="Search team members..."
         className="sm:col-span-1"
       />
       <Field label="Next Action" className="sm:col-span-2"><input className="input" {...register('nextAction')} /></Field>
@@ -129,112 +254,6 @@ function Field({ label, children, className = '' }) {
     <label className={`block ${className}`}>
       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</span>
       {children}
-    </label>
-  );
-}
-
-function DropdownField({
-  label,
-  value,
-  onChange,
-  placeholder,
-  selectedLabel,
-  options = [],
-  emptyValue = '',
-  className = '',
-}) {
-  const wrapRef = useRef(null);
-  const [open, setOpen] = useState(false);
-  const [rect, setRect] = useState(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const updateRect = () => {
-      if (!wrapRef.current) return;
-      setRect(wrapRef.current.getBoundingClientRect());
-    };
-    updateRect();
-
-    const close = (event) => {
-      if (wrapRef.current && !wrapRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    };
-    const onKey = (event) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-
-    window.addEventListener('resize', updateRect);
-    window.addEventListener('scroll', updateRect, true);
-    document.addEventListener('pointerdown', close);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('resize', updateRect);
-      window.removeEventListener('scroll', updateRect, true);
-      document.removeEventListener('pointerdown', close);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  const menu = open && rect && typeof document !== 'undefined'
-    ? createPortal(
-      <div
-        className="fixed z-[80] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10"
-        style={{
-          left: rect.left,
-          top: rect.bottom + 6,
-          width: rect.width,
-        }}
-      >
-        <div className="max-h-64 overflow-y-auto py-1">
-          <button
-            type="button"
-            onClick={() => {
-              onChange(emptyValue);
-              setOpen(false);
-            }}
-            className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition ${String(value || '') === String(emptyValue || '') ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50'}`}
-          >
-            <span className="min-w-0 flex-1 truncate">{placeholder}</span>
-            {String(value || '') === String(emptyValue || '') ? <Check className="h-4 w-4 flex-shrink-0 text-sky-600" /> : null}
-          </button>
-          {options.map((option) => {
-            const isActive = String(option.value) === String(value);
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition ${isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50'}`}
-              >
-                <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                {isActive ? <Check className="h-4 w-4 flex-shrink-0 text-sky-600" /> : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>,
-      document.body,
-    )
-    : null;
-
-  return (
-    <label className={`block ${className}`}>
-      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</span>
-      <div ref={wrapRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setOpen((current) => !current)}
-          className="flex h-11 w-full items-center gap-3 rounded-2xl border border-sky-200 bg-white px-4 text-left text-sm text-slate-700 shadow-sm transition hover:border-sky-300 hover:bg-slate-50"
-        >
-          <span className="min-w-0 flex-1 truncate">{selectedLabel || placeholder}</span>
-          <ChevronDown className={`h-4 w-4 flex-shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
-      </div>
-      {menu}
     </label>
   );
 }

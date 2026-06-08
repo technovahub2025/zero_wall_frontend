@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, BookOpen, CheckCircle2, Clock3, Layers3, MapPin, Users } from 'lucide-react';
 import { pageVariants } from '../utils/motionVariants';
 import { useProjects } from '../hooks/useProjects';
 import { useEmployees } from '../hooks/useEmployees';
-import { useProjectStore } from '../store/projectStore';
 import { useStages, useCreateStage, useUpdateStage, useDeleteStage, useApproveStage } from '../hooks/useStages';
 import { useUiStore } from '../store/uiStore';
 import { StageTimeline } from '../components/stages/StageTimeline';
@@ -22,8 +21,6 @@ export default function StageDetail() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: projects = [] } = useProjects();
-  const { selectedProjectId, setSelectedProjectId } = useProjectStore();
-  const [localProjectId, setLocalProjectId] = useState(() => searchParams.get('project') || '');
   const { activeModal, modalData, openModal, closeModal, openConfirm } = useUiStore();
   const createStage = useCreateStage();
   const updateStage = useUpdateStage();
@@ -31,7 +28,7 @@ export default function StageDetail() {
   const approveStage = useApproveStage();
   const employeesQuery = useEmployees();
   const urlProjectId = searchParams.get('project') || '';
-  const selectedId = localProjectId || urlProjectId || projects[0]?.id || '';
+  const selectedId = useMemo(() => urlProjectId || projects[0]?.id || '', [projects, urlProjectId]);
   const stagesQuery = useStages(selectedId);
   const employees = employeesQuery.data || [];
   const selectedProject = projects.find((project) => String(project.id) === String(selectedId)) || null;
@@ -44,22 +41,18 @@ export default function StageDetail() {
   useEffect(() => {
     if (!urlProjectId && projects[0]?.id) {
       const fallbackId = String(projects[0].id);
-      setLocalProjectId(fallbackId);
-      setSelectedProjectId(fallbackId);
-      navigate(`/stages?project=${encodeURIComponent(fallbackId)}`, { replace: true });
+      const next = new URLSearchParams(searchParams);
+      next.set('project', fallbackId);
+      setSearchParams(next, { replace: true });
     }
-    if (urlProjectId && urlProjectId !== selectedProjectId) {
-      setLocalProjectId(urlProjectId);
-      setSelectedProjectId(urlProjectId);
-    }
-  }, [navigate, projects, selectedProjectId, setSelectedProjectId, urlProjectId]);
+  }, [projects, searchParams, setSearchParams, urlProjectId]);
 
   function handleProjectChange(nextValue) {
     const projectId = String(nextValue || '');
-    setLocalProjectId(projectId);
-    setSelectedProjectId(projectId);
-    if (projectId) navigate(`/stages?project=${encodeURIComponent(projectId)}`, { replace: true });
-    else navigate('/stages', { replace: true });
+    const next = new URLSearchParams(searchParams);
+    if (projectId) next.set('project', projectId);
+    else next.delete('project');
+    setSearchParams(next, { replace: true });
   }
 
   async function handleSave(values) {
@@ -91,7 +84,8 @@ export default function StageDetail() {
             <p className="hero-kicker">Stage Detail</p>
             <h1 className="hero-title">{selectedProject?.projectName || 'Stage timeline and approval log'}</h1>
             <p className="hero-subtitle max-w-3xl">
-              {selectedProject?.clientName || 'Select a project'}{selectedProject?.location ? ' · ' : ''}
+              {selectedProject?.clientName || 'Select a project'}
+              {selectedProject?.location ? ' · ' : ''}
               {selectedProject?.location ? (
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="h-3.5 w-3.5" />

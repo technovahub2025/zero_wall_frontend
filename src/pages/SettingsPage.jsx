@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
 import { pageVariants } from '../utils/motionVariants';
 import { useAuthStore } from '../store/authStore';
+import { buildAvatarUrl } from '../utils/avatarUrl';
 import { useUiStore } from '../store/uiStore';
 import { settingsService } from '../services/settingsService';
 import { AvatarUpload } from '../components/upload/AvatarUpload';
@@ -28,6 +29,7 @@ export default function SettingsPage() {
   });
 
   const profile = useMemo(() => profileQuery.data || currentUser || {}, [profileQuery.data, currentUser]);
+  const avatarSrc = useMemo(() => buildAvatarUrl(profile.avatar, profile.updatedAt), [profile.avatar, profile.updatedAt]);
 
   return (
     <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-6 pb-8">
@@ -62,7 +64,7 @@ export default function SettingsPage() {
             <Card>
               <CardBody className="space-y-6">
                 <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-                  <AvatarUpload avatar={profile.avatar} name={profile.name} />
+                  <AvatarUpload avatar={avatarSrc} name={profile.name} />
                   <ProfileSettings
                     initialValues={profile}
                     onSubmit={async (payload) => {

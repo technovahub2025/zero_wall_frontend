@@ -14,9 +14,18 @@ function toFormData(payload = {}) {
 }
 
 export const uploadService = {
-  async uploadAvatar(file) {
+  async uploadAsset(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/upload/asset', formData);
+    return unwrap(response);
+  },
+  async uploadAvatar(file, payload = {}) {
     const formData = new FormData();
     formData.append('avatar', file);
+    if (payload.employeeId) {
+      formData.append('employeeId', payload.employeeId);
+    }
     const response = await api.post('/upload/avatar', formData);
     return unwrap(response);
   },
@@ -27,6 +36,10 @@ export const uploadService = {
   },
   async deleteDocument(publicId) {
     const response = await api.delete(`/upload/${encodeURIComponent(publicId)}`);
+    return unwrap(response);
+  },
+  async updateDocument(publicId, payload) {
+    const response = await api.put(`/upload/${encodeURIComponent(publicId)}`, toFormData(payload));
     return unwrap(response);
   },
   async getProjectDocuments(projectId) {

@@ -2,7 +2,7 @@ import { Card, CardBody } from '../ui/card';
 import { TaskCountdown } from './TaskCountdown';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
-import { CalendarDays, Clock3, FolderKanban, PauseCircle, PlayCircle, UserRound } from 'lucide-react';
+import { CalendarDays, Clock3, FolderKanban, PauseCircle, PlayCircle, UserRound, Users } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useTimer } from '../../hooks/useTimer';
 import { Badge } from '../ui/badge';
@@ -17,9 +17,29 @@ export function TaskCard({ task, onClick, showProject = false, selected = false,
   const projectId = task.project?.id || task.project?._id || task.projectId || task.project;
   const stageId = task.stage?.id || task.stage?._id || task.stageId || task.stage;
   const assigneeId = task.assignee?._id || task.assignee?.id || task.assignee;
-  const canStart = ['superadmin', 'admin'].includes(user?.role) || String(assigneeId) === String(user?.id);
+  const teamIds = Array.isArray(task.assignedTeam) ? task.assignedTeam.map((member) => member?._id || member?.id || member) : [];
+  const taskTeamMemberIds = Array.isArray(task.teamMembers) ? task.teamMembers.map((member) => member?._id || member?.id || member) : [];
+  const reporterId = task.reporter?._id || task.reporter?.id || task.reporter || task.createdBy?._id || task.createdBy?.id || task.createdBy;
+  const canStart =
+    ['superadmin', 'admin'].includes(user?.role) ||
+    String(assigneeId) === String(user?.id) ||
+    String(reporterId) === String(user?.id) ||
+    teamIds.some((memberId) => String(memberId) === String(user?.id)) ||
+    taskTeamMemberIds.some((memberId) => String(memberId) === String(user?.id));
   const isThisTaskActive = isRunning && String(activeLog?.task?.id || activeLog?.task?._id || activeLog?.task) === String(taskId);
   const assigneeName = task.assignee?.name || task.assigneeName || 'Unassigned';
+  const reporterName = task.reporter?.name || task.reporterName || task.createdBy?.name || 'Unknown';
+  const teamNames = Array.isArray(task.assignedTeam)
+    ? task.assignedTeam
+        .map((member) => member?.name || member?.label || '')
+        .filter(Boolean)
+    : Array.isArray(task.assignedTeamNames)
+      ? task.assignedTeamNames
+      : [];
+  const teamLabel = teamNames.length
+    ? `${teamNames.slice(0, 2).join(', ')}${teamNames.length > 2 ? ` +${teamNames.length - 2}` : ''}`
+    : 'No team';
+  const taskTeamName = task.team?.name || task.teamName || '';
   const dueDateLabel = formatTaskDate(task.dueDate);
 
   return (
@@ -49,9 +69,23 @@ export function TaskCard({ task, onClick, showProject = false, selected = false,
                 <UserRound className="h-3.5 w-3.5" />
                 {assigneeName}
               </Badge>
+              {taskTeamName ? (
+                <Badge tone="blue">
+                  <Users className="h-3.5 w-3.5" />
+                  {taskTeamName}
+                </Badge>
+              ) : null}
               <Badge tone="slate">
                 <CalendarDays className="h-3.5 w-3.5" />
                 {dueDateLabel}
+              </Badge>
+              <Badge tone="slate">
+                <UserRound className="h-3.5 w-3.5" />
+                Raised by {reporterName}
+              </Badge>
+              <Badge tone="slate">
+                <Users className="h-3.5 w-3.5" />
+                Team {teamLabel}
               </Badge>
             </div>
           </div>

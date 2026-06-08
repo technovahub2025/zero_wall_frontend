@@ -8,21 +8,37 @@ import { Button } from '../ui/button';
 import { DropZone } from './DropZone';
 import { LazyImage } from '../shared/LazyImage';
 
-export function AvatarUpload({ avatar, name }) {
+export function AvatarUpload({ avatar, name, uploadMode = 'avatar', employeeId = '', onUploaded }) {
   const inputRef = useRef(null);
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((state) => state.user);
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const mutation = useMutation({
-    mutationFn: (file) => uploadService.uploadAvatar(file),
-    onSuccess: (data) => {
-      const avatarUrl = data?.avatarUrl || data?.avatar || data;
-      toast.success('Avatar updated');
-      if (currentUser) {
-        setAuth({ user: { ...currentUser, avatar: avatarUrl } });
+    mutationFn: (file) => {
+      if (uploadMode === 'asset') return uploadService.uploadAsset(file);
+      if (uploadMode === 'employee') {
+        return uploadService.uploadAvatar(file, { employeeId });
       }
-      queryClient.invalidateQueries({ queryKey: ['employee'] });
+      return uploadService.uploadAvatar(file);
+    },
+    onSuccess: async (data, file) => {
+      const avatarUrl = data?.avatarUrl || data?.url || data?.avatar || data;
+      const avatarUpdatedAt = data?.updatedAt || data?.data?.updatedAt || Date.now();
+      toast.success('Avatar updated');
+      if (uploadMode === 'avatar' && currentUser) {
+        setAuth({ user: { ...currentUser, avatar: avatarUrl, updatedAt: avatarUpdatedAt } });
+      }
+      if (uploadMode === 'asset' || uploadMode === 'employee') {
+        await onUploaded?.(avatarUrl, file);
+      }
+      if (uploadMode === 'employee' && employeeId) {
+        queryClient.invalidateQueries({ queryKey: ['employee', employeeId] });
+        queryClient.invalidateQueries({ queryKey: ['employees'] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['employee'] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
     onError: () => toast.error('Avatar upload failed'),
   });

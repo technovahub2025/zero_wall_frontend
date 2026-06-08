@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { pageVariants } from '../utils/motionVariants';
 import { useAuthStore } from '../store/authStore';
+import { buildAvatarUrl } from '../utils/avatarUrl';
 import { useMyTasks } from '../hooks/useTasks';
 import { useTimer } from '../hooks/useTimer';
 import { TimesheetCalendar } from '../components/timer/TimesheetCalendar';
@@ -23,13 +24,14 @@ export default function ProfilePage() {
 
   const myTasks = tasksQuery.data || [];
   const todayTasks = myTasks.filter((task) => task.status !== 'done').slice(0, 4);
+  const avatarSrc = buildAvatarUrl(user?.avatar, user?.updatedAt);
 
   return (
     <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-6 pb-8">
       <section className="theme-hero theme-hero-blue p-5 sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <AvatarUpload avatar={user?.avatar} name={user?.name} />
+            <AvatarUpload avatar={avatarSrc} name={user?.name} />
             <div>
               <p className="hero-kicker">Profile</p>
               <h1 className="hero-title">{user?.name || 'My Profile'}</h1>

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Landmark, PiggyBank, Wallet } from 'lucide-react';
+import { BarChart3, Landmark, PiggyBank, Wallet } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardBody, CardHeader, CardTitle } from '../ui/card';
 import { useUiStore } from '../../store/uiStore';
 import { clamp, cn } from '../../lib/utils';
@@ -43,6 +44,27 @@ export function RevenueChart({ data = [] }) {
     [rows],
   );
 
+  const healthRows = useMemo(() => {
+    const buckets = [
+      { key: 'healthy', label: 'Healthy 75%+', count: 0, color: '#10b981' },
+      { key: 'watch', label: 'Watch 50-74%', count: 0, color: '#3b82f6' },
+      { key: 'risk', label: 'Risk 25-49%', count: 0, color: '#f59e0b' },
+      { key: 'critical', label: 'Critical <25%', count: 0, color: '#ef4444' },
+    ];
+
+    rows.forEach((row) => {
+      if (row.progress >= 75) buckets[0].count += 1;
+      else if (row.progress >= 50) buckets[1].count += 1;
+      else if (row.progress >= 25) buckets[2].count += 1;
+      else buckets[3].count += 1;
+    });
+
+    return buckets;
+  }, [rows]);
+
+  const topRow = rows[0] || null;
+  const weakestRow = rows.length ? [...rows].sort((a, b) => a.progress - b.progress)[0] : null;
+
   return (
     <Card className="self-start overflow-hidden">
       <CardHeader className="items-start gap-2">
@@ -50,7 +72,8 @@ export function RevenueChart({ data = [] }) {
           <CardTitle>Revenue Pipeline</CardTitle>
           <p className="mt-1 text-xs text-slate-500">High-signal summary of collected and pending amounts.</p>
         </div>
-        <span className="ml-auto rounded-full border border-sky-400/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-300">
+        <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-sky-400/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-300">
+          <BarChart3 className="h-3.5 w-3.5" />
           Rs. Lakhs
         </span>
       </CardHeader>
@@ -83,54 +106,81 @@ export function RevenueChart({ data = [] }) {
           />
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)] dark:border-[rgb(var(--line)/0.16)] dark:bg-[rgb(var(--panel-2)/0.78)]">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3 text-xs uppercase tracking-[0.18em] text-slate-400 dark:border-[rgb(var(--line)/0.16)]">
-            <span>Project snapshot</span>
-            <span>{rows.length} records</span>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(250px,0.95fr)]">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)] dark:border-[rgb(var(--line)/0.16)] dark:bg-[rgb(var(--panel-2)/0.78)]">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3 text-xs uppercase tracking-[0.18em] text-slate-400 dark:border-[rgb(var(--line)/0.16)]">
+              <span>Collection health</span>
+              <span>{rows.length} projects</span>
+            </div>
+
+            <div className="mt-3 h-[190px]">
+              {rows.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={healthRows} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.18} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} height={52} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(59,130,246,0.04)' }}
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        return (
+                          <div className="rounded-2xl border border-[rgb(var(--line)/0.16)] bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+                            <div className="text-xs font-semibold text-[rgb(var(--text))]">{label}</div>
+                            <div className="mt-1 text-xs text-slate-500">{payload[0]?.value || 0} projects</div>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="count" radius={[12, 12, 0, 0]}>
+                      {healthRows.map((row) => (
+                        <Cell key={row.key} fill={row.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div
+                  className={cn(
+                    'flex h-full items-center justify-center rounded-2xl border border-dashed px-4 text-center text-sm text-slate-400',
+                    isLight ? 'border-slate-200 bg-white' : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)]',
+                  )}
+                >
+                  No revenue data available.
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {healthRows.map((row) => (
+                <span
+                  key={row.key}
+                  className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--line)/0.12)] bg-white/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:bg-[rgb(var(--panel-2)/0.78)]"
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: row.color }} />
+                  {row.label}: {row.count}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <div className="max-h-[280px] space-y-2 overflow-auto pr-1 pt-3">
-            {rows.map((row) => (
-              <article
-                key={row.name}
-                className={cn(
-                  'rounded-2xl border p-3 transition',
-                  isLight
-                    ? 'border-slate-200/80 bg-white hover:border-sky-200'
-                    : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)]',
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{row.name}</div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {row.received} received / {row.balance} pending
-                    </div>
-                  </div>
-                  <div className="shrink-0 rounded-full border border-sky-400/20 bg-sky-500/10 px-2.5 py-1 text-xs font-semibold text-sky-600 dark:text-sky-300">
-                    {row.progress}%
-                  </div>
-                </div>
-
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200/70 dark:bg-white/5">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-500"
-                    style={{ width: `${row.progress}%` }}
-                  />
-                </div>
-              </article>
-            ))}
-
-            {!rows.length ? (
-              <div
-                className={cn(
-                  'rounded-2xl border px-4 py-8 text-center text-sm text-slate-400',
-                  isLight ? 'border-slate-200 bg-white' : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)]',
-                )}
-              >
-                No revenue data available.
-              </div>
-            ) : null}
+          <div className="space-y-3">
+            <SummaryCard
+              title="Top collection"
+              name={topRow?.name || 'No data'}
+              accent="emerald"
+              value={topRow ? `${topRow.progress}%` : '--'}
+              detail={topRow ? `${topRow.received} received · ${topRow.balance} pending` : 'No active revenue rows available.'}
+              isLight={isLight}
+            />
+            <SummaryCard
+              title="Needs attention"
+              name={weakestRow?.name || 'No data'}
+              accent="rose"
+              value={weakestRow ? `${weakestRow.progress}%` : '--'}
+              detail={weakestRow ? `${weakestRow.received} received · ${weakestRow.balance} pending` : 'No active revenue rows available.'}
+              isLight={isLight}
+            />
           </div>
         </div>
       </CardBody>
@@ -146,7 +196,7 @@ function StatCard({ label, value, hint, tone = 'slate', icon: Icon, isLight = fa
   };
 
   return (
-    <div className={cn('rounded-2xl border p-3', styles[tone])}>
+    <div className={cn('rounded-2xl border p-3 transition hover:-translate-y-0.5', styles[tone])}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">{label}</div>
@@ -155,6 +205,26 @@ function StatCard({ label, value, hint, tone = 'slate', icon: Icon, isLight = fa
         {Icon ? <Icon className="h-4 w-4 shrink-0 opacity-80" /> : null}
       </div>
       <div className="mt-1 text-xs text-slate-500">{hint}</div>
+    </div>
+  );
+}
+
+function SummaryCard({ title, name, accent, value, detail, isLight = false }) {
+  const accents = {
+    emerald: isLight ? 'border-emerald-200 bg-emerald-50/80 text-emerald-700' : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200',
+    rose: isLight ? 'border-rose-200 bg-rose-50/80 text-rose-700' : 'border-rose-400/20 bg-rose-500/10 text-rose-200',
+  };
+
+  return (
+    <div className={cn('rounded-2xl border p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5', isLight ? 'border-slate-200/80 bg-white' : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)]')}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">{title}</div>
+          <div className="mt-1 truncate text-sm font-semibold text-[rgb(var(--text))]">{name}</div>
+        </div>
+        <div className={cn('rounded-full border px-2.5 py-1 text-xs font-semibold', accents[accent] || accents.emerald)}>{value}</div>
+      </div>
+      <div className="mt-2 text-xs text-slate-500">{detail}</div>
     </div>
   );
 }

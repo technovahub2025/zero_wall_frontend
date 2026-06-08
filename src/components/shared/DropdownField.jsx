@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Search } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export function DropdownField({
@@ -12,11 +12,21 @@ export function DropdownField({
   selectedLabel,
   emptyValue = '',
   multiple = false,
+  searchable = false,
+  searchPlaceholder = 'Search...',
   className = '',
 }) {
   const wrapRef = useRef(null);
+  const menuRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState(null);
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+    }
+  }, [open]);
 
   const activeLabel = useMemo(() => {
     if (selectedLabel) return selectedLabel;
@@ -31,6 +41,19 @@ export function DropdownField({
     return current?.label || placeholder;
   }, [multiple, options, placeholder, selectedLabel, value]);
 
+  const visibleOptions = useMemo(() => {
+    if (!searchable || !query.trim()) {
+      return options;
+    }
+
+    const normalized = query.trim().toLowerCase();
+    return options.filter((option) => {
+      const label = String(option.label || '').toLowerCase();
+      const valueLabel = String(option.value || '').toLowerCase();
+      return label.includes(normalized) || valueLabel.includes(normalized);
+    });
+  }, [options, query, searchable]);
+
   useEffect(() => {
     if (!open) return undefined;
 
@@ -41,7 +64,10 @@ export function DropdownField({
     updateRect();
 
     const onPointerDown = (event) => {
-      if (wrapRef.current && !wrapRef.current.contains(event.target)) {
+      const target = event.target;
+      const clickedTrigger = wrapRef.current && wrapRef.current.contains(target);
+      const clickedMenu = menuRef.current && menuRef.current.contains(target);
+      if (!clickedTrigger && !clickedMenu) {
         setOpen(false);
       }
     };
@@ -65,6 +91,7 @@ export function DropdownField({
     open && rect && typeof document !== 'undefined'
       ? createPortal(
           <div
+            ref={menuRef}
             className="fixed z-[80] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10"
             style={{
               left: rect.left,
@@ -72,6 +99,21 @@ export function DropdownField({
               width: rect.width,
             }}
           >
+            <div className="border-b border-slate-100 p-2">
+              {searchable ? (
+                <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                  <Search className="h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder={searchPlaceholder}
+                    className="w-full bg-transparent outline-none placeholder:text-slate-400"
+                    autoComplete="off"
+                  />
+                </label>
+              ) : null}
+            </div>
             <div className="scrollbar-none max-h-64 overflow-y-auto py-1">
               {multiple ? (
                 <>
@@ -88,7 +130,7 @@ export function DropdownField({
                     <span className="min-w-0 flex-1 truncate">{placeholder}</span>
                     {Array.isArray(value) && value.length === options.length ? <Check className="h-4 w-4 flex-shrink-0 text-sky-600" /> : null}
                   </button>
-                  {options.map((option) => {
+                  {visibleOptions.map((option) => {
                     const isActive = Array.isArray(value) && value.some((item) => String(item) === String(option.value));
                     return (
                       <button
@@ -112,6 +154,9 @@ export function DropdownField({
                       </button>
                     );
                   })}
+                  {!visibleOptions.length ? (
+                    <div className="px-4 py-3 text-sm text-slate-500">No matches found.</div>
+                  ) : null}
                 </>
               ) : (
                 <>
@@ -129,7 +174,7 @@ export function DropdownField({
                     <span className="min-w-0 flex-1 truncate">{placeholder}</span>
                     {String(value || '') === String(emptyValue || '') ? <Check className="h-4 w-4 flex-shrink-0 text-sky-600" /> : null}
                   </button>
-                  {options.map((option) => {
+                  {visibleOptions.map((option) => {
                     const isActive = String(option.value) === String(value);
                     return (
                       <button
@@ -149,6 +194,9 @@ export function DropdownField({
                       </button>
                     );
                   })}
+                  {!visibleOptions.length ? (
+                    <div className="px-4 py-3 text-sm text-slate-500">No matches found.</div>
+                  ) : null}
                 </>
               )}
             </div>

@@ -9,7 +9,27 @@ export function TaskTable({ rows = [], onEdit, onDelete, onComment }) {
       columns={[
         { key: 'title', label: 'Task' },
         { key: 'projectName', label: 'Project' },
+        {
+          key: 'teamName',
+          label: 'Team',
+          render: (row) => row.teamName || row.team?.name || '-',
+        },
         { key: 'assigneeName', label: 'Assignee' },
+        { key: 'reporterName', label: 'Raised By', hideOnMobile: true },
+        {
+          key: 'assignedTeamNames',
+          label: 'Team',
+          hideOnMobile: true,
+          render: (row) => {
+            if (Array.isArray(row.assignedTeamNames) && row.assignedTeamNames.length) {
+              return row.assignedTeamNames.join(', ');
+            }
+            if (Array.isArray(row.assignedTeam) && row.assignedTeam.length) {
+              return row.assignedTeam.map((member) => member?.name || member?.label || '').filter(Boolean).join(', ') || '-';
+            }
+            return '-';
+          },
+        },
         { key: 'startDate', label: 'Start', hideOnMobile: true, render: (row) => row.startDate || '-' },
         { key: 'dueDate', label: 'Due', render: (row) => row.dueDate || '-' },
         { key: 'priority', label: 'Priority', render: (row) => <TaskPriorityBadge value={row.priority} /> },

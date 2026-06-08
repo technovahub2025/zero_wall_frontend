@@ -10,11 +10,12 @@ export function useTeamMembers() {
   });
 }
 
-export function usePendingInvites() {
+export function usePendingInvites(options = {}) {
   return useQuery({
     queryKey: ['team-invites'],
     queryFn: () => teamService.getInvites(),
     staleTime: 30_000,
+    enabled: options.enabled ?? true,
   });
 }
 
@@ -27,6 +28,10 @@ export function useInviteMember() {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       queryClient.invalidateQueries({ queryKey: ['team-invites'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project'] });
+      queryClient.invalidateQueries({ queryKey: ['project-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['kanban-overview'] });
     },
   });
 }
@@ -73,6 +78,10 @@ export function useRemoveMember() {
       toast.success('Member removed');
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project'] });
+      queryClient.invalidateQueries({ queryKey: ['project-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['kanban-overview'] });
     },
   });
 }

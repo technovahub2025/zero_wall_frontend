@@ -6,6 +6,7 @@ import { pageVariants } from '../utils/motionVariants';
 import { useAuthStore } from '../store/authStore';
 import { useEmployees } from '../hooks/useEmployees';
 import { useProjects } from '../hooks/useProjects';
+import { useTeams } from '../hooks/useTeams';
 import { useKanbanOverview, useMyTasksKanban, useProjectTasks, useTaskCounts } from '../hooks/useTasks';
 import { ProjectKanbanBoard } from '../components/kanban/ProjectKanbanBoard';
 import { MyTasksKanbanBoard } from '../components/kanban/MyTasksKanbanBoard';
@@ -35,6 +36,7 @@ export default function Kanban() {
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const projectDropdownRef = useRef(null);
   const projectsQuery = useProjects();
+  const teamsQuery = useTeams();
   const employeesQuery = useEmployees();
   const overviewQuery = useKanbanOverview();
   const myTasksQuery = useMyTasksKanban();
@@ -45,6 +47,7 @@ export default function Kanban() {
   const projectIdParam = searchParams.get('project') || '';
 
   const projects = projectsQuery.data || [];
+  const teams = teamsQuery.data || [];
   const employees = employeesQuery.data || [];
   const selectedProjectId = useMemo(() => {
     if (activeMode !== 'project') return projectIdParam || '';
@@ -175,9 +178,9 @@ export default function Kanban() {
     };
   }, []);
 
-  const isLoading = projectsQuery.isLoading || employeesQuery.isLoading || overviewQuery.isLoading || myTasksQuery.isLoading || (activeMode === 'project' && projectTasksQuery.isLoading);
-  const isError = projectsQuery.isError || employeesQuery.isError || overviewQuery.isError || myTasksQuery.isError || (activeMode === 'project' && projectTasksQuery.isError);
-  const errorMessage = projectsQuery.error?.message || employeesQuery.error?.message || overviewQuery.error?.message || myTasksQuery.error?.message || projectTasksQuery.error?.message;
+  const isLoading = projectsQuery.isLoading || teamsQuery.isLoading || employeesQuery.isLoading || overviewQuery.isLoading || myTasksQuery.isLoading || (activeMode === 'project' && projectTasksQuery.isLoading);
+  const isError = projectsQuery.isError || teamsQuery.isError || employeesQuery.isError || overviewQuery.isError || myTasksQuery.isError || (activeMode === 'project' && projectTasksQuery.isError);
+  const errorMessage = projectsQuery.error?.message || teamsQuery.error?.message || employeesQuery.error?.message || overviewQuery.error?.message || myTasksQuery.error?.message || projectTasksQuery.error?.message;
 
   return (
     <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-6 pb-8">
@@ -280,7 +283,7 @@ export default function Kanban() {
 
           {activeMode === 'project' ? (
             selectedProject ? (
-              <ProjectKanbanBoard project={selectedProject} tasks={projectTasks} employees={employees} />
+              <ProjectKanbanBoard project={selectedProject} tasks={projectTasks} employees={employees} teams={teams} />
             ) : (
               <EmptyState
                 title="Choose a project"
@@ -289,7 +292,7 @@ export default function Kanban() {
             )
           ) : null}
 
-          {activeMode === 'mine' ? <MyTasksKanbanBoard tasks={myTasks} projects={projects} employees={employees} /> : null}
+          {activeMode === 'mine' ? <MyTasksKanbanBoard tasks={myTasks} projects={projects} employees={employees} teams={teams} /> : null}
 
           {activeMode === 'overview' ? (
             <KanbanOverviewBoard projects={overviewProjects} columns={overviewColumns} employees={employees} stats={overview.stats || {}} />

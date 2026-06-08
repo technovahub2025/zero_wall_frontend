@@ -26,7 +26,10 @@ import {
   Wallet,
 } from 'lucide-react';
 import { pageVariants } from '../utils/motionVariants';
+import { useAuthStore } from '../store/authStore';
 import { useProject, useProjectStages, useCreateProject, useUpdateProject, useDeleteProject } from '../hooks/useProjects';
+import { useEmployees } from '../hooks/useEmployees';
+import { useTeams } from '../hooks/useTeams';
 import { useStages, useCreateStage, useUpdateStage, useDeleteStage, useApproveStage } from '../hooks/useStages';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useAddTaskComment } from '../hooks/useTasks';
 import { useProjectInvoice, useCreateInvoice, useUpdateInvoice } from '../hooks/useBilling';
@@ -100,6 +103,9 @@ export default function ProjectDetail() {
   const { activeModal, modalData, openModal, closeModal, openConfirm } = useUiStore();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
+  const currentUser = useAuthStore((state) => state.user);
+  const employeesQuery = useEmployees();
+  const teamsQuery = useTeams();
   const createStage = useCreateStage();
   const updateStage = useUpdateStage();
   const deleteStage = useDeleteStage();
@@ -115,6 +121,8 @@ export default function ProjectDetail() {
   const invoice = invoiceQuery.data;
   const stages = stagesQuery.data || [];
   const tasks = tasksQuery.data || [];
+  const employees = employeesQuery.data || [];
+  const teams = teamsQuery.data || [];
   const activityItems = activityQuery.data?.items || [];
   const activitySummary = useMemo(() => {
     const latest = activityItems[0] || null;
@@ -166,7 +174,21 @@ export default function ProjectDetail() {
     return orderedTasks.filter((task) => {
       const matchesSearch =
         !query ||
-        [task.title, task.description, task.projectName, task.assignee?.name, task.priority, task.status, task.dueDate]
+        [
+          task.title,
+          task.description,
+          task.projectName,
+          task.teamName,
+          task.team?.name,
+          task.assignee?.name,
+          task.reporter?.name,
+          task.reporterName,
+          ...(Array.isArray(task.assignedTeamNames) ? task.assignedTeamNames : []),
+          ...(Array.isArray(task.teamMemberNames) ? task.teamMemberNames : []),
+          task.priority,
+          task.status,
+          task.dueDate,
+        ]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(query));
       const matchesStatus = taskStatusFilter === 'all' ? true : String(task.status || '').toLowerCase() === taskStatusFilter;
@@ -282,7 +304,7 @@ export default function ProjectDetail() {
       return <StageForm initialValues={modalData} onSubmit={handleStageSave} onCancel={closeModal} />;
     }
     if (activeModal === 'task') {
-      return <TaskForm initialValues={modalData} projects={[project]} onSubmit={handleTaskSave} onCancel={closeModal} />;
+      return <TaskForm initialValues={modalData} projects={[project]} teams={teams} employees={employees} currentUser={currentUser} reporter={currentUser?.id || ''} onSubmit={handleTaskSave} onCancel={closeModal} />;
     }
     if (activeModal === 'invoice') {
       return <BillingForm initialValues={modalData} projects={[project]} onSubmit={handleInvoiceSave} onCancel={closeModal} />;
@@ -477,7 +499,7 @@ export default function ProjectDetail() {
                 <SearchInput
                   value={taskSearch}
                   onChange={(event) => setTaskSearch(event.target.value)}
-                  placeholder="Search task title, description, assignee..."
+                  placeholder="Search task title, description, assignee, reporter..."
                 />
                 <div className="space-y-2">
                   <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Status</div>
@@ -555,11 +577,23 @@ export default function ProjectDetail() {
                       <TaskStatusBadge value={selectedTask.status} />
                     </div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <MetaItem label="Project" value={selectedTask.projectName || selectedTask.project?.projectName || project.projectName} />
-                      <MetaItem label="Assignee" value={selectedTask.assignee?.name || selectedTask.assigneeName || 'Unassigned'} />
-                      <MetaItem label="Due Date" value={selectedTask.dueDate ? format(new Date(selectedTask.dueDate), 'dd MMM yyyy') : '-'} />
-                      <MetaItem label="Logged" value={Number(selectedTask.totalTimeLogged || 0) > 0 ? `${selectedTask.totalTimeLogged} min` : '-'} />
-                    </div>
+                    <MetaItem label="Project" value={selectedTask.projectName || selectedTask.project?.projectName || project.projectName} />
+                    <MetaItem label="Assignee" value={selectedTask.assignee?.name || selectedTask.assigneeName || 'Unassigned'} />
+                    <MetaItem label="Raised by" value={selectedTask.reporter?.name || selectedTask.reporterName || selectedTask.createdBy?.name || 'Unknown'} />
+                    <MetaItem label="Team" value={selectedTask.team?.name || selectedTask.teamName || 'No team'} />
+                    <MetaItem
+                      label="Team Members"
+                      value={
+                        Array.isArray(selectedTask.teamMemberNames) && selectedTask.teamMemberNames.length
+                          ? selectedTask.teamMemberNames.join(', ')
+                          : Array.isArray(selectedTask.teamMembers) && selectedTask.teamMembers.length
+                            ? selectedTask.teamMembers.map((member) => member?.name || member?.label || '').filter(Boolean).join(', ') || 'No members'
+                            : 'No members'
+                      }
+                    />
+                    <MetaItem label="Due Date" value={selectedTask.dueDate ? format(new Date(selectedTask.dueDate), 'dd MMM yyyy') : '-'} />
+                    <MetaItem label="Logged" value={Number(selectedTask.totalTimeLogged || 0) > 0 ? `${selectedTask.totalTimeLogged} min` : '-'} />
+                  </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Button size="sm" variant="secondary" onClick={() => openModal('task', selectedTask)}>
                         <PencilLine className="h-4 w-4" />

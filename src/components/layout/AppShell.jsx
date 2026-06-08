@@ -129,7 +129,7 @@ export function AppShell() {
                       <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} />
                       <SidebarLink item={{ label: 'Stage Detail', path: '/stages', icon: 'Route' }} collapsed={sidebarCollapsed} />
                       <SidebarLink item={{ label: 'Employees', path: '/employees', icon: 'Users' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Team', path: '/team', icon: 'Users' }} collapsed={sidebarCollapsed} />
+                      <SidebarLink item={{ label: 'Teams', path: '/teams', icon: 'FolderKanban' }} collapsed={sidebarCollapsed} />
                       <SidebarLink item={{ label: 'Reports', path: '/reports', icon: 'BarChart3' }} collapsed={sidebarCollapsed} />
                     </div>
                   </div>

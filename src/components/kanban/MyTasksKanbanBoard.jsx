@@ -20,7 +20,7 @@ const BOARD_COLUMNS = [
 ];
 const EXTRA_COLUMN_COLORS = ['#6366f1', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6', '#10b981'];
 
-export function MyTasksKanbanBoard({ tasks = [], projects = [], employees = [] }) {
+export function MyTasksKanbanBoard({ tasks = [], projects = [], employees = [], teams = [] }) {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const updateTask = useUpdateTask();
@@ -61,7 +61,11 @@ export function MyTasksKanbanBoard({ tasks = [], projects = [], employees = [] }
         task.description,
         task.projectName,
         task.projectClient,
+        task.teamName,
         task.assigneeName,
+        task.reporterName,
+        ...(Array.isArray(task.assignedTeamNames) ? task.assignedTeamNames : []),
+        ...(Array.isArray(task.teamMemberNames) ? task.teamMemberNames : []),
         task.projectStage,
       ]
         .filter(Boolean)
@@ -125,6 +129,9 @@ export function MyTasksKanbanBoard({ tasks = [], projects = [], employees = [] }
         startDate: values.startDate || undefined,
         dueDate: values.dueDate || undefined,
         assignee: values.assignee || undefined,
+        team: values.team || undefined,
+        reporter: values.reporter || undefined,
+        assignedTeam: Array.isArray(values.assignedTeam) ? values.assignedTeam : [],
         nextAction: values.nextAction || '',
         tags: String(values.tags || '')
           .split(',')
@@ -302,7 +309,10 @@ export function MyTasksKanbanBoard({ tasks = [], projects = [], employees = [] }
           <TaskForm
             initialValues={editingTask}
             projects={projects}
+            teams={teams}
             employees={employees}
+            currentUser={user}
+            reporter={user?.id || ''}
             onSubmit={handleTaskSave}
             onCancel={() => {
               setTaskModalOpen(false);

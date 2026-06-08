@@ -37,6 +37,12 @@ export function useSocket() {
       queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['project-summary'] });
       queryClient.invalidateQueries({ queryKey: ['project-stages'] });
+      queryClient.invalidateQueries({ queryKey: ['report-status'] });
+      queryClient.invalidateQueries({ queryKey: ['report-priority'] });
+      queryClient.invalidateQueries({ queryKey: ['report-task-status'] });
+      queryClient.invalidateQueries({ queryKey: ['report-revenue-trend'] });
+      queryClient.invalidateQueries({ queryKey: ['report-stage-completion'] });
+      queryClient.invalidateQueries({ queryKey: ['report-engineer'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['stages'] });

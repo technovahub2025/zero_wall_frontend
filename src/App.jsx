@@ -31,7 +31,7 @@ const EmployeeProfile = lazy(() => import('./pages/EmployeeProfile'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Clients = lazy(() => import('./pages/Clients'));
-const TeamPage = lazy(() => import('./pages/TeamPage'));
+const TeamsPage = lazy(() => import('./pages/TeamsPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
@@ -140,10 +140,26 @@ export default function App() {
                 <Route path="/employees" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}><Employees /></RoleGuard>} />
                 <Route path="/employees/:id" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}><EmployeeProfile /></RoleGuard>} />
                 <Route
+                  path="/teams"
+                  element={
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
+                      <TeamsPage />
+                    </RoleGuard>
+                  }
+                />
+                <Route
                   path="/team"
                   element={
                     <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
-                      <TeamPage />
+                      <Navigate to="/teams" replace />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/team/pending-invites"
+                  element={
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
+                      <Navigate to="/teams" replace />
                     </RoleGuard>
                   }
                 />

@@ -5,6 +5,10 @@ function unwrap(response) {
 }
 
 export const reportService = {
+  async getOverview() {
+    const response = await api.get('/reports');
+    return unwrap(response);
+  },
   async getProjectStatus() {
     const response = await api.get('/reports/project-status');
     return unwrap(response);

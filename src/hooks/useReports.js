@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { reportService } from '../services/reportService';
 
+export function useReportOverview() {
+  return useQuery({
+    queryKey: ['reports'],
+    queryFn: () => reportService.getOverview(),
+    staleTime: 120_000,
+  });
+}
+
 export function useProjectStatusReport() {
   return useQuery({
     queryKey: ['report-status'],

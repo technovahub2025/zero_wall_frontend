@@ -19,13 +19,14 @@ function sanitizeProjectFilters(filters = {}) {
   );
 }
 
-export function useProjects(extraFilters = {}) {
+export function useProjects(extraFilters = {}, queryOptions = {}) {
   const filters = useProjectStore((state) => state.filters);
   const merged = sanitizeProjectFilters({ ...filters, ...extraFilters });
 
   return useQuery({
     queryKey: ['projects', merged],
     queryFn: () => loadProjects(merged),
+    ...queryOptions,
   });
 }
 

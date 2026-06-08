@@ -2,14 +2,17 @@ import { Users, Mail, Phone, BadgeInfo } from 'lucide-react';
 import { Card, CardBody } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { buildAvatarUrl } from '../../utils/avatarUrl';
 
 export function EmployeeCard({ employee, onEdit, onOpen, onDeactivate }) {
+  const avatarSrc = buildAvatarUrl(employee.avatar, employee.updatedAt);
+
   return (
     <Card className="transition hover:translate-y-[-1px]">
       <CardBody className="space-y-4">
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-sky-500 to-amber-500 text-lg font-semibold text-white">
-            {employee.avatar ? <img src={employee.avatar} alt={employee.name} className="h-full w-full object-cover" /> : (employee.name || 'E')[0]}
+            {avatarSrc ? <img src={avatarSrc} alt={employee.name} className="h-full w-full object-cover" /> : (employee.name || 'E')[0]}
           </div>
           <div className="min-w-0 flex-1">
             <button type="button" className="text-left" onClick={() => onOpen?.(employee)}>

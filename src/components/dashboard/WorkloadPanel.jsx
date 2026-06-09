@@ -5,7 +5,7 @@ export function WorkloadPanel({ members = [] }) {
   const peak = Math.max(...members.map((member) => Number(member.projects || 0)), 1);
 
   return (
-    <Card className="self-start overflow-hidden">
+    <Card className="flex h-full flex-col overflow-hidden">
       <CardHeader className="items-start gap-2">
         <div>
           <CardTitle>Workload</CardTitle>
@@ -15,7 +15,7 @@ export function WorkloadPanel({ members = [] }) {
           {totalProjects} projects
         </span>
       </CardHeader>
-      <CardBody className="max-h-[320px] space-y-3 overflow-auto pr-1">
+      <CardBody className="min-h-0 flex-1 space-y-3 overflow-auto pr-1">
         {members.length ? members.map((member) => {
           const count = Number(member.projects || 0);
           const width = Math.max(Math.round((count / peak) * 100), 10);

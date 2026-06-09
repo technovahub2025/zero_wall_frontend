@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { BarChart3, Landmark, PiggyBank, Wallet } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardBody, CardHeader, CardTitle } from '../ui/card';
@@ -18,13 +18,7 @@ export function RevenueChart({ data = [] }) {
           const total = received + balance;
           const progress = total > 0 ? clamp(Math.round((received / total) * 100), 0, 100) : 0;
 
-          return {
-            ...item,
-            received,
-            balance,
-            total,
-            progress,
-          };
+          return { ...item, received, balance, total, progress };
         })
         .sort((a, b) => b.total - a.total),
     [data],
@@ -66,7 +60,7 @@ export function RevenueChart({ data = [] }) {
   const weakestRow = rows.length ? [...rows].sort((a, b) => a.progress - b.progress)[0] : null;
 
   return (
-    <Card className="self-start overflow-hidden">
+    <Card className="w-full self-start overflow-hidden">
       <CardHeader className="items-start gap-2">
         <div>
           <CardTitle>Revenue Pipeline</CardTitle>
@@ -80,22 +74,8 @@ export function RevenueChart({ data = [] }) {
 
       <CardBody className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-3">
-          <StatCard
-            label="Received"
-            value={summary.received}
-            hint="Collected so far"
-            tone="blue"
-            icon={Landmark}
-            isLight={isLight}
-          />
-          <StatCard
-            label="Pending"
-            value={summary.balance}
-            hint="Remaining to bill"
-            tone="slate"
-            icon={Wallet}
-            isLight={isLight}
-          />
+          <StatCard label="Received" value={summary.received} hint="Collected so far" tone="blue" icon={Landmark} isLight={isLight} />
+          <StatCard label="Pending" value={summary.balance} hint="Remaining to bill" tone="slate" icon={Wallet} isLight={isLight} />
           <StatCard
             label="Collection Rate"
             value={`${summary.total ? Math.round((summary.received / summary.total) * 100) : 0}%`}
@@ -106,20 +86,20 @@ export function RevenueChart({ data = [] }) {
           />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(250px,0.95fr)]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(220px,0.75fr)]">
           <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)] dark:border-[rgb(var(--line)/0.16)] dark:bg-[rgb(var(--panel-2)/0.78)]">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 pb-3 text-xs uppercase tracking-[0.18em] text-slate-400 dark:border-[rgb(var(--line)/0.16)]">
               <span>Collection health</span>
               <span>{rows.length} projects</span>
             </div>
 
-            <div className="mt-3 h-[190px]">
+            <div className="mt-3 h-[220px]">
               {rows.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={healthRows} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
+                  <BarChart data={healthRows} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.18} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} height={52} />
-                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                    <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="label" width={124} tickLine={false} axisLine={false} interval={0} />
                     <Tooltip
                       cursor={{ fill: 'rgba(59,130,246,0.04)' }}
                       content={({ active, payload, label }) => {
@@ -132,7 +112,7 @@ export function RevenueChart({ data = [] }) {
                         );
                       }}
                     />
-                    <Bar dataKey="count" radius={[12, 12, 0, 0]}>
+                    <Bar dataKey="count" radius={[0, 12, 12, 0]} barSize={18}>
                       {healthRows.map((row) => (
                         <Cell key={row.key} fill={row.color} />
                       ))}
@@ -228,3 +208,4 @@ function SummaryCard({ title, name, accent, value, detail, isLight = false }) {
     </div>
   );
 }
+

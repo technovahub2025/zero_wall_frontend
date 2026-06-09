@@ -14,6 +14,7 @@ export function ProjectTable({
   selectedIds = [],
   onToggleRowSelection,
   showSelection = false,
+  compact = false,
 }) {
   const navigate = useNavigate();
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -52,7 +53,7 @@ export function ProjectTable({
     };
   }, []);
 
-  const columns = useMemo(() => ([
+  const baseColumns = useMemo(() => ([
     {
       key: 'projectName',
       label: 'Project',
@@ -142,6 +143,21 @@ export function ProjectTable({
     },
   ]), [navigate, onDelete, onEdit, openMenuId]);
 
+  const columns = useMemo(() => {
+    if (!compact) return baseColumns;
+
+    return [
+      baseColumns[0],
+      baseColumns[4],
+      baseColumns[5],
+      baseColumns[6],
+      baseColumns[7],
+      baseColumns[8],
+      baseColumns[11],
+      baseColumns[12],
+    ];
+  }, [baseColumns, compact]);
+
   const visibleColumns = useMemo(() => {
     if (!showSelection) {
       return columns;
@@ -183,7 +199,7 @@ export function ProjectTable({
         rows={rows}
         rowKey={(row) => row.id}
         emptyMessage="No projects found."
-        scrollClassName="max-h-[calc(100vh-25rem)] overflow-auto pr-1"
+        scrollClassName={`max-h-[calc(100vh-25rem)] overflow-auto pr-1 ${compact ? 'overflow-x-hidden' : ''}`}
         stickyHeader
       />
 

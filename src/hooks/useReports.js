@@ -1,58 +1,58 @@
 import { useQuery } from '@tanstack/react-query';
 import { reportService } from '../services/reportService';
 
-export function useReportOverview() {
+export function useReportOverview(params = {}) {
   return useQuery({
-    queryKey: ['reports'],
-    queryFn: () => reportService.getOverview(),
+    queryKey: ['reports', params],
+    queryFn: () => reportService.getOverview(params),
     staleTime: 120_000,
   });
 }
 
-export function useProjectStatusReport() {
+export function useProjectStatusReport(params = {}) {
   return useQuery({
-    queryKey: ['report-status'],
-    queryFn: () => reportService.getProjectStatus(),
+    queryKey: ['report-status', params],
+    queryFn: () => reportService.getProjectStatus(params),
     staleTime: 120_000,
   });
 }
 
-export function usePriorityReport() {
+export function usePriorityReport(params = {}) {
   return useQuery({
-    queryKey: ['report-priority'],
-    queryFn: () => reportService.getPriority(),
+    queryKey: ['report-priority', params],
+    queryFn: () => reportService.getPriority(params),
     staleTime: 120_000,
   });
 }
 
-export function useTaskStatusReport() {
+export function useTaskStatusReport(params = {}) {
   return useQuery({
-    queryKey: ['report-task-status'],
-    queryFn: () => reportService.getTaskStatus(),
+    queryKey: ['report-task-status', params],
+    queryFn: () => reportService.getTaskStatus(params),
     staleTime: 120_000,
   });
 }
 
-export function useRevenueTrend() {
+export function useRevenueTrend(params = {}) {
   return useQuery({
-    queryKey: ['report-revenue-trend'],
-    queryFn: () => reportService.getRevenueTrend(),
+    queryKey: ['report-revenue-trend', params],
+    queryFn: () => reportService.getRevenueTrend(params),
     staleTime: 120_000,
   });
 }
 
-export function useStageCompletion() {
+export function useStageCompletion(params = {}) {
   return useQuery({
-    queryKey: ['report-stage-completion'],
-    queryFn: () => reportService.getStageCompletion(),
+    queryKey: ['report-stage-completion', params],
+    queryFn: () => reportService.getStageCompletion(params),
     staleTime: 120_000,
   });
 }
 
-export function useEngineerUtilization() {
+export function useEngineerUtilization(params = {}) {
   return useQuery({
-    queryKey: ['report-engineer'],
-    queryFn: () => reportService.getEngineerUtilization(),
+    queryKey: ['report-engineer', params],
+    queryFn: () => reportService.getEngineerUtilization(params),
     staleTime: 60_000,
   });
 }

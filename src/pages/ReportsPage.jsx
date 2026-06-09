@@ -1,12 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity,
   BadgeDollarSign,
   BarChart3,
   Banknote,
+  Check,
   CircleDollarSign,
+  ChevronDown,
   Layers3,
+  Filter,
   PieChart as PieChartIcon,
   SlidersHorizontal,
   TrendingUp,
@@ -62,15 +65,63 @@ const SECTION_OPTIONS = [
   { id: 'delivery', label: 'Delivery', icon: BarChart3 },
   { id: 'team', label: 'Team', icon: Users },
 ];
+const DENSITY_OPTIONS = [
+  {
+    id: 'compact',
+    label: 'Compact',
+    description: 'Fastest mode for 1000+ rows. Charts are capped and lists are trimmed to the most useful items.',
+    chartLimit: 12,
+    listLimit: 25,
+  },
+  {
+    id: 'balanced',
+    label: 'Balanced',
+    description: 'Default mode. Good balance between detail and performance.',
+    chartLimit: 24,
+    listLimit: 100,
+  },
+  {
+    id: 'full',
+    label: 'Full detail',
+    description: 'Shows the fullest available dataset while keeping long lists virtualized.',
+    chartLimit: 48,
+    listLimit: Infinity,
+  },
+];
+const TEAM_SORT_OPTIONS = [
+  { id: 'hours', label: 'Sort by hours' },
+  { id: 'projects', label: 'Sort by projects' },
+];
 
 export default function ReportsPage() {
   const [activeSection, setActiveSection] = useState('all');
+  const [activeDensity, setActiveDensity] = useState('balanced');
+  const [reportPeriod, setReportPeriod] = useState('last12');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [teamSortBy, setTeamSortBy] = useState('hours');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const filtersRef = useRef(null);
 
-  const overviewQuery = useReportOverview();
-  const revenueQuery = useRevenueTrend();
-  const stageQuery = useStageCompletion();
-  const engineerQuery = useEngineerUtilization();
+  const reportParams = useMemo(() => {
+    if (reportPeriod === 'custom') {
+      return {
+        from: customFrom || undefined,
+        to: customTo || undefined,
+      };
+    }
+
+    if (reportPeriod === 'all') return {};
+
+    return { period: reportPeriod };
+  }, [customFrom, customTo, reportPeriod]);
+
+  const overviewQuery = useReportOverview(reportParams);
+  const revenueQuery = useRevenueTrend(reportParams);
+  const stageQuery = useStageCompletion(reportParams);
+  const engineerQuery = useEngineerUtilization(reportParams);
 
   const overview = overviewQuery.data || {};
   const billing = overview.billing || { received: 0, balance: 0, total: 0 };
@@ -139,16 +190,45 @@ export default function ReportsPage() {
       .sort((a, b) => b.average - a.average);
   }, [stageQuery.data]);
 
-  const engineerRows = useMemo(
-    () =>
-      (Array.isArray(engineerQuery.data) ? engineerQuery.data : [])
-        .map((row) => ({
-          name: row.name,
-          projects: Number(row.projects || 0),
-          hours: Number(row.hours || 0),
-        }))
-        .sort((a, b) => b.hours - a.hours),
-    [engineerQuery.data],
+  const deferredDensity = useDeferredValue(activeDensity);
+  const deferredTeamSortBy = useDeferredValue(teamSortBy);
+  const densityConfig = useMemo(
+    () => DENSITY_OPTIONS.find((option) => option.id === deferredDensity) || DENSITY_OPTIONS[1],
+    [deferredDensity],
+  );
+
+  const engineerRows = useMemo(() => {
+    const rows = (Array.isArray(engineerQuery.data) ? engineerQuery.data : []).map((row) => ({
+      name: row.name,
+      projects: Number(row.projects || 0),
+      hours: Number(row.hours || 0),
+    }));
+
+    return rows.sort((a, b) =>
+      deferredTeamSortBy === 'projects'
+        ? b.projects - a.projects || b.hours - a.hours
+        : b.hours - a.hours || b.projects - a.projects,
+    );
+  }, [deferredTeamSortBy, engineerQuery.data]);
+
+  const stageChartRows = useMemo(
+    () => stageRows.slice(0, densityConfig.chartLimit),
+    [densityConfig.chartLimit, stageRows],
+  );
+
+  const stageDisplayRows = useMemo(
+    () => (densityConfig.listLimit === Infinity ? stageRows : stageRows.slice(0, densityConfig.listLimit)),
+    [densityConfig.listLimit, stageRows],
+  );
+
+  const engineerChartRows = useMemo(
+    () => sampleRows(engineerRows, densityConfig.chartLimit),
+    [densityConfig.chartLimit, engineerRows],
+  );
+
+  const engineerDisplayRows = useMemo(
+    () => (densityConfig.listLimit === Infinity ? engineerRows : engineerRows.slice(0, densityConfig.listLimit)),
+    [densityConfig.listLimit, engineerRows],
   );
 
   const totalProjects = Number(overview.totalProjects || 0);
@@ -168,11 +248,41 @@ export default function ReportsPage() {
   const loading = overviewQuery.isLoading || revenueQuery.isLoading || stageQuery.isLoading || engineerQuery.isLoading;
   const error = overviewQuery.error || revenueQuery.error || stageQuery.error || engineerQuery.error;
 
+  useEffect(() => {
+    if (!filtersOpen) return undefined;
+
+    function handlePointerDown(event) {
+      if (!filtersRef.current?.contains(event.target)) {
+        setFiltersOpen(false);
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setFiltersOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [filtersOpen]);
+
   const showAll = activeSection === 'all';
   const showOverview = showAll || activeSection === 'overview';
   const showFinance = showAll || activeSection === 'finance';
   const showDelivery = showAll || activeSection === 'delivery';
   const showTeam = showAll || activeSection === 'team';
+  const periodLabel = {
+    all: 'All time',
+    last12: 'Last 12 months',
+    'this-year': 'This year',
+    custom: 'Custom range',
+  }[reportPeriod] || 'Last 12 months';
 
   function buildExportSheets() {
     const sheets = [
@@ -250,9 +360,9 @@ export default function ReportsPage() {
             : activeSection === 'finance'
               ? 'finance'
               : activeSection === 'delivery'
-                ? 'delivery'
+              ? 'delivery'
                 : 'team';
-      exportWorkbookToExcel(buildExportSheets(), `reports-${sectionName}.xlsx`);
+      exportWorkbookToExcel(buildExportSheets(), `reports-${sectionName}-${densityConfig.id}.xlsx`);
     } finally {
       setIsExporting(false);
     }
@@ -278,7 +388,7 @@ export default function ReportsPage() {
 
   return (
     <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-6 pb-8">
-      <section className="theme-hero theme-hero-slate p-5 sm:p-6">
+      <section className="relative z-20 overflow-visible theme-hero theme-hero-slate p-5 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="hero-kicker">Reports</p>
@@ -287,7 +397,168 @@ export default function ReportsPage() {
               Modern performance dashboards for status, priority, revenue, stage progression, and team utilization.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative" ref={filtersRef}>
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((open) => !open)}
+                className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--line)/0.14)] bg-white/80 px-3 py-2 text-sm font-semibold text-[rgb(var(--text))] shadow-sm transition hover:border-sky-200 hover:bg-sky-50/80"
+                aria-expanded={filtersOpen}
+                aria-haspopup="menu"
+                aria-busy={isPending}
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-600">
+                  {periodLabel}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition ${filtersOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {filtersOpen ? (
+                <div className="absolute right-0 top-full z-50 mt-3 w-[560px] max-w-[calc(100vw-1rem)] rounded-[1.4rem] border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.98)] p-3 shadow-2xl backdrop-blur-xl">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Period</div>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {[
+                      { id: 'all', label: 'All time', description: 'No date limit.' },
+                      { id: 'last12', label: 'Last 12 months', description: 'Best default for large year-over-year reporting.' },
+                      { id: 'this-year', label: 'This year', description: 'Current calendar year only.' },
+                      { id: 'custom', label: 'Custom range', description: 'Pick exact from/to dates.' },
+                    ].map((option) => {
+                      const active = reportPeriod === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => {
+                            startTransition(() => setReportPeriod(option.id));
+                            if (option.id !== 'custom') setFiltersOpen(false);
+                          }}
+                          className={`flex h-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                            active
+                              ? 'border-sky-300 bg-sky-50/80 text-sky-700'
+                              : 'border-[rgb(var(--line)/0.12)] bg-white/70 text-[rgb(var(--text))] hover:border-sky-200 hover:bg-sky-50/60'
+                          }`}
+                        >
+                          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-500/10 text-sky-600">
+                            {active ? <Check className="h-3.5 w-3.5" /> : <Filter className="h-3.5 w-3.5" />}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold">{option.label}</span>
+                            <span className="mt-1 block text-xs text-slate-500">{option.description}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {reportPeriod === 'custom' ? (
+                    <div className="mt-3 border-t border-[rgb(var(--line)/0.12)] pt-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="block">
+                          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">From</span>
+                          <input
+                            type="date"
+                            value={customFrom}
+                            onChange={(event) => setCustomFrom(event.target.value)}
+                            className="input h-11 py-2"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">To</span>
+                          <input
+                            type="date"
+                            value={customTo}
+                            onChange={(event) => setCustomTo(event.target.value)}
+                            className="input h-11 py-2"
+                          />
+                        </label>
+                      </div>
+                      <div className="mt-2 text-xs text-slate-500">
+                        Custom ranges are sent to the backend, so only matching records are fetched.
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="mt-3 border-t border-[rgb(var(--line)/0.12)] pt-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Density</div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {DENSITY_OPTIONS.map((option) => {
+                        const active = activeDensity === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => {
+                              startTransition(() => setActiveDensity(option.id));
+                              setFiltersOpen(false);
+                            }}
+                            className={`flex h-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                              active
+                                ? 'border-sky-300 bg-sky-50/80 text-sky-700'
+                                : 'border-[rgb(var(--line)/0.12)] bg-white/70 text-[rgb(var(--text))] hover:border-sky-200 hover:bg-sky-50/60'
+                            }`}
+                          >
+                            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-500/10 text-sky-600">
+                              {active ? <Check className="h-3.5 w-3.5" /> : <SlidersHorizontal className="h-3.5 w-3.5" />}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold">{option.label}</span>
+                              <span className="mt-1 block text-xs text-slate-500">{option.description}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 border-t border-[rgb(var(--line)/0.12)] pt-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Team sort</div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {TEAM_SORT_OPTIONS.map((option) => {
+                        const active = teamSortBy === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => {
+                              startTransition(() => setTeamSortBy(option.id));
+                              setFiltersOpen(false);
+                            }}
+                            className={`inline-flex items-center justify-center rounded-2xl border px-3 py-2 text-sm font-semibold transition ${
+                              active
+                                ? 'border-sky-300 bg-sky-100 text-sky-700'
+                                : 'border-[rgb(var(--line)/0.12)] bg-white/70 text-[rgb(var(--text))] hover:border-sky-200 hover:bg-sky-50/60'
+                            }`}
+                          >
+                            {active ? <Check className="mr-2 h-4 w-4" /> : null}
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      startTransition(() => {
+                        setReportPeriod('last12');
+                        setCustomFrom('');
+                        setCustomTo('');
+                        setActiveDensity('balanced');
+                        setTeamSortBy('hours');
+                      });
+                      setFiltersOpen(false);
+                    }}
+                    className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-white/70 px-3 py-2 text-sm font-semibold text-slate-500 transition hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
+                  >
+                    Reset filters
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
             <ExportButton onClick={handleExport} disabled={isExporting}>
               {isExporting ? 'Exporting...' : 'Export'}
             </ExportButton>
@@ -362,7 +633,10 @@ export default function ReportsPage() {
                 </span>
                 <div>
                   <CardTitle>Project status composition</CardTitle>
-                  <p className="text-xs text-slate-500">Current distribution of live project states.</p>
+                  <p className="text-xs text-slate-500">
+                    Current distribution of live project states.
+                    {stageRows.length > stageChartRows.length ? ` Showing top ${stageChartRows.length} of ${stageRows.length}.` : ''}
+                  </p>
                 </div>
               </div>
             </CardHeader>
@@ -482,7 +756,7 @@ export default function ReportsPage() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} minTickGap={24} />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} minTickGap={24} tickFormatter={(value) => truncateChartLabel(value, 12)} />
                     <YAxis
                       width={96}
                       tickMargin={10}
@@ -527,7 +801,7 @@ export default function ReportsPage() {
                       formatter={(value) => formatCurrency(value)}
                       style={{ fill: '#ef4444', fontSize: 11, fontWeight: 600 }}
                     />
-                    {revenueRows.length > 8 ? <Brush dataKey="month" height={22} travellerWidth={10} /> : null}
+                    {revenueRows.length > 12 && densityConfig.id === 'full' ? <Brush dataKey="month" height={22} travellerWidth={10} /> : null}
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -604,7 +878,7 @@ export default function ReportsPage() {
                 <ResponsiveContainer width="100%" height={320}>
                   <BarChart data={taskRows} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} tickFormatter={(value) => truncateChartLabel(value, 14)} />
                     <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
                     <Tooltip content={<ChartTooltip />} />
                     <Bar dataKey="value" radius={[12, 12, 0, 0]}>
@@ -635,13 +909,22 @@ export default function ReportsPage() {
             <CardBody className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
               <div className="h-[360px] min-w-0">
                 <ResponsiveContainer width="100%" height={360}>
-                  <BarChart data={stageRows.slice(0, 8)} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                  <BarChart data={stageChartRows} layout="vertical" margin={{ top: 8, right: 20, left: 12, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} tickLine={false} axisLine={false} />
-                    <YAxis type="category" dataKey="projectName" width={120} tickLine={false} axisLine={false} interval={0} />
+                    <YAxis
+                      type="category"
+                      dataKey="projectName"
+                      width={180}
+                      tickLine={false}
+                      axisLine={false}
+                      interval={0}
+                      tickMargin={12}
+                      tickFormatter={(value) => truncateChartLabel(value, 20)}
+                    />
                     <Tooltip content={<ChartTooltip percent />} />
                     <Bar dataKey="average" radius={[0, 12, 12, 0]}>
-                      {stageRows.slice(0, 8).map((row, index) => (
+                      {stageChartRows.map((row, index) => (
                         <Cell key={row.id || row.projectName} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
                       ))}
                     </Bar>
@@ -656,21 +939,26 @@ export default function ReportsPage() {
                   <Badge tone="slate">Top: {stageRows[0]?.projectName || 'N/A'}</Badge>
                 </div>
                 <div className="max-h-[330px] space-y-3 overflow-y-auto pr-1">
-                  {stageRows.length ? (
-                    stageRows.length > 8 ? (
+                  {stageDisplayRows.length ? (
+                    stageDisplayRows.length > 8 ? (
                       <VirtualList
-                        items={stageRows}
+                        items={stageDisplayRows}
                         estimateSize={164}
                         className="h-[330px]"
                         renderItem={(row) => <StageSummaryRow row={row} />}
                       />
                     ) : (
-                      stageRows.map((row) => <StageSummaryRow key={row.id || row.projectName} row={row} />)
+                      stageDisplayRows.map((row) => <StageSummaryRow key={row.id || row.projectName} row={row} />)
                     )
                   ) : (
                     <EmptyChartState label="No stage completion data" />
                   )}
                 </div>
+                {stageDisplayRows.length < stageRows.length ? (
+                  <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.14)] bg-slate-50/80 px-3 py-2 text-xs text-slate-500">
+                    Showing {stageDisplayRows.length} of {stageRows.length} projects in {densityConfig.label.toLowerCase()} mode.
+                  </div>
+                ) : null}
               </div>
             </CardBody>
           </Card>
@@ -687,16 +975,19 @@ export default function ReportsPage() {
                 </span>
                 <div>
                   <CardTitle>Engineer utilization</CardTitle>
-                  <p className="text-xs text-slate-500">Projects handled and hours logged by each engineer.</p>
+                  <p className="text-xs text-slate-500">
+                    Projects handled and hours logged by each engineer.
+                    {engineerRows.length > engineerChartRows.length ? ` Showing a sampled chart of ${engineerChartRows.length} engineers.` : ''}
+                  </p>
                 </div>
               </div>
             </CardHeader>
             <CardBody className="h-[390px]">
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height={320}>
-                  <LineChart data={engineerRows} margin={{ top: 12, right: 24, left: 8, bottom: 8 }}>
+                  <LineChart data={engineerChartRows} margin={{ top: 12, right: 24, left: 8, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="name" tickLine={false} axisLine={false} minTickGap={24} />
+                    <XAxis dataKey="name" tickLine={false} axisLine={false} minTickGap={24} tickFormatter={(value) => truncateChartLabel(value, 12)} />
                     <YAxis yAxisId="left" tickLine={false} axisLine={false} allowDecimals={false} />
                     <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} allowDecimals />
                     <Tooltip content={<ChartTooltip />} />
@@ -721,7 +1012,7 @@ export default function ReportsPage() {
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
                     />
-                    {engineerRows.length > 8 ? <Brush dataKey="name" height={22} travellerWidth={10} /> : null}
+                    {engineerRows.length > 12 && densityConfig.id === 'full' ? <Brush dataKey="name" height={22} travellerWidth={10} /> : null}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -746,8 +1037,8 @@ export default function ReportsPage() {
                 <MetricInline label="Top engineer" value={topEngineer.name} />
               </div>
               <div className="max-h-[290px] space-y-2 overflow-y-auto pr-1">
-                {engineerRows.length ? (
-                  engineerRows.map((engineer, index) => (
+                {engineerDisplayRows.length ? (
+                  engineerDisplayRows.map((engineer, index) => (
                     <div
                       key={engineer.name}
                       className="flex items-center justify-between gap-3 rounded-2xl border border-[rgb(var(--line)/0.12)] bg-white/75 px-3 py-2"
@@ -765,6 +1056,11 @@ export default function ReportsPage() {
                   <EmptyChartState label="No utilization data" />
                 )}
               </div>
+              {engineerDisplayRows.length < engineerRows.length ? (
+                <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.14)] bg-slate-50/80 px-3 py-2 text-xs text-slate-500">
+                  Showing {engineerDisplayRows.length} of {engineerRows.length} engineers in {densityConfig.label.toLowerCase()} mode.
+                </div>
+              ) : null}
             </CardBody>
           </Card>
         </section>
@@ -903,6 +1199,32 @@ function formatCompactCurrency(value) {
 function formatCurrency(value) {
   const number = Number(value || 0);
   return `Rs. ${number.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+}
+
+function sampleRows(rows = [], maxPoints = 24) {
+  const list = Array.isArray(rows) ? rows : [];
+  const limit = Math.max(1, Number(maxPoints || 0));
+  if (list.length <= limit) return list;
+
+  const sampleSize = Math.max(2, limit);
+  const step = Math.ceil(list.length / sampleSize);
+  const sampled = [];
+
+  for (let index = 0; index < list.length && sampled.length < sampleSize; index += step) {
+    sampled.push(list[index]);
+  }
+
+  if (sampled[sampled.length - 1] !== list[list.length - 1]) {
+    sampled[sampled.length - 1] = list[list.length - 1];
+  }
+
+  return sampled;
+}
+
+function truncateChartLabel(value = '', maxLength = 16) {
+  const text = String(value ?? '').trim();
+  if (!text || text.length <= maxLength) return text;
+  return `${text.slice(0, Math.max(0, maxLength - 1)).trimEnd()}â€¦`;
 }
 
 function blendColor(percent) {

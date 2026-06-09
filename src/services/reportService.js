@@ -5,32 +5,32 @@ function unwrap(response) {
 }
 
 export const reportService = {
-  async getOverview() {
-    const response = await api.get('/reports');
+  async getOverview(params = {}) {
+    const response = await api.get('/reports', { params });
     return unwrap(response);
   },
-  async getProjectStatus() {
-    const response = await api.get('/reports/project-status');
+  async getProjectStatus(params = {}) {
+    const response = await api.get('/reports/project-status', { params });
     return unwrap(response);
   },
-  async getPriority() {
-    const response = await api.get('/reports/priority');
+  async getPriority(params = {}) {
+    const response = await api.get('/reports/priority', { params });
     return unwrap(response);
   },
-  async getTaskStatus() {
-    const response = await api.get('/reports/task-status');
+  async getTaskStatus(params = {}) {
+    const response = await api.get('/reports/task-status', { params });
     return unwrap(response);
   },
-  async getRevenueTrend() {
-    const response = await api.get('/reports/revenue-trend');
+  async getRevenueTrend(params = {}) {
+    const response = await api.get('/reports/revenue-trend', { params });
     return unwrap(response);
   },
-  async getStageCompletion() {
-    const response = await api.get('/reports/stage-completion');
+  async getStageCompletion(params = {}) {
+    const response = await api.get('/reports/stage-completion', { params });
     return unwrap(response);
   },
-  async getEngineerUtilization() {
-    const response = await api.get('/reports/engineer-utilization');
+  async getEngineerUtilization(params = {}) {
+    const response = await api.get('/reports/engineer-utilization', { params });
     return unwrap(response);
   },
 };

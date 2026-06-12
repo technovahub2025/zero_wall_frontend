@@ -204,9 +204,10 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
 
     const duration = selectedLogs.reduce((total, log) => total + Number(log.duration || 0), 0);
     const billable = selectedLogs.reduce((total, log) => total + (log.isBillable ? Number(log.duration || 0) : 0), 0);
-    const firstStart = selectedLogs[0]?.startTime || activeRange.start;
+    const summaryDate = activeRange?.start || selectedLogs[0]?.startTime || selectedLogs[0]?.date || null;
+    const firstStart = selectedLogs[0]?.startTime || summaryDate;
     return {
-      date: activeRange.start,
+      date: summaryDate || new Date(),
       duration,
       entries: selectedLogs.length,
       tasks: new Set(selectedLogs.map((log) => log.taskTitle || log.id)).size,

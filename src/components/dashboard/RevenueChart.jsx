@@ -144,7 +144,7 @@ export function RevenueChart({ data = [] }) {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="scrollbar-none space-y-3 overflow-y-auto pr-1">
             <SummaryCard
               title="Top collection"
               name={topRow?.name || 'No data'}

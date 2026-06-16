@@ -22,7 +22,7 @@ export function ConfirmModal() {
         <div className="flex items-start justify-between gap-4 border-b border-[rgb(var(--line)/0.16)] px-5 py-4">
           <div>
             <div className="font-display text-lg font-semibold text-[rgb(var(--text))]">{confirmState.title}</div>
-            <div className="mt-1 text-sm text-slate-400">{confirmState.message}</div>
+            <div className="mt-1 text-sm text-[rgb(var(--muted))]">{confirmState.message}</div>
           </div>
           <button
             type="button"
@@ -45,4 +45,3 @@ export function ConfirmModal() {
     </div>
   );
 }
-

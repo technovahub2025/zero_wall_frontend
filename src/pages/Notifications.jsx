@@ -76,7 +76,7 @@ export default function Notifications() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <FilterChips value={filter} onChange={setFilter} options={filterOptions} />
-        <div className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.76)] px-3 py-2 text-xs font-medium text-slate-500">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.76)] px-3 py-2 text-xs font-medium text-[rgb(var(--muted))]">
           <Filter className="h-4 w-4" />
           {filter === 'all' ? 'All notifications' : `${filter} notifications`}
         </div>
@@ -99,12 +99,12 @@ export default function Notifications() {
         </Card>
       ) : notifications.length ? (
         <Card className="overflow-hidden">
-          <CardHeader className="items-start justify-between gap-3 border-b border-[rgb(var(--line)/0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,255,255,0.74))]">
+          <CardHeader className="items-start justify-between gap-3 border-b border-[rgb(var(--line)/0.12)] bg-[linear-gradient(180deg,rgb(var(--panel)/0.9),rgb(var(--panel-2)/0.72))]">
             <div>
               <CardTitle>Recent notifications</CardTitle>
               <p className="mt-1 text-sm text-slate-500">Scroll inside the list to review older activity without moving the page.</p>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--line)/0.14)] bg-white/70 px-3 py-1 text-xs text-slate-500">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.78)] px-3 py-1 text-xs text-[rgb(var(--muted))]">
               <Inbox className="h-4 w-4" />
               {notifications.length} items
             </div>
@@ -204,7 +204,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 gap-3">
-          <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${notification.isRead ? 'bg-slate-500/10 text-slate-500' : 'bg-sky-500/12 text-sky-600'}`}>
+          <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${notification.isRead ? 'bg-slate-500/10 text-[rgb(var(--muted))]' : 'bg-sky-500/12 text-sky-500'}`}>
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0">
@@ -217,7 +217,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }) {
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--line)/0.12)] bg-white/60 px-2.5 py-1 text-xs text-slate-500">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.7)] px-2.5 py-1 text-xs text-[rgb(var(--muted))]">
           <Icon className="h-3.5 w-3.5" />
           <span>{notification.type}</span>
         </div>

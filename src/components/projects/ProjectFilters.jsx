@@ -78,20 +78,20 @@ export function ProjectFilters({
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.86)] px-4 py-3">
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--line)/0.16)] bg-white/70 px-3 py-2 text-sm font-medium text-[rgb(var(--text))] transition hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.72)] px-3 py-2 text-sm font-medium text-[rgb(var(--text))] transition hover:bg-[rgb(var(--panel-2)/0.78)]"
               onClick={() => onToggleAllSelection?.(allSelected)}
             >
-              <span className={`inline-flex h-4 w-4 items-center justify-center rounded border ${allSelected ? 'border-sky-500 bg-sky-500' : selectedCount ? 'border-sky-400 bg-sky-100' : 'border-slate-300 bg-white'}`}>
+              <span className={`inline-flex h-4 w-4 items-center justify-center rounded border ${allSelected ? 'border-sky-500 bg-sky-500' : selectedCount ? 'border-sky-400 bg-sky-500/10' : 'border-[rgb(var(--line)/0.28)] bg-[rgb(var(--panel)/0.82)]'}`}>
                 {allSelected ? <CheckMark /> : selectedCount ? <MinusMark /> : null}
               </span>
               {allSelected ? 'Unselect all' : 'Select all'}
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-[0.18em] text-slate-500">{selectedCount} selected</span>
+              <span className="text-xs uppercase tracking-[0.18em] text-[rgb(var(--muted))]">{selectedCount} selected</span>
               <button
                 type="button"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-rose-400/20 bg-rose-500/10 text-rose-500 transition hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={onDeleteSelected}
                 disabled={!selectedCount}
                 title="Delete selected projects permanently"
@@ -162,7 +162,7 @@ function SortToggle({ value, onChange }) {
         type="button"
         className={cn(
           'relative z-10 rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-300 ease-out motion-reduce:transition-none',
-          !isNewest ? 'text-white' : 'text-slate-500 hover:text-slate-700',
+          !isNewest ? 'text-white' : 'text-[rgb(var(--muted))] hover:text-[rgb(var(--text))]',
         )}
         onClick={() => onChange('oldest')}
       >
@@ -172,7 +172,7 @@ function SortToggle({ value, onChange }) {
         type="button"
         className={cn(
           'relative z-10 rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-300 ease-out motion-reduce:transition-none',
-          isNewest ? 'text-white' : 'text-slate-500 hover:text-slate-700',
+          isNewest ? 'text-white' : 'text-[rgb(var(--muted))] hover:text-[rgb(var(--text))]',
         )}
         onClick={() => onChange('newest')}
       >
@@ -214,7 +214,7 @@ function FilterField({ label, value, options, onChange, placeholder, isOpen, onT
 
   return (
     <div ref={rootRef} className="relative rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-[0_1px_0_rgba(255,255,255,0.5)_inset]">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</div>
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgb(var(--muted))]">{label}</div>
       <button
         type="button"
         className={cn(
@@ -223,14 +223,14 @@ function FilterField({ label, value, options, onChange, placeholder, isOpen, onT
         )}
         onClick={onToggle}
       >
-        <span className={cn('truncate', currentOption || isAllSelected ? 'text-[rgb(var(--text))]' : 'text-slate-500')}>
+        <span className={cn('truncate', currentOption || isAllSelected ? 'text-[rgb(var(--text))]' : 'text-[rgb(var(--muted))]')}>
           {currentOption?.label || placeholder}
         </span>
-        <ChevronDown className={cn('h-4 w-4 shrink-0 text-slate-500 transition-transform', isOpen && 'rotate-180')} />
+        <ChevronDown className={cn('h-4 w-4 shrink-0 text-[rgb(var(--muted))] transition-transform', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen ? (
-        <div className="absolute left-4 right-4 top-[calc(100%-0px)] z-30 mt-2 overflow-hidden rounded-none border border-[rgb(var(--line)/0.22)] bg-white shadow-[0_18px_36px_rgba(15,23,42,0.14)]">
+        <div className="absolute left-4 right-4 top-[calc(100%-0px)] z-30 mt-2 overflow-hidden rounded-none border border-[rgb(var(--line)/0.22)] bg-[rgb(var(--panel)/0.98)] shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur">
           {options.map((option) => {
             const selected = option.value === value || (option.value === 'all' && isAllSelected);
             return (
@@ -239,7 +239,7 @@ function FilterField({ label, value, options, onChange, placeholder, isOpen, onT
                 type="button"
                 className={cn(
                   'flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition-colors',
-                  selected ? 'bg-sky-100 text-sky-700' : 'text-slate-700 hover:bg-slate-50',
+                  selected ? 'bg-sky-500/10 text-sky-500' : 'text-[rgb(var(--text))] hover:bg-[rgb(var(--panel-2)/0.78)]',
                 )}
                 onClick={() => {
                   if (option.value === 'all') {

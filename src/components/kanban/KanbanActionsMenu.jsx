@@ -64,7 +64,7 @@ export function KanbanActionsMenu({
         ref={triggerRef}
         type="button"
         className={cn(
-          'inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700',
+          'inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.92)] text-[rgb(var(--text))] shadow-sm transition hover:border-[rgb(var(--line)/0.24)] hover:bg-[rgb(var(--panel-2)/0.82)]',
           triggerClassName,
         )}
         aria-label="Open actions menu"
@@ -85,7 +85,7 @@ export function KanbanActionsMenu({
             <div
               ref={menuRef}
               className={cn(
-                'fixed z-[80] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl shadow-slate-900/10',
+                'fixed z-[80] overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.98)] p-1.5 text-[rgb(var(--text))] shadow-2xl shadow-slate-900/10 backdrop-blur-xl',
                 menuClassName,
               )}
               style={{ top: position.top, left: position.left, width: position.width }}
@@ -101,8 +101,8 @@ export function KanbanActionsMenu({
                       className={cn(
                         'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium transition',
                         item.tone === 'danger'
-                          ? 'text-rose-500 hover:bg-rose-50'
-                          : 'text-slate-600 hover:bg-slate-50',
+                          ? 'text-rose-500 hover:bg-rose-500/10'
+                          : 'text-[rgb(var(--text))] hover:bg-[rgb(var(--panel-2)/0.72)]',
                         item.disabled && 'cursor-not-allowed opacity-40 hover:bg-transparent',
                       )}
                       onClick={(event) => {
@@ -112,7 +112,7 @@ export function KanbanActionsMenu({
                         item.onClick?.();
                       }}
                     >
-                      {Icon ? <Icon className={cn('h-4 w-4', item.tone === 'danger' ? 'text-rose-500' : 'text-slate-400')} /> : null}
+                      {Icon ? <Icon className={cn('h-4 w-4', item.tone === 'danger' ? 'text-rose-500' : 'text-[rgb(var(--muted))]')} /> : null}
                       <span>{item.label}</span>
                     </button>
                   );

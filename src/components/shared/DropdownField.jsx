@@ -54,6 +54,29 @@ export function DropdownField({
     });
   }, [options, query, searchable]);
 
+  const menuStyle = useMemo(() => {
+    if (!rect || typeof window === 'undefined') return {};
+
+    const gap = 6;
+    const viewportPadding = 12;
+    const searchHeight = searchable ? 58 : 0;
+    const preferredListHeight = 256;
+    const preferredHeight = searchHeight + preferredListHeight;
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const openAbove = spaceBelow < Math.min(preferredHeight, 220) && spaceAbove > spaceBelow;
+    const availableHeight = Math.max(140, (openAbove ? spaceAbove : spaceBelow) - gap);
+    const maxHeight = Math.min(preferredHeight, availableHeight);
+
+    return {
+      left: rect.left,
+      top: openAbove ? Math.max(viewportPadding, rect.top - maxHeight - gap) : rect.bottom + gap,
+      width: rect.width,
+      maxHeight,
+      listMaxHeight: Math.max(96, maxHeight - searchHeight),
+    };
+  }, [rect, searchable]);
+
   useEffect(() => {
     if (!open) return undefined;
 
@@ -95,12 +118,13 @@ export function DropdownField({
             data-dropdown-portal="true"
             className="fixed z-[130] overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.98)] text-[rgb(var(--text))] shadow-2xl shadow-slate-900/10 backdrop-blur-xl"
             style={{
-              left: rect.left,
-              top: rect.bottom + 6,
-              width: rect.width,
+              left: menuStyle.left,
+              top: menuStyle.top,
+              width: menuStyle.width,
+              maxHeight: menuStyle.maxHeight,
             }}
           >
-            <div className="border-b border-slate-100 p-2">
+            <div className="border-b border-[rgb(var(--line)/0.12)] p-2">
               {searchable ? (
                 <label className="flex items-center gap-2 rounded-xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.72)] px-3 py-2 text-sm text-[rgb(var(--text))]">
                   <Search className="h-4 w-4 text-slate-400" />
@@ -115,7 +139,7 @@ export function DropdownField({
                 </label>
               ) : null}
             </div>
-            <div className="scrollbar-none max-h-64 overflow-y-auto py-1">
+            <div className="scrollbar-none overflow-y-auto py-1" style={{ maxHeight: menuStyle.listMaxHeight }}>
               {multiple ? (
                 <>
                   <button
@@ -171,7 +195,9 @@ export function DropdownField({
                     }}
                     className={cn(
                       'flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition',
-                      String(value || '') === String(emptyValue || '') ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50',
+                      String(value || '') === String(emptyValue || '')
+                        ? 'bg-sky-500/10 text-sky-500'
+                        : 'text-[rgb(var(--text))] hover:bg-[rgb(var(--panel-2)/0.7)]',
                     )}
                   >
                     <span className="min-w-0 flex-1 truncate">{placeholder}</span>

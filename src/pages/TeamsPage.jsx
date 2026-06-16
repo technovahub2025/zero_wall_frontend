@@ -66,7 +66,7 @@ export default function TeamsPage() {
   const pendingInvitesQuery = usePendingInvites({ enabled: pendingInvitesOpen });
   const resendInvite = useResendInvite();
   const revokeInvite = useRevokeInvite();
-  const projectsQuery = useProjects({ limit: 100 }, { enabled: inviteOpen || Boolean(manageProjectsTeam) });
+  const projectsQuery = useProjects({ limit: 100 }, { enabled: inviteOpen || Boolean(manageProjectsTeam) || teamModalOpen });
 
   const teams = teamsQuery.data || [];
   const rosterMembers = membersQuery.data || [];
@@ -204,6 +204,7 @@ export default function TeamsPage() {
         description: values.description || '',
         color: values.color || '#3b82f6',
         members: Array.isArray(values.members) ? values.members : [],
+        projectIds: Array.isArray(values.projectIds) ? values.projectIds : [],
         isActive: Boolean(values.isActive),
       };
 
@@ -626,6 +627,7 @@ export default function TeamsPage() {
           <TeamForm
             initialValues={editingTeam}
             members={rosterMembers}
+            projects={projects}
             onSubmit={handleSaveTeam}
             onCancel={() => {
               setTeamModalOpen(false);

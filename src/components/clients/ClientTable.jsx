@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, PencilLine, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { DataTable } from '../shared/DataTable';
@@ -26,7 +26,7 @@ export function ClientTable({ rows = [], onEdit, onDelete, onRowClick, selectedI
       render: (row) => (
         <div>
           <div className="font-semibold text-[rgb(var(--text))]">{row.clientName}</div>
-          <div className="text-xs text-slate-400">{row.companyName || row.contactPerson || '-'}</div>
+          <div className="text-xs text-[rgb(var(--muted))]">{row.companyName || row.contactPerson || '-'}</div>
         </div>
       ),
     },
@@ -68,26 +68,28 @@ export function ClientTable({ rows = [], onEdit, onDelete, onRowClick, selectedI
                 {onEdit ? (
                   <button
                     type="button"
-                    className="flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--panel-2)/0.82)]"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--panel-2)/0.82)]"
                     onClick={(event) => {
                       event.stopPropagation();
                       setOpenMenuId(null);
                       onEdit(row);
                     }}
                   >
+                    <PencilLine className="h-4 w-4 text-[rgb(var(--muted))]" />
                     Edit
                   </button>
                 ) : null}
                 {onDelete ? (
                   <button
                     type="button"
-                    className="flex w-full items-center rounded-xl px-3 py-2 text-left text-sm text-rose-400 transition hover:bg-rose-500/10"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-400 transition hover:bg-rose-500/10"
                     onClick={(event) => {
                       event.stopPropagation();
                       setOpenMenuId(null);
                       onDelete(row);
                     }}
                   >
+                    <Trash2 className="h-4 w-4" />
                     Delete
                   </button>
                 ) : null}
@@ -105,11 +107,12 @@ export function ClientTable({ rows = [], onEdit, onDelete, onRowClick, selectedI
       rows={rows}
       rowKey={(row) => row.id}
       emptyMessage="No clients found."
-      scrollClassName="scrollbar-none max-h-[calc(100vh-25rem)] pr-1"
+      scrollClassName="max-h-[calc(100vh-25rem)] pb-3 pr-1"
+      tableClassName="min-w-[980px]"
       stickyHeader
-      scrollAxis="y"
+      scrollAxis="both"
       onRowClick={onRowClick}
-      rowClassName={(row) => (selectedId && String(row.id) === String(selectedId) ? 'bg-sky-50/70' : '')}
+      rowClassName={(row) => (selectedId && String(row.id) === String(selectedId) ? 'bg-sky-500/10' : '')}
     />
   );
 }

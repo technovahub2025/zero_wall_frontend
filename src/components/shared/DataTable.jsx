@@ -6,6 +6,7 @@ export function DataTable({
   scrollClassName = '',
   stickyHeader = false,
   scrollAxis = 'x',
+  tableClassName = '',
   onRowClick,
   rowClassName,
 }) {
@@ -14,14 +15,16 @@ export function DataTable({
   }
 
   const scrollContainerClassName =
-    scrollAxis === 'y'
-      ? `overflow-y-auto overflow-x-hidden ${scrollClassName}`.trim()
-      : `overflow-x-auto overflow-y-hidden ${scrollClassName}`.trim();
+    scrollAxis === 'both'
+      ? `overflow-auto ${scrollClassName}`.trim()
+      : scrollAxis === 'y'
+        ? `overflow-y-auto overflow-x-hidden ${scrollClassName}`.trim()
+        : `overflow-x-auto overflow-y-hidden ${scrollClassName}`.trim();
 
   return (
     <div className={scrollContainerClassName}>
-      <table className="min-w-full text-left text-sm">
-        <thead className={`border-b border-[rgb(var(--line)/0.12)] text-[10px] uppercase tracking-[0.2em] text-slate-500 ${stickyHeader ? 'sticky top-0 z-10 bg-[rgb(var(--panel)/0.98)] backdrop-blur' : ''}`}>
+      <table className={`min-w-full text-left text-sm ${tableClassName}`.trim()}>
+        <thead className={`border-b border-[rgb(var(--line)/0.12)] text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--muted))] ${stickyHeader ? 'sticky top-0 z-10 bg-[rgb(var(--panel)/0.98)] backdrop-blur' : ''}`}>
           <tr>
             {columns.map((column) => (
               <th
@@ -56,7 +59,7 @@ export function DataTable({
             ))
           ) : (
             <tr>
-              <td className="px-4 py-6 text-sm text-slate-400" colSpan={columns.length}>
+              <td className="px-4 py-6 text-sm text-[rgb(var(--muted))]" colSpan={columns.length}>
                 {emptyMessage}
               </td>
             </tr>

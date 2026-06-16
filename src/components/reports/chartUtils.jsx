@@ -61,11 +61,11 @@ export function truncateChartLabel(value = '', maxLength = 16) {
 
 export function EmptyChartState({ label = 'No data available.' }) {
   return (
-    <div className="grid h-full min-h-[280px] place-items-center rounded-[var(--radius)] border border-dashed border-[rgb(var(--line)/0.16)] bg-[linear-gradient(135deg,rgba(248,250,252,0.92),rgba(239,246,255,0.72))] px-4 text-center">
+    <div className="theme-chart-surface grid h-full min-h-[280px] place-items-center rounded-[var(--radius)] border border-dashed border-[rgb(var(--line)/0.16)] px-4 text-center">
       <div>
-        <div className="mx-auto h-10 w-10 rounded-2xl border border-slate-200 bg-white shadow-sm" />
+        <div className="mx-auto h-10 w-10 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.74)] shadow-sm" />
         <div className="mt-3 text-sm font-semibold text-[rgb(var(--text))]">No report data</div>
-        <div className="mt-1 text-xs text-slate-500">{label}</div>
+        <div className="mt-1 text-xs text-[rgb(var(--muted))]">{label}</div>
       </div>
     </div>
   );
@@ -105,12 +105,12 @@ export function ReportTooltip({ active, payload, label, currency = false, hours 
   });
 
   return (
-    <div className="min-w-[190px] rounded-2xl border border-[rgb(var(--line)/0.14)] bg-white/95 px-3 py-2 shadow-[0_24px_70px_-30px_rgba(15,23,42,0.55)] backdrop-blur-xl">
-      {label ? <div className="border-b border-slate-100 pb-1.5 text-xs font-semibold text-[rgb(var(--text))]">{label}</div> : null}
+    <div className="min-w-[190px] rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.98)] px-3 py-2 shadow-[0_24px_70px_-30px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+      {label ? <div className="border-b border-[rgb(var(--line)/0.12)] pb-1.5 text-xs font-semibold text-[rgb(var(--text))]">{label}</div> : null}
       <div className="mt-2 space-y-1.5">
         {visiblePayload.map((entry, index) => (
           <div key={`${entry.dataKey || entry.name || 'series'}-${index}`} className="flex items-center justify-between gap-6 text-xs">
-            <div className="flex items-center gap-2 text-slate-500">
+            <div className="flex items-center gap-2 text-[rgb(var(--muted))]">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: resolveSeriesColor(entry) }} />
               <span>{entry.name || entry.dataKey}</span>
             </div>
@@ -127,13 +127,13 @@ export function ReportTooltip({ active, payload, label, currency = false, hours 
 export function ChartSummaryPill({ label, value, tone = 'blue' }) {
   const toneClass =
     {
-      blue: 'bg-sky-50 text-sky-700 ring-sky-100',
-      green: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-      amber: 'bg-amber-50 text-amber-700 ring-amber-100',
-      rose: 'bg-rose-50 text-rose-700 ring-rose-100',
-      violet: 'bg-violet-50 text-violet-700 ring-violet-100',
-      slate: 'bg-slate-50 text-slate-700 ring-slate-100',
-    }[tone] || 'bg-sky-50 text-sky-700 ring-sky-100';
+      blue: 'bg-sky-500/15 text-sky-500 ring-sky-400/20',
+      green: 'bg-emerald-500/15 text-emerald-500 ring-emerald-400/20',
+      amber: 'bg-amber-500/15 text-amber-500 ring-amber-400/20',
+      rose: 'bg-rose-500/15 text-rose-500 ring-rose-400/20',
+      violet: 'bg-violet-500/15 text-violet-500 ring-violet-400/20',
+      slate: 'bg-[rgb(var(--panel-2)/0.82)] text-[rgb(var(--text))] ring-[rgb(var(--line)/0.16)]',
+    }[tone] || 'bg-sky-500/15 text-sky-500 ring-sky-400/20';
 
   return (
     <div className={`rounded-2xl px-3 py-2 text-right ring-1 ${toneClass}`}>

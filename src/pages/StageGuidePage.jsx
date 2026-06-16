@@ -192,26 +192,26 @@ export default function StageGuidePage() {
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/50 px-4 py-3 text-sm text-slate-600 backdrop-blur">
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
+            <div className="rounded-2xl border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.64)] px-4 py-3 text-sm text-[rgb(var(--muted))] backdrop-blur">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--muted))]">
                 <Layers3 className="h-3.5 w-3.5" />
                 <span>Stages</span>
               </div>
-              <div className="mt-1 font-semibold text-slate-900">{counts.total} reference rows</div>
+              <div className="mt-1 font-semibold text-[rgb(var(--text))]">{counts.total} reference rows</div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/50 px-4 py-3 text-sm text-slate-600 backdrop-blur">
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
+            <div className="rounded-2xl border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.64)] px-4 py-3 text-sm text-[rgb(var(--muted))] backdrop-blur">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--muted))]">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 <span>Approvals</span>
               </div>
-              <div className="mt-1 font-semibold text-slate-900">{counts.approval} client-gated stages</div>
+              <div className="mt-1 font-semibold text-[rgb(var(--text))]">{counts.approval} client-gated stages</div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/50 px-4 py-3 text-sm text-slate-600 backdrop-blur">
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
+            <div className="rounded-2xl border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.64)] px-4 py-3 text-sm text-[rgb(var(--muted))] backdrop-blur">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--muted))]">
                 <MapPinned className="h-3.5 w-3.5" />
                 <span>Usage</span>
               </div>
-              <div className="mt-1 font-semibold text-slate-900">{counts.active} active entries</div>
+              <div className="mt-1 font-semibold text-[rgb(var(--text))]">{counts.active} active entries</div>
             </div>
           </div>
         </div>
@@ -221,12 +221,12 @@ export default function StageGuidePage() {
         <CardBody className="space-y-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <label className="input flex w-full items-center gap-2 rounded-2xl px-4 py-3 lg:max-w-md">
-              <Search className="h-4 w-4 text-slate-400" />
+              <Search className="h-4 w-4 text-[rgb(var(--muted))]" />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search stage number, name, approval, discipline..."
-                className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-[rgb(var(--muted))]"
               />
             </label>
             {canManage ? (
@@ -250,11 +250,11 @@ export default function StageGuidePage() {
               }
             />
           ) : rows.length ? (
-            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/60">
+            <div className="overflow-hidden rounded-3xl border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.68)]">
               <div className="max-h-[68vh] overflow-auto">
                 <table className="min-w-full border-separate border-spacing-0">
                   <thead className="sticky top-0 z-10 bg-[rgb(var(--panel)/0.98)] backdrop-blur">
-                    <tr className="text-left text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                    <tr className="text-left text-[10px] uppercase tracking-[0.25em] text-[rgb(var(--muted))]">
                       <th className="px-5 py-4">Stage</th>
                       <th className="px-5 py-4">Name</th>
                       <th className="px-5 py-4">Approval</th>
@@ -265,12 +265,12 @@ export default function StageGuidePage() {
                   </thead>
                   <tbody>
                     {rows.map((row) => (
-                      <tr key={row.id} className="border-t border-white/5 text-sm text-[rgb(var(--text))]">
+                      <tr key={row.id} className="border-t border-[rgb(var(--line)/0.08)] text-sm text-[rgb(var(--text))]">
                         <td className="px-5 py-4 align-top font-medium whitespace-nowrap">{row.stageNo}</td>
                         <td className="px-5 py-4 align-top">{row.stageName}</td>
-                        <td className="px-5 py-4 align-top text-slate-500">{row.approvalRequired || '-'}</td>
-                        <td className="px-5 py-4 align-top text-slate-500">{row.disciplines || '-'}</td>
-                        <td className="px-5 py-4 align-top whitespace-nowrap text-slate-500">{row.duration || '-'}</td>
+                        <td className="px-5 py-4 align-top text-[rgb(var(--muted))]">{row.approvalRequired || '-'}</td>
+                        <td className="px-5 py-4 align-top text-[rgb(var(--muted))]">{row.disciplines || '-'}</td>
+                        <td className="px-5 py-4 align-top whitespace-nowrap text-[rgb(var(--muted))]">{row.duration || '-'}</td>
                         <td className="px-5 py-4 align-top">
                           <div className="flex items-center justify-end gap-2">
                             {canManage || canDelete ? (
@@ -278,7 +278,7 @@ export default function StageGuidePage() {
                                 <Button
                                   size="sm"
                                   variant="secondary"
-                                  className="h-10 w-10 rounded-xl border border-[rgb(var(--line)/0.18)] bg-white/95 px-0 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+                                  className="h-10 w-10 rounded-xl border border-[rgb(var(--line)/0.18)] bg-[rgb(var(--panel)/0.92)] px-0 text-[rgb(var(--muted))] shadow-sm transition hover:border-sky-400/30 hover:bg-[rgb(var(--panel-2)/0.78)] hover:text-[rgb(var(--text))]"
                                   onClick={(event) => {
                                     event.stopPropagation();
                                     if (openMenuId === row.id) {
@@ -309,7 +309,7 @@ export default function StageGuidePage() {
                                 </Button>
                               </div>
                             ) : (
-                              <span className="text-slate-400">-</span>
+                              <span className="text-[rgb(var(--muted))]">-</span>
                             )}
                           </div>
                         </td>
@@ -369,7 +369,7 @@ export default function StageGuidePage() {
               <Field label="Key Deliverables" className="sm:col-span-2">
                 <textarea className="input min-h-[96px]" name="keyDeliverables" defaultValue={editor.data.keyDeliverables} />
               </Field>
-              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/70 px-4 py-3 text-sm text-[rgb(var(--text))] sm:col-span-2">
+              <label className="flex items-center gap-3 rounded-2xl border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel-2)/0.68)] px-4 py-3 text-sm text-[rgb(var(--text))] sm:col-span-2">
                 <input type="checkbox" name="isActive" defaultChecked={editor.data.isActive} className="h-4 w-4 rounded border-slate-300 text-sky-500 focus:ring-sky-400" />
                 <span>Active</span>
               </label>
@@ -400,7 +400,7 @@ export default function StageGuidePage() {
                     {canManage ? (
                       <button
                         type="button"
-                        className="flex h-10 w-10 items-center justify-center rounded-xl text-[rgb(var(--text))] transition hover:bg-slate-50"
+                        className="flex h-10 w-10 items-center justify-center rounded-xl text-[rgb(var(--text))] transition hover:bg-[rgb(var(--panel-2)/0.78)]"
                         onClick={(event) => {
                           event.stopPropagation();
                           setOpenMenuId(null);
@@ -410,7 +410,7 @@ export default function StageGuidePage() {
                         aria-label="Edit stage guide"
                         title="Edit"
                       >
-                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[rgb(var(--panel-2)/0.86)] text-[rgb(var(--muted))]">
                           <Edit3 className="h-4 w-4" />
                         </span>
                         <span className="sr-only">Edit</span>
@@ -448,7 +448,7 @@ export default function StageGuidePage() {
 function Field({ label, className = '', children }) {
   return (
     <label className={`space-y-2 ${className}`}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[rgb(var(--muted))]">{label}</div>
       {children}
     </label>
   );

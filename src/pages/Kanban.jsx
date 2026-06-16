@@ -228,7 +228,7 @@ export default function Kanban() {
                       'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition',
                       activeMode === option.value
                         ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80',
+                        : 'bg-[rgb(var(--panel-2)/0.78)] text-[rgb(var(--muted))] hover:bg-[rgb(var(--panel-2)/0.95)] hover:text-[rgb(var(--text))]',
                     )}
                   >
                     {Icon ? <Icon className="h-4 w-4" /> : null}
@@ -240,20 +240,20 @@ export default function Kanban() {
 
             {activeMode === 'project' && projects.length ? (
               <div ref={projectDropdownRef} className="flex min-w-0 flex-1 flex-col gap-1 xl:max-w-2xl xl:flex-none">
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Project</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[rgb(var(--muted))]">Project</span>
                 <div className="relative min-w-0">
                   <button
                     type="button"
                     onClick={() => setProjectDropdownOpen((current) => !current)}
-                    className="flex h-11 w-full items-center gap-3 rounded-2xl border border-sky-200 bg-white px-4 text-left text-sm text-slate-700 shadow-sm transition hover:border-sky-300 hover:bg-slate-50"
+                    className="flex h-11 w-full items-center gap-3 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] px-4 text-left text-sm text-[rgb(var(--text))] shadow-sm transition hover:border-sky-400/35 hover:bg-[rgb(var(--panel-2)/0.78)]"
                   >
                     <span className="min-w-0 flex-1 truncate">{selectedProjectLabel}</span>
-                    <Search className="h-4 w-4 flex-shrink-0 text-slate-400" />
-                    <ChevronDown className={cn('h-4 w-4 flex-shrink-0 text-slate-400 transition-transform', projectDropdownOpen && 'rotate-180')} />
+                    <Search className="h-4 w-4 flex-shrink-0 text-[rgb(var(--muted))]" />
+                    <ChevronDown className={cn('h-4 w-4 flex-shrink-0 text-[rgb(var(--muted))] transition-transform', projectDropdownOpen && 'rotate-180')} />
                   </button>
 
                   {projectDropdownOpen ? (
-                    <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-30 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10">
+                    <div className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-30 overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.98)] shadow-2xl shadow-slate-900/10 backdrop-blur">
                       <div className="scrollbar-none max-h-72 overflow-y-auto py-1">
                         {projects.map((project) => {
                           const isActive = String(project.id) === String(selectedProjectId);
@@ -264,7 +264,7 @@ export default function Kanban() {
                               onClick={() => handleSelectProject(project.id)}
                               className={cn(
                                 'flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition',
-                                isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50',
+                                isActive ? 'bg-sky-500/10 text-sky-500' : 'text-[rgb(var(--text))] hover:bg-[rgb(var(--panel-2)/0.78)]',
                               )}
                             >
                               <span className="min-w-0 flex-1 truncate">

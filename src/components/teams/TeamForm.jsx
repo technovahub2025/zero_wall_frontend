@@ -10,6 +10,7 @@ const schema = z.object({
   description: z.string().optional(),
   color: z.string().optional(),
   members: z.array(z.string()).optional(),
+  projectIds: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -24,7 +25,7 @@ function extractIds(value) {
   return value.map((item) => extractId(item)).filter(Boolean);
 }
 
-export function TeamForm({ initialValues, members = [], onSubmit, onCancel }) {
+export function TeamForm({ initialValues, members = [], projects = [], onSubmit, onCancel }) {
   const {
     register,
     handleSubmit,
@@ -39,20 +40,34 @@ export function TeamForm({ initialValues, members = [], onSubmit, onCancel }) {
       description: '',
       color: '#3b82f6',
       members: [],
+      projectIds: [],
       isActive: true,
     },
   });
 
   const membersValue = watch('members');
+  const projectIdsValue = watch('projectIds');
+
   const memberOptions = useMemo(
     () =>
       (Array.isArray(members) ? members : []).map((member) => ({
         value: member.id || member._id,
-        label: [member.name, member.role ? `(${member.role})` : '', member.department ? `• ${member.department}` : '']
+        label: [member.name, member.role ? `(${member.role})` : '', member.department ? `- ${member.department}` : '']
           .filter(Boolean)
           .join(' '),
       })),
     [members],
+  );
+
+  const projectOptions = useMemo(
+    () =>
+      (Array.isArray(projects) ? projects : []).map((project) => ({
+        value: project.id || project._id,
+        label: [project.projectName || project.name, project.clientName ? `- ${project.clientName}` : '', project.status ? `- ${project.status}` : '']
+          .filter(Boolean)
+          .join(' '),
+      })),
+    [projects],
   );
 
   const selectedMembers = useMemo(
@@ -63,12 +78,27 @@ export function TeamForm({ initialValues, members = [], onSubmit, onCancel }) {
     [members, membersValue],
   );
 
+  const selectedProjects = useMemo(
+    () =>
+      (Array.isArray(projects) ? projects : []).filter((project) =>
+        Array.isArray(projectIdsValue) && projectIdsValue.some((id) => String(id) === String(project.id || project._id)),
+      ),
+    [projectIdsValue, projects],
+  );
+
   const membersLabel = selectedMembers.length
     ? `${selectedMembers
         .slice(0, 2)
         .map((member) => member.name || 'Member')
         .join(', ')}${selectedMembers.length > 2 ? ` +${selectedMembers.length - 2}` : ''}`
     : 'No members selected';
+
+  const projectsLabel = selectedProjects.length
+    ? `${selectedProjects
+        .slice(0, 2)
+        .map((project) => project.projectName || project.name || 'Project')
+        .join(', ')}${selectedProjects.length > 2 ? ` +${selectedProjects.length - 2}` : ''}`
+    : 'No projects selected';
 
   useEffect(() => {
     if (!initialValues) {
@@ -77,6 +107,7 @@ export function TeamForm({ initialValues, members = [], onSubmit, onCancel }) {
         description: '',
         color: '#3b82f6',
         members: [],
+        projectIds: [],
         isActive: true,
       });
       return;
@@ -87,6 +118,7 @@ export function TeamForm({ initialValues, members = [], onSubmit, onCancel }) {
       description: initialValues.description || '',
       color: initialValues.color || '#3b82f6',
       members: extractIds(initialValues.members),
+      projectIds: extractIds(initialValues.projectIds),
       isActive: typeof initialValues.isActive === 'boolean' ? initialValues.isActive : true,
     });
   }, [initialValues, reset]);
@@ -112,6 +144,18 @@ export function TeamForm({ initialValues, members = [], onSubmit, onCancel }) {
         multiple
         searchable
         searchPlaceholder="Search members..."
+        className="sm:col-span-2"
+      />
+      <DropdownField
+        label="Projects"
+        value={projectIdsValue}
+        onChange={(nextValue) => setValue('projectIds', nextValue, { shouldValidate: true, shouldDirty: true })}
+        placeholder="Select projects"
+        selectedLabel={projectsLabel}
+        options={projectOptions}
+        multiple
+        searchable
+        searchPlaceholder="Search projects..."
         className="sm:col-span-2"
       />
       <label className="flex items-center gap-3 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-white/70 px-4 py-3 sm:col-span-2">

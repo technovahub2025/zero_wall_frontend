@@ -64,8 +64,8 @@ function watchTone(score = 0) {
 
 function ExecutiveWatchlist({ rows = [] }) {
   return (
-    <Card className="overflow-hidden border border-[rgb(var(--line)/0.12)] bg-white/92 shadow-[0_22px_60px_-44px_rgba(15,23,42,0.45)] backdrop-blur">
-      <div className="border-b border-[rgb(var(--line)/0.12)] bg-gradient-to-r from-white/96 via-white/92 to-rose-50/40 px-5 py-4">
+    <Card className="overflow-hidden border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.86)] shadow-[0_22px_60px_-44px_rgba(15,23,42,0.45)] backdrop-blur">
+      <div className="border-b border-[rgb(var(--line)/0.12)] bg-[linear-gradient(90deg,rgb(var(--panel)/0.92),rgb(var(--panel-2)/0.74))] px-5 py-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="inline-flex items-center gap-2 text-sm font-semibold text-[rgb(var(--text))]">
@@ -97,11 +97,11 @@ function ExecutiveWatchlist({ rows = [] }) {
                 </div>
               </div>
               <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
-                <div className="rounded-xl bg-white/70 px-3 py-2">
+                <div className="rounded-xl bg-[rgb(var(--panel-2)/0.72)] px-3 py-2">
                   <span className="text-slate-400">Next action</span>
                   <div className="mt-1 font-medium text-[rgb(var(--text))]">{row.nextAction || row.description || '-'}</div>
                 </div>
-                <div className="rounded-xl bg-white/70 px-3 py-2">
+                <div className="rounded-xl bg-[rgb(var(--panel-2)/0.72)] px-3 py-2">
                   <span className="text-slate-400">Responsible</span>
                   <div className="mt-1 font-medium text-[rgb(var(--text))]">{row.assigneeName || row.projectEngineer || 'Unassigned'}</div>
                 </div>
@@ -335,7 +335,7 @@ export default function CeoDashboard() {
         <KPIRow data={kpis} />
       </motion.div>
 
-      <motion.section variants={staggerItem} className="rounded-[var(--radius)] border border-[rgb(var(--line)/0.12)] bg-white/85 p-4 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.28)] backdrop-blur">
+      <motion.section variants={staggerItem} className="rounded-[var(--radius)] border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.86)] p-4 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.28)] backdrop-blur">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Analyze</div>

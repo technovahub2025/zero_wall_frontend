@@ -217,6 +217,8 @@ export function normalizeClient(record = {}) {
 export function normalizeTeam(record = {}) {
   const members = Array.isArray(record.members) ? record.members : [];
   const projectIds = Array.isArray(record.projectIds) ? record.projectIds : [];
+  const currentProjects = Array.isArray(record.currentProjects) ? record.currentProjects.map(normalizeProject) : [];
+  const currentTasks = Array.isArray(record.currentTasks) ? record.currentTasks.map(normalizeTask) : [];
 
   return {
     id: String(record.id || record._id || ''),
@@ -228,6 +230,8 @@ export function normalizeTeam(record = {}) {
     memberCount: Number(record.memberCount || members.length || 0),
     projectIds,
     projectCount: Number(record.projectCount || projectIds.length || 0),
+    currentProjects,
+    currentTasks,
     createdBy: record.createdBy || null,
     isActive: Boolean(record.isActive ?? true),
     createdAt: record.createdAt || null,

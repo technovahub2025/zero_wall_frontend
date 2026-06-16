@@ -55,8 +55,8 @@ export function ActionItemsTable({ tasks = [], showApproveButtons = false, onApp
   );
 
   return (
-    <Card className="overflow-hidden border border-[rgb(var(--line)/0.12)] bg-white/92 shadow-[0_22px_60px_-44px_rgba(15,23,42,0.45)] backdrop-blur">
-      <CardHeader className="items-center justify-between bg-gradient-to-r from-white/96 via-white/92 to-sky-50/50">
+    <Card className="overflow-hidden border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.86)] shadow-[0_22px_60px_-44px_rgba(15,23,42,0.45)] backdrop-blur">
+      <CardHeader className="items-center justify-between bg-[linear-gradient(90deg,rgb(var(--panel)/0.94),rgb(var(--panel-2)/0.74))]">
         <div>
           <CardTitle>Executive project queue</CardTitle>
           <div className="mt-1 text-xs text-slate-500">Full project and decision data, sorted and scrollable for large sets.</div>
@@ -92,7 +92,7 @@ export function ActionItemsTable({ tasks = [], showApproveButtons = false, onApp
               renderItem={(row, index) => (
                 <div className="px-2 py-2">
                   <div
-                    className="grid items-start gap-3 rounded-3xl border border-[rgb(var(--line)/0.08)] bg-white/92 px-4 py-4 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.38)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_52px_-36px_rgba(15,23,42,0.44)]"
+                    className="grid items-start gap-3 rounded-3xl border border-[rgb(var(--line)/0.08)] bg-[rgb(var(--panel-2)/0.72)] px-4 py-4 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.38)] transition duration-300 hover:-translate-y-0.5 hover:bg-[rgb(var(--panel-2)/0.86)] hover:shadow-[0_22px_52px_-36px_rgba(15,23,42,0.44)]"
                     style={{ gridTemplateColumns: GRID_TEMPLATE }}
                   >
                     <div className="text-sm font-semibold text-[rgb(var(--text))]">{String(index + 1).padStart(2, '0')}</div>

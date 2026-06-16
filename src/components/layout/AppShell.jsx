@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BarChart3,
   ChartPie,
@@ -43,6 +43,7 @@ export function AppShell() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleSidebarCollapsed, resolvedTheme, toggleTheme } = useUiStore();
+  const [sidebarTooltip, setSidebarTooltip] = useState(null);
   const panelOpen = useNotificationStore((state) => state.panelOpen);
   const togglePanel = useNotificationStore((state) => state.togglePanel);
   const notifications = useNotificationStore((state) => state.notifications);
@@ -57,6 +58,26 @@ export function AppShell() {
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname, setSidebarOpen]);
+
+  useEffect(() => {
+    if (!sidebarCollapsed) {
+      setSidebarTooltip(null);
+    }
+  }, [sidebarCollapsed]);
+
+  function showSidebarTooltip(label, event) {
+    if (!sidebarCollapsed || !label) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    setSidebarTooltip({
+      label,
+      top: rect.top + rect.height / 2,
+      left: rect.right + 12,
+    });
+  }
+
+  function hideSidebarTooltip() {
+    setSidebarTooltip(null);
+  }
 
   async function handleLogout() {
     try {
@@ -92,7 +113,7 @@ export function AppShell() {
             <div className="flex items-center justify-center border-b border-[rgb(var(--line)/0.16)] px-5 py-5">
               <div
                 className={cn(
-                  'flex shrink-0 items-center justify-center overflow-hidden rounded-[28px] bg-white ring-1 ring-[rgb(var(--line)/0.14)]',
+                  'flex shrink-0 items-center justify-center overflow-hidden rounded-[28px] bg-[rgb(255_255_255)] ring-1 ring-[rgb(var(--line)/0.14)]',
                   sidebarCollapsed ? 'h-16 w-16' : 'h-[76px] w-full max-w-[236px]',
                 )}
               >
@@ -107,13 +128,13 @@ export function AppShell() {
                     Personal
                   </p>
                   <div className="space-y-1">
-                    <SidebarLink item={{ label: 'My Tasks', path: '/my-tasks', icon: 'LayoutDashboard' }} collapsed={sidebarCollapsed} />
-                    <SidebarLink item={{ label: 'My Timesheets', path: '/my-timesheets', icon: 'BarChart3' }} collapsed={sidebarCollapsed} />
-                    <SidebarLink item={{ label: 'Profile', path: '/profile', icon: 'Users' }} collapsed={sidebarCollapsed} />
-                    <SidebarLink item={{ label: 'Notifications', path: '/notifications', icon: 'Bell' }} collapsed={sidebarCollapsed} />
-                    <SidebarLink item={{ label: 'Clients', path: '/clients', icon: 'Users' }} collapsed={sidebarCollapsed} />
+                    <SidebarLink item={{ label: 'My Tasks', path: '/my-tasks', icon: 'LayoutDashboard' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                    <SidebarLink item={{ label: 'My Timesheets', path: '/my-timesheets', icon: 'BarChart3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                    <SidebarLink item={{ label: 'Profile', path: '/profile', icon: 'Users' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                    <SidebarLink item={{ label: 'Notifications', path: '/notifications', icon: 'Bell' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                    <SidebarLink item={{ label: 'Clients', path: '/clients', icon: 'Users' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     <RoleGuard roles={['employee']}>
-                      <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} />
+                      <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     </RoleGuard>
                   </div>
                 </div>
@@ -124,13 +145,13 @@ export function AppShell() {
                       Operations
                     </p>
                     <div className="space-y-1">
-                      <SidebarLink item={{ label: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Projects', path: '/projects', icon: 'FolderKanban' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Stage Detail', path: '/stages', icon: 'Route' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Employees', path: '/employees', icon: 'Users' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Teams', path: '/teams', icon: 'FolderKanban' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Reports', path: '/reports', icon: 'BarChart3' }} collapsed={sidebarCollapsed} />
+                      <SidebarLink item={{ label: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <SidebarLink item={{ label: 'Projects', path: '/projects', icon: 'FolderKanban' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <SidebarLink item={{ label: 'Stage Detail', path: '/stages', icon: 'Route' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <SidebarLink item={{ label: 'Employees', path: '/employees', icon: 'Users' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <SidebarLink item={{ label: 'Teams', path: '/teams', icon: 'FolderKanban' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <SidebarLink item={{ label: 'Reports', path: '/reports', icon: 'BarChart3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     </div>
                   </div>
                 </RoleGuard>
@@ -141,7 +162,7 @@ export function AppShell() {
                       Finance
                     </p>
                     <div className="space-y-1">
-                      <SidebarLink item={{ label: 'Billing', path: '/billing', icon: 'ReceiptText' }} collapsed={sidebarCollapsed} />
+                      <SidebarLink item={{ label: 'Billing', path: '/billing', icon: 'ReceiptText' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     </div>
                   </div>
                 </RoleGuard>
@@ -152,17 +173,22 @@ export function AppShell() {
                       Executive
                     </p>
                     <div className="space-y-1">
-                      <SidebarLink item={{ label: 'CEO / MD View', path: '/ceo', icon: 'ChartPie' }} collapsed={sidebarCollapsed} />
-                      <SidebarLink item={{ label: 'Settings', path: '/settings', icon: 'Settings2' }} collapsed={sidebarCollapsed} />
+                      <SidebarLink item={{ label: 'CEO / MD View', path: '/ceo', icon: 'ChartPie' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <SidebarLink item={{ label: 'Settings', path: '/settings', icon: 'Settings2' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     </div>
                   </div>
                 </RoleGuard>
               </div>
             </nav>
 
-            <div className="border-t border-[rgb(var(--line)/0.16)] p-4">
-              <div className="flex items-center gap-3 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.84)] p-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-amber-500 font-semibold text-white">
+            <div className={cn('border-t border-[rgb(var(--line)/0.16)] p-4', sidebarCollapsed && 'lg:px-3')}>
+              <div
+                className={cn(
+                  'flex items-center gap-3 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.84)] p-3',
+                  sidebarCollapsed && 'lg:flex-col lg:gap-2 lg:px-2 lg:py-3',
+                )}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-amber-500 font-semibold text-white shadow-sm ring-1 ring-white/20">
                   {(user?.name || 'Z')[0]?.toUpperCase()}
                 </div>
                 <div className={cn('min-w-0 flex-1', sidebarCollapsed && 'lg:hidden')}>
@@ -173,10 +199,17 @@ export function AppShell() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="ml-auto h-9 w-9 shrink-0 rounded-xl px-0"
+                  className={cn(
+                    'ml-auto h-9 w-9 shrink-0 rounded-xl px-0 text-[rgb(var(--muted))] hover:text-[rgb(var(--text))]',
+                    sidebarCollapsed && 'lg:ml-0 lg:h-8 lg:w-8',
+                  )}
                   onClick={handleLogout}
                   aria-label="Logout"
                   title="Logout"
+                  onMouseEnter={(event) => showSidebarTooltip('Logout', event)}
+                  onMouseLeave={hideSidebarTooltip}
+                  onFocus={(event) => showSidebarTooltip('Logout', event)}
+                  onBlur={hideSidebarTooltip}
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -273,13 +306,22 @@ export function AppShell() {
           onDelete={(id) => deleteNotification.mutate(id)}
           onMarkAllRead={() => markAllRead.mutate()}
         />
+        {sidebarTooltip ? (
+          <div
+            className="pointer-events-none fixed z-[80] -translate-y-1/2 whitespace-nowrap rounded-xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.98)] px-3 py-2 text-xs font-semibold text-[rgb(var(--text))] shadow-2xl shadow-slate-950/20 backdrop-blur"
+            style={{ top: sidebarTooltip.top, left: sidebarTooltip.left }}
+            role="tooltip"
+          >
+            {sidebarTooltip.label}
+          </div>
+        ) : null}
       </div>
     </div>
     </>
   );
 }
 
-function SidebarLink({ item, collapsed }) {
+function SidebarLink({ item, collapsed, onTooltip, onTooltipHide }) {
   const isLight = useUiStore((state) => state.resolvedTheme) === 'light';
   const iconMap = {
     LayoutDashboard,
@@ -298,6 +340,12 @@ function SidebarLink({ item, collapsed }) {
   return (
     <NavLink
       to={item.path}
+      title={collapsed ? item.label : undefined}
+      aria-label={collapsed ? item.label : undefined}
+      onMouseEnter={(event) => onTooltip?.(item.label, event)}
+      onMouseLeave={onTooltipHide}
+      onFocus={(event) => onTooltip?.(item.label, event)}
+      onBlur={onTooltipHide}
       className={({ isActive }) =>
         cn(
           'group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition',

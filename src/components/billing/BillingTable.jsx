@@ -144,7 +144,7 @@ function InvoiceActionsMenu({ row, onEdit, onDelete }) {
         ref={triggerRef}
         type="button"
         onClick={openMenu}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--line)/0.18)] bg-white/95 text-slate-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--line)/0.18)] bg-[rgb(var(--panel)/0.92)] text-[rgb(var(--muted))] shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-sky-400/30 hover:bg-[rgb(var(--panel-2)/0.78)] hover:text-[rgb(var(--text))]"
         aria-label="Open invoice actions"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -183,14 +183,14 @@ function InvoiceActionsMenu({ row, onEdit, onDelete }) {
                         }}
                         className={cn(
                           'flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-200',
-                          tone === 'danger' ? 'text-rose-500 hover:bg-rose-50' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800',
+                          tone === 'danger' ? 'text-rose-500 hover:bg-rose-500/10' : 'text-[rgb(var(--text))] hover:bg-[rgb(var(--panel-2)/0.78)]',
                         )}
                         role="menuitem"
                       >
                         <span
                           className={cn(
                             'inline-flex h-8 w-8 items-center justify-center rounded-lg',
-                            tone === 'danger' ? 'bg-rose-500/10 text-rose-500' : 'bg-slate-100 text-slate-500',
+                            tone === 'danger' ? 'bg-rose-500/10 text-rose-500' : 'bg-[rgb(var(--panel-2)/0.86)] text-[rgb(var(--muted))]',
                           )}
                         >
                           <Icon className="h-4 w-4" />
@@ -213,7 +213,7 @@ function BillingVirtualRows({ rows = [], onEdit, onDelete }) {
   return (
     <div className="overflow-hidden">
       <div
-        className="grid border-b border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.98)] px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-slate-500 backdrop-blur-xl"
+        className="grid border-b border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.98)] px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--muted))] backdrop-blur-xl"
         style={{ gridTemplateColumns: GRID_TEMPLATE }}
       >
         <span className="inline-flex items-center gap-1.5"><LayoutGrid className="h-3.5 w-3.5" />Project</span>

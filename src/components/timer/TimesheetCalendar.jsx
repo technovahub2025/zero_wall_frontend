@@ -386,7 +386,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
   }
 
   return (
-    <div className={cn('rounded-3xl border border-white/10 bg-white/80 p-4 shadow-sm backdrop-blur', className)}>
+    <div className={cn('rounded-3xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.82)] p-4 shadow-sm backdrop-blur', className)}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-4">
           <div>
@@ -398,7 +398,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-white/90 p-1 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.9)] p-1 shadow-sm">
               <button
                 type="button"
                 onClick={() => stepRange(-1)}
@@ -455,7 +455,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
         <div className="min-w-0">
           {pickerStage === 'year' ? (
-            <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-300">
+            <div className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-5 shadow-sm transition-all duration-300">
               <div className="mb-4">
                 <div className="text-lg font-semibold text-[rgb(var(--text))]">{browseYearLabel}</div>
                 <div className="mt-1 text-xs text-slate-500">Click a year to browse months.</div>
@@ -470,7 +470,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                       'rounded-2xl border px-4 py-5 text-center text-base font-semibold transition-all duration-300 ease-out hover:-translate-y-[1px] hover:shadow-sm',
                       active
                         ? 'border-sky-500 bg-sky-500 text-white shadow-lg shadow-sky-500/20'
-                        : 'border-sky-200 bg-white text-[rgb(var(--text))] hover:border-sky-400/30 hover:bg-sky-50',
+                        : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] text-[rgb(var(--text))] hover:border-sky-400/30 hover:bg-sky-500/10',
                     )}
                   >
                     {year}
@@ -479,7 +479,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
               </div>
             </div>
           ) : pickerStage === 'month' ? (
-            <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm transition-all duration-300">
+            <div className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-5 shadow-sm transition-all duration-300">
               <div className="mb-4">
                 <div className="text-lg font-semibold text-[rgb(var(--text))]">{browseMonthLabel} {browseYearLabel}</div>
                 <div className="mt-1 text-xs text-slate-500">Click a month to return to the calendar.</div>
@@ -496,7 +496,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                         'rounded-2xl border px-4 py-5 text-center text-sm font-semibold transition-all duration-300 ease-out hover:-translate-y-[1px] hover:shadow-sm',
                         active
                           ? 'border-sky-500 bg-sky-500 text-white shadow-lg shadow-sky-500/20'
-                          : 'border-sky-200 bg-white text-[rgb(var(--text))] hover:border-sky-400/30 hover:bg-sky-50',
+                          : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] text-[rgb(var(--text))] hover:border-sky-400/30 hover:bg-sky-500/10',
                       )}
                     >
                       {month}
@@ -563,12 +563,12 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
           )}
         </div>
 
-        <aside className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/90 p-4 transition-all duration-300">
+        <aside className="space-y-4 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] p-4 transition-all duration-300">
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{selectedSummary ? 'Day details' : 'Top days'}</div>
             <div className="mt-2 space-y-2">
               {selectedSummary ? (
-                <div className="rounded-2xl border border-sky-200 bg-white p-3 shadow-sm transition-all duration-300">
+                <div className="rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.88)] p-3 shadow-sm transition-all duration-300">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(selectedSummary.date, 'dd MMM yyyy')}</div>
@@ -577,19 +577,19 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                     <Badge tone="sky">{formatHours(selectedSummary.duration)}</Badge>
                   </div>
                   <div className="mt-3 grid gap-2 text-xs text-slate-600">
-                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
                       <span>Entries</span>
                       <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.entries || selectedLogs.length || 0}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
                       <span>Tasks</span>
                       <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.tasks || selectedLogs.length || 0}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
                       <span>Billable</span>
                       <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.billable ? `${formatHours(selectedSummary.billable)}` : selectedLogs.some((log) => log.isBillable) ? 'Yes' : 'No'}</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
                       <span>Avg start</span>
                       <span className="font-semibold text-[rgb(var(--text))]">
                         {Number.isFinite(selectedSummary.averageStartMinutes) && selectedSummary.averageStartMinutes > 0
@@ -604,7 +604,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                     <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Logs</div>
                     {selectedLogs.length ? (
                       selectedLogs.map((log) => (
-                        <div key={log.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs transition-all duration-200 hover:bg-white">
+                        <div key={log.id} className="rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.74)] px-3 py-2 text-xs transition-all duration-200 hover:bg-[rgb(var(--panel)/0.9)]">
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               <div className="truncate font-semibold text-[rgb(var(--text))]">{log.projectName}</div>
@@ -619,13 +619,13 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-500">No logs for this day.</div>
+                      <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logs for this day.</div>
                     )}
                   </div>
                 </div>
               ) : topDays.length ? (
                 topDays.map((item) => (
-                  <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-sm">
+                  <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.78)] px-3 py-2 transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-sm">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(item.date, 'dd MMM')}</div>
                       <div className="text-xs text-slate-500">{format(item.date, 'EEE')}</div>
@@ -634,7 +634,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                   </div>
                 ))
               ) : (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-500">No logged days yet.</div>
+                <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logged days yet.</div>
               )}
             </div>
           </div>
@@ -650,7 +650,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
 
 function Metric({ label, value, icon: Icon }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-md">
+    <div className="rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.76)] p-4 shadow-sm transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-md">
       <div className="flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
         <span>{label}</span>
         <Icon className="h-4 w-4 text-slate-400" />

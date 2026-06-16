@@ -358,10 +358,6 @@ export default function Clients() {
                         Delete
                       </Button>
                     ) : null}
-                    <Button size="sm" variant="ghost" onClick={() => openClient(previewClient.id)}>
-                      Open Record
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
 

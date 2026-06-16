@@ -17,9 +17,9 @@ export function ConfirmModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/80 p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-md">
-        <div className="flex items-start justify-between gap-4 border-b border-[rgb(var(--line)/0.16)] px-5 py-4">
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/80 p-3 backdrop-blur-sm sm:p-4">
+      <Card className="w-full max-w-[calc(100vw-1.5rem)] sm:max-w-md">
+        <div className="flex items-start justify-between gap-4 border-b border-[rgb(var(--line)/0.16)] px-4 py-4 sm:px-5">
           <div>
             <div className="font-display text-lg font-semibold text-[rgb(var(--text))]">{confirmState.title}</div>
             <div className="mt-1 text-sm text-[rgb(var(--muted))]">{confirmState.message}</div>
@@ -33,7 +33,7 @@ export function ConfirmModal() {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:justify-end">
+        <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:justify-end sm:px-5">
           <Button variant="secondary" onClick={closeConfirm}>
             {confirmState.cancelLabel}
           </Button>

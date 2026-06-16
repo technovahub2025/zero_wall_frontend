@@ -65,27 +65,27 @@ export function StageTable({ rows = [], onEdit, onDelete, onApprove, onReject })
     <>
       <DataTable
       columns={[
-        { key: 'stageNo', label: 'Stage No', render: (row) => <span className="whitespace-nowrap">{row.stageNo}</span> },
-        { key: 'stageName', label: 'Stage Name', render: (row) => <span className="font-medium text-[rgb(var(--text))]">{row.stageName}</span> },
-        { key: 'stageDescription', label: 'Description', render: (row) => <span className="block max-w-[180px] truncate">{row.stageDescription || '-'}</span> },
-        { key: 'stageStart', label: 'Start', render: (row) => <span className="whitespace-nowrap text-slate-400">{formatDate(row.stageStart)}</span> },
-        { key: 'stageEndPlanned', label: 'End (Planned)', render: (row) => <span className="whitespace-nowrap text-slate-400">{formatDate(row.stageEndPlanned)}</span> },
-        { key: 'stageEndActual', label: 'End (Actual)', render: (row) => <span className="whitespace-nowrap text-slate-400">{formatDate(row.stageEndActual)}</span> },
+        { key: 'stageNo', label: 'Stage No', render: (row) => <span className="whitespace-nowrap font-medium">{row.stageNo}</span> },
+        { key: 'stageName', label: 'Stage Name', render: (row) => <span className="font-semibold text-[rgb(var(--text))]">{row.stageName}</span> },
+        { key: 'stageDescription', label: 'Description', render: (row) => <span className="block max-w-[180px] truncate text-[rgb(var(--muted))]">{row.stageDescription || '-'}</span> },
+        { key: 'stageStart', label: 'Start', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageStart)}</span> },
+        { key: 'stageEndPlanned', label: 'End (Planned)', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageEndPlanned)}</span> },
+        { key: 'stageEndActual', label: 'End (Actual)', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageEndActual)}</span> },
         {
           key: 'stageStatus',
           label: 'Status',
           render: (row) => <Badge tone={row.stageStatus === 'Completed' ? 'green' : row.stageStatus === 'In Progress' ? 'blue' : 'amber'}>{row.stageStatus}</Badge>,
         },
-        { key: 'responsibleEngineer', label: 'Responsible Engineer', hideOnMobile: true, render: (row) => <span className="block max-w-[160px] truncate">{row.responsibleEngineer?.name || '-'}</span> },
-        { key: 'approvalRequired', label: 'Approval Req.', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate">{row.approvalRequired || '-'}</span> },
-        { key: 'disciplines', label: 'Disciplines', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate">{row.disciplines || '-'}</span> },
-        { key: 'duration', label: 'Duration', hideOnMobile: true, render: (row) => <span className="whitespace-nowrap">{row.duration || '-'}</span> },
-        { key: 'deliverable', label: 'Deliverable', render: (row) => <span className="block max-w-[160px] truncate">{row.deliverable || '-'}</span> },
-        { key: 'submittedToClientOn', label: 'Submitted On', render: (row) => <span className="whitespace-nowrap text-slate-400">{formatDate(row.submittedToClientOn)}</span> },
-        { key: 'clientApprovalStatus', label: 'Client Approval', render: (row) => <span className="whitespace-nowrap">{row.clientApprovalStatus || '-'}</span> },
-        { key: 'clientApprovalDate', label: 'Approval Date', render: (row) => <span className="whitespace-nowrap text-slate-400">{formatDate(row.clientApprovalDate)}</span> },
-        { key: 'clientComments', label: 'Client Comments', render: (row) => <span className="block max-w-[180px] truncate">{row.clientComments || '-'}</span> },
-        { key: 'nextAction', label: 'Next Action', render: (row) => <span className="block max-w-[160px] truncate">{row.nextAction || '-'}</span> },
+        { key: 'responsibleEngineer', label: 'Responsible Engineer', hideOnMobile: true, render: (row) => <span className="block max-w-[160px] truncate font-medium text-[rgb(var(--text))]">{row.responsibleEngineer?.name || '-'}</span> },
+        { key: 'approvalRequired', label: 'Approval Req.', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate font-medium text-[rgb(var(--text))]">{row.approvalRequired || '-'}</span> },
+        { key: 'disciplines', label: 'Disciplines', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate font-medium text-[rgb(var(--text))]">{row.disciplines || '-'}</span> },
+        { key: 'duration', label: 'Duration', hideOnMobile: true, render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--text))]">{row.duration || '-'}</span> },
+        { key: 'deliverable', label: 'Deliverable', render: (row) => <span className="block max-w-[160px] truncate font-medium text-[rgb(var(--text))]">{row.deliverable || '-'}</span> },
+        { key: 'submittedToClientOn', label: 'Submitted On', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.submittedToClientOn)}</span> },
+        { key: 'clientApprovalStatus', label: 'Client Approval', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--text))]">{row.clientApprovalStatus || '-'}</span> },
+        { key: 'clientApprovalDate', label: 'Approval Date', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.clientApprovalDate)}</span> },
+        { key: 'clientComments', label: 'Client Comments', render: (row) => <span className="block max-w-[180px] truncate text-[rgb(var(--muted))]">{row.clientComments || '-'}</span> },
+        { key: 'nextAction', label: 'Next Action', render: (row) => <span className="block max-w-[160px] truncate text-[rgb(var(--muted))]">{row.nextAction || '-'}</span> },
         {
           key: 'actions',
           label: 'Actions',
@@ -94,7 +94,7 @@ export function StageTable({ rows = [], onEdit, onDelete, onApprove, onReject })
               <Button
                 size="sm"
                 variant="secondary"
-                className="h-10 w-10 rounded-xl border border-[rgb(var(--line)/0.18)] bg-white/95 px-0 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+                className="h-10 w-10 rounded-xl border border-[rgb(var(--line)/0.18)] bg-[rgb(var(--panel)/0.94)] px-0 text-[rgb(var(--text))] shadow-sm transition hover:border-[rgb(var(--line)/0.28)] hover:bg-[rgb(var(--panel-2)/0.92)] hover:text-[rgb(var(--text))]"
                 onClick={(event) => {
                   event.stopPropagation();
                   if (openMenuId === row.id) {

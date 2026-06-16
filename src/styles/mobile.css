@@ -1,17 +1,73 @@
+@media (max-width: 1024px) {
+  .glass-panel,
+  .theme-panel,
+  .theme-panel-muted,
+  .theme-panel-raised {
+    border-radius: 1.15rem;
+  }
+
+  .theme-hero {
+    border-radius: 1.35rem;
+  }
+}
+
 @media (max-width: 640px) {
   .hero-title {
-    font-size: 2rem;
+    font-size: 1.9rem;
+    line-height: 1.08;
   }
 
   .hero-subtitle {
     max-width: none;
+    font-size: 0.95rem;
+    line-height: 1.55;
   }
 
   .glass-panel {
     border-radius: 1rem;
   }
 
+  .theme-panel,
+  .theme-panel-muted,
+  .theme-panel-raised,
+  .theme-hero {
+    border-radius: 1rem;
+  }
+
+  .theme-hero {
+    padding: 1rem;
+  }
+
+  .theme-hero .hero-title {
+    font-size: 1.9rem;
+  }
+
+  .theme-hero .hero-subtitle {
+    margin-top: 0.75rem;
+  }
+
+  .input {
+    border-radius: 0.95rem;
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
   .scrollbar-thin {
     scrollbar-width: auto;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .soft-grid {
+    background-size: 20px 20px;
   }
 }

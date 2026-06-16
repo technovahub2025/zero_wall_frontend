@@ -9,11 +9,11 @@ export function StageApprovalLog({ stages = [] }) {
       </CardHeader>
       <CardBody className="space-y-3">
         {stages.map((stage) => (
-          <div key={stage.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div key={stage.id} className="theme-panel-muted rounded-2xl border p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="font-semibold text-[rgb(var(--text))]">{stage.stageName}</div>
-                <div className="text-xs text-slate-400">{stage.clientComments || stage.nextAction || 'No comments'}</div>
+                <div className="text-xs leading-5 text-[rgb(var(--muted))]">{stage.clientComments || stage.nextAction || 'No comments'}</div>
               </div>
               <Badge tone={stage.clientApprovalStatus === 'Approved' ? 'green' : stage.clientApprovalStatus === 'In Review' ? 'blue' : 'amber'}>
                 {stage.clientApprovalStatus || 'Pending'}
@@ -25,4 +25,3 @@ export function StageApprovalLog({ stages = [] }) {
     </Card>
   );
 }
-

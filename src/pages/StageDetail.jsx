@@ -115,9 +115,9 @@ export default function StageDetail() {
               ['Completed', stageStats.completed, CheckCircle2],
               ['In Progress', stageStats.inProgress, Clock3],
             ].map(([label, value, Icon]) => (
-              <div key={label} className="rounded-2xl border border-white/15 bg-white/60 px-4 py-3 shadow-sm backdrop-blur">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-slate-500">
-                  <Icon className="h-3.5 w-3.5 text-slate-400" />
+              <div key={label} className="theme-panel-muted rounded-2xl border px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-[rgb(var(--muted))]">
+                  <Icon className="h-3.5 w-3.5 text-[rgb(var(--muted))]" />
                   <span>{label}</span>
                 </div>
                 <div className="mt-1 text-lg font-semibold text-[rgb(var(--text))]">{value}</div>

@@ -31,7 +31,7 @@ export function NotificationPanel({ open, notifications = [], onClose, onRead, o
       role="presentation"
     >
       <div
-        className="absolute bottom-0 right-0 top-auto h-[85vh] w-full max-w-md overflow-hidden rounded-t-[28px] p-0 sm:top-0 sm:h-full sm:rounded-none sm:p-4"
+        className="absolute bottom-0 right-0 top-auto h-[100dvh] w-full max-w-none overflow-hidden rounded-t-[28px] p-0 sm:top-0 sm:h-full sm:max-w-md sm:rounded-none sm:p-4"
         onClick={(event) => event.stopPropagation()}
         role="presentation"
       >

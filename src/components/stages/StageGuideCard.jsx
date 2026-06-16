@@ -9,7 +9,7 @@ export function StageGuideCard({ id }) {
     <Card id={id} className="self-start">
       <CardHeader>
         <CardTitle className="inline-flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-slate-400" />
+          <BookOpen className="h-4 w-4 text-[rgb(var(--muted))]" />
           Stage Guide
         </CardTitle>
         <Badge tone="amber">Reference</Badge>

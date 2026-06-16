@@ -18,12 +18,12 @@ export function DataTable({
     scrollAxis === 'both'
       ? `overflow-auto ${scrollClassName}`.trim()
       : scrollAxis === 'y'
-        ? `overflow-y-auto overflow-x-hidden ${scrollClassName}`.trim()
+        ? `overflow-y-auto overflow-x-auto md:overflow-x-hidden ${scrollClassName}`.trim()
         : `overflow-x-auto overflow-y-hidden ${scrollClassName}`.trim();
 
   return (
     <div className={scrollContainerClassName}>
-      <table className={`min-w-full text-left text-sm ${tableClassName}`.trim()}>
+      <table className={`min-w-full text-left text-sm text-[rgb(var(--text))] ${tableClassName}`.trim()}>
         <thead className={`border-b border-[rgb(var(--line)/0.12)] text-[10px] uppercase tracking-[0.2em] text-[rgb(var(--muted))] ${stickyHeader ? 'sticky top-0 z-10 bg-[rgb(var(--panel)/0.98)] backdrop-blur' : ''}`}>
           <tr>
             {columns.map((column) => (
@@ -50,8 +50,8 @@ export function DataTable({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`px-4 py-4 align-top ${column.hideOnMobile ? 'hidden md:table-cell' : ''} ${column.className || ''}`}
-                  >
+                  className={`px-4 py-4 align-top leading-6 ${column.hideOnMobile ? 'hidden md:table-cell' : ''} ${column.className || ''}`}
+                >
                     {column.render ? column.render(row, index) : row[column.key]}
                   </td>
                 ))}

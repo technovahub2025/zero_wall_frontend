@@ -111,6 +111,38 @@ export default function Employees() {
     });
   }
 
+  async function submitEmployee(values) {
+    try {
+      setFormError('');
+      if (editingEmployee) {
+        await updateEmployee.mutateAsync({ id: editingEmployee.id, payload: values });
+      } else {
+        await createEmployee.mutateAsync(values);
+      }
+      closeEmployeeForm();
+    } catch (error) {
+      setFormError(error?.response?.data?.message || error?.message || 'Request failed');
+    }
+  }
+
+  function handleSaveEmployee(values) {
+    if (!editingEmployee && values.role === 'superadmin') {
+      openConfirm({
+        title: 'Create superadmin',
+        message: 'Superadmin accounts have full access to the system. Continue only if this is intentional.',
+        confirmLabel: 'Create superadmin',
+        cancelLabel: 'Cancel',
+        tone: 'amber',
+        onConfirm: async () => {
+          await submitEmployee(values);
+        },
+      });
+      return;
+    }
+
+    return submitEmployee(values);
+  }
+
   return (
     <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-6 pb-8">
       <section className="theme-hero theme-hero-blue p-5 sm:p-6">
@@ -223,19 +255,7 @@ export default function Employees() {
             <EmployeeForm
               initialValues={editingEmployee}
               onCancel={closeEmployeeForm}
-              onSubmit={async (values) => {
-                try {
-                  setFormError('');
-                  if (editingEmployee) {
-                    await updateEmployee.mutateAsync({ id: editingEmployee.id, payload: values });
-                  } else {
-                    await createEmployee.mutateAsync(values);
-                  }
-                  closeEmployeeForm();
-                } catch (error) {
-                  setFormError(error?.response?.data?.message || error?.message || 'Request failed');
-                }
-              }}
+              onSubmit={handleSaveEmployee}
             />
           </div>
         </ModalShell>

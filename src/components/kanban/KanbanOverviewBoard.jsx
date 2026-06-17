@@ -6,13 +6,11 @@ import { KanbanColumn } from './KanbanColumn';
 import { KanbanAddColumn } from './KanbanAddColumn';
 import { useDeleteProject, useUpdateProject } from '../../hooks/useProjects';
 import { useKanbanColumns, useSaveKanbanColumns } from '../../hooks/useTasks';
-import { stageGuideRows } from '../../data/stageGuide';
 import { FilterChips } from '../shared/FilterChips';
 import { ModalShell } from '../shared/ModalShell';
 import { ProjectForm } from '../projects/ProjectForm';
 import { useAuthStore } from '../../store/authStore';
 
-const STAGE_COLUMNS = stageGuideRows.map((row) => row.name);
 export function KanbanOverviewBoard({ projects = [], columns = [], employees = [] }) {
   const role = useAuthStore((state) => state.user?.role || 'employee');
   const updateProject = useUpdateProject();
@@ -23,7 +21,10 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
   const [localProjects, setLocalProjects] = useState(projects);
   const [search, setSearch] = useState('');
   const [scope, setScope] = useState('all');
-  const [stageColumns, setStageColumns] = useState(() => STAGE_COLUMNS.map((name) => ({ id: name, title: name, count: 0 })));
+  const normalizedColumns = useMemo(() => normalizeColumns(columns), [columns]);
+  const fallbackColumns = useMemo(() => deriveColumnsFromProjects(projects), [projects]);
+  const sourceColumns = normalizedColumns.length ? normalizedColumns : fallbackColumns;
+  const [stageColumns, setStageColumns] = useState(() => sourceColumns);
   const [columnModalOpen, setColumnModalOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState(null);
   const [columnTitle, setColumnTitle] = useState('');
@@ -35,24 +36,12 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
     setLocalProjects(projects);
   }, [projects]);
 
-  const defaultColumns = useMemo(
-    () => (columns.length ? columns : STAGE_COLUMNS.map((name) => ({ id: name, title: name, count: 0 }))),
-    [columns],
-  );
-
   useEffect(() => {
     const nextColumns = Array.isArray(kanbanColumnsQuery.data?.columns) && kanbanColumnsQuery.data.columns.length
-      ? kanbanColumnsQuery.data.columns
-      : defaultColumns;
-    setStageColumns(
-      nextColumns.map((column, index) => ({
-        id: String(column.id || '').trim() || slugify(String(column.title || '').trim()) || `stage-${index + 1}`,
-        title: String(column.title || '').trim() || `Stage ${index + 1}`,
-        color: String(column.color || '#3b82f6'),
-        count: Number(column.count || 0),
-      })),
-    );
-  }, [defaultColumns, kanbanColumnsQuery.data]);
+      ? normalizeColumns(kanbanColumnsQuery.data.columns)
+      : sourceColumns;
+    setStageColumns(nextColumns);
+  }, [kanbanColumnsQuery.data, sourceColumns]);
 
   const filteredProjects = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -81,12 +70,13 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
   const groupedProjects = useMemo(
     () =>
       filteredProjects.reduce((acc, project) => {
-        const key = stageColumns.find((column) => column.id === normalizeStage(project.currentStage))?.id || normalizeStage(project.currentStage);
+        const normalizedStage = normalizeStage(project.currentStage);
+        const key = stageColumns.find((column) => column.id === normalizedStage)?.id || normalizedStage || stageColumns[0]?.id || fallbackColumns[0]?.id || '';
         if (!acc[key]) acc[key] = [];
         acc[key].push(project);
         return acc;
       }, {}),
-    [filteredProjects, stageColumns],
+    [fallbackColumns, filteredProjects, stageColumns],
   );
 
   async function handleDragEnd(event) {
@@ -134,7 +124,7 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
     }
     if (typeof window !== 'undefined' && !window.confirm(`Delete stage column "${column.title}"? Projects in it will move to the first remaining stage.`)) return;
 
-    const fallbackColumnId = stageColumns.find((item) => item.id !== columnId)?.id || STAGE_COLUMNS[0];
+    const fallbackColumnId = stageColumns.find((item) => item.id !== columnId)?.id || stageColumns[0]?.id || fallbackColumns[0]?.id || '';
     const affected = localProjects.filter((project) => normalizeStage(project.currentStage) === columnId);
     const snapshotProjects = localProjects;
     const snapshotColumns = stageColumns;
@@ -209,7 +199,7 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full bg-sky-500/10 px-3 py-1 text-[11px] font-semibold text-sky-600 ring-1 ring-sky-200/70">
-            11 stage columns
+            {stageColumns.length} stage columns
           </span>
           <span className="text-xs text-slate-500">
             Showing {filteredProjects.length} project{filteredProjects.length === 1 ? '' : 's'}
@@ -252,7 +242,7 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
                 {
                   id: nextId,
                   title: nextTitle,
-                  color: nextColumnColor(stageColumns.filter((column) => !STAGE_COLUMNS.includes(column.id)).length),
+                  color: nextColumnColor(stageColumns.length),
                 },
               ];
               const snapshotColumns = stageColumns;
@@ -333,13 +323,32 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
 
 function normalizeStage(stage = '') {
   const raw = String(stage || '').trim();
-  if (!raw) return STAGE_COLUMNS[0];
-  if (STAGE_COLUMNS.includes(raw)) return raw;
+  if (!raw) return '';
   const aliases = {
     'Load Schedule & SLD': 'Detailed Engineering',
     'Panel Schedule & Drawings': 'Detailed Engineering',
   };
   return aliases[raw] || raw;
+}
+
+function normalizeColumns(columns = []) {
+  return columns.map((column, index) => ({
+    id: String(column.id || '').trim() || slugify(String(column.title || '').trim()) || `stage-${index + 1}`,
+    title: String(column.title || '').trim() || `Stage ${index + 1}`,
+    color: String(column.color || '#3b82f6'),
+    count: Number(column.count || 0),
+  }));
+}
+
+function deriveColumnsFromProjects(projects = []) {
+  const stageNames = [...new Set(projects.map((project) => normalizeStage(project.currentStage)).filter(Boolean))];
+
+  return stageNames.map((name, index) => ({
+    id: slugify(name) || `stage-${index + 1}`,
+    title: name,
+    color: nextColumnColor(index),
+    count: 0,
+  }));
 }
 
 function slugify(value = '') {

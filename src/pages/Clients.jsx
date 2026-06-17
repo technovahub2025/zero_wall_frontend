@@ -136,8 +136,6 @@ export default function Clients() {
         await createClient.mutateAsync(values);
       }
       closeModal();
-    } catch (error) {
-      toast.error(error?.response?.data?.message || error?.message || 'Could not save client');
     } finally {
       saveLockRef.current = false;
     }

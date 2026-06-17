@@ -1,9 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const PRIORITY_OPTIONS = ['Critical', 'High', 'Medium', 'Low'].map((value) => ({ value, label: value }));
 const STATUS_OPTIONS = [
@@ -59,6 +60,7 @@ export function TaskForm({
   onSubmit,
   onCancel,
 }) {
+  const [submitError, setSubmitError] = useState('');
   const {
     register,
     handleSubmit,
@@ -232,14 +234,24 @@ export function TaskForm({
       estimatedDurationMinutesRemainder: _estimatedDurationMinutesRemainder,
       ...payload
     } = values;
-    onSubmit({
+    return onSubmit({
       ...payload,
       estimatedDurationMinutes,
     });
   }
 
   return (
-    <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit(submitForm)}>
+    <form
+      className="grid gap-4 sm:grid-cols-2"
+      onSubmit={handleSubmit(async (values) => {
+        try {
+          setSubmitError('');
+          await submitForm(values);
+        } catch (error) {
+          setSubmitError(error?.response?.data?.message || error?.message || 'Could not save task');
+        }
+      })}
+    >
       <Field label="Title" error={errors.title?.message}>
         <input className="input" placeholder="Enter task title" {...register('title')} />
       </Field>
@@ -380,6 +392,7 @@ export function TaskForm({
       ) : null}
       <Field label="Next Action" className="sm:col-span-2"><input className="input" {...register('nextAction')} /></Field>
       <Field label="Tags" className="sm:col-span-2"><input className="input" {...register('tags')} /></Field>
+      <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save task" />
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Task'}</Button>

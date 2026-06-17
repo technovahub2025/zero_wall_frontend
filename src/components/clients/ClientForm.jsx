@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
   clientName: z.string().min(2, 'Client name is required'),
@@ -20,6 +21,7 @@ const schema = z.object({
 });
 
 export function ClientForm({ initialValues, projects = [], onSubmit, onCancel, isSubmitting = false }) {
+  const [submitError, setSubmitError] = useState('');
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -60,12 +62,17 @@ export function ClientForm({ initialValues, projects = [], onSubmit, onCancel, i
   return (
     <form
       className="grid gap-4 sm:grid-cols-2"
-      onSubmit={form.handleSubmit((values) =>
-        onSubmit({
-          ...values,
-          projectIds: Array.isArray(values.projectIds) ? values.projectIds.filter(Boolean) : [],
-        }),
-      )}
+      onSubmit={form.handleSubmit(async (values) => {
+        try {
+          setSubmitError('');
+          await onSubmit({
+            ...values,
+            projectIds: Array.isArray(values.projectIds) ? values.projectIds.filter(Boolean) : [],
+          });
+        } catch (error) {
+          setSubmitError(error?.response?.data?.message || error?.message || 'Could not save client');
+        }
+      })}
     >
       <Field label="Client Name" error={form.formState.errors.clientName?.message}>
         <input className="input" {...form.register('clientName')} />
@@ -130,6 +137,7 @@ export function ClientForm({ initialValues, projects = [], onSubmit, onCancel, i
           selectedLabel={Array.isArray(projectIds) && projectIds.length ? `${projectIds.length} projects selected` : 'Select projects'}
         />
       </Field>
+      <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save client" />
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel

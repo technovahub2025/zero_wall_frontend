@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
   projectId: z.string().min(1, 'Project is required'),
@@ -15,6 +16,7 @@ const schema = z.object({
 });
 
 export function TimerManualEntry({ projects = [], tasks = [], initialValues, onSubmit, onCancel }) {
+  const [submitError, setSubmitError] = useState('');
   const { register, handleSubmit, reset, watch, setValue, formState: { isSubmitting } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -40,12 +42,17 @@ export function TimerManualEntry({ projects = [], tasks = [], initialValues, onS
     <form
       className="grid gap-4 sm:grid-cols-2"
       onSubmit={handleSubmit(async (values) => {
-        const start = new Date(values.startTime);
-        const end = new Date(values.endTime);
-        await onSubmit({
-          ...values,
-          duration: Math.max(0, Math.floor((end.getTime() - start.getTime()) / 1000)),
-        });
+        try {
+          setSubmitError('');
+          const start = new Date(values.startTime);
+          const end = new Date(values.endTime);
+          await onSubmit({
+            ...values,
+            duration: Math.max(0, Math.floor((end.getTime() - start.getTime()) / 1000)),
+          });
+        } catch (error) {
+          setSubmitError(error?.response?.data?.message || error?.message || 'Could not save entry');
+        }
       })}
     >
       <Field label="Project">
@@ -84,6 +91,7 @@ export function TimerManualEntry({ projects = [], tasks = [], initialValues, onS
           <textarea className="input min-h-[96px]" {...register('note')} />
         </Field>
       </div>
+      <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save entry" />
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting}>Save Entry</Button>

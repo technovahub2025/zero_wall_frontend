@@ -125,16 +125,12 @@ export default function SettingsPage() {
                   <ProfileSettings
                     initialValues={profile}
                     onSubmit={async (payload) => {
-                      try {
-                        const updated = await settingsService.updateProfile(payload);
-                        useAuthStore.setState((state) => ({
-                          user: { ...state.user, ...updated },
-                        }));
-                        await queryClient.invalidateQueries({ queryKey: ['settings-profile'] });
-                        toast.success('Profile updated');
-                      } catch (error) {
-                        toast.error(error?.response?.data?.message || 'Profile update failed');
-                      }
+                      const updated = await settingsService.updateProfile(payload);
+                      useAuthStore.setState((state) => ({
+                        user: { ...state.user, ...updated },
+                      }));
+                      await queryClient.invalidateQueries({ queryKey: ['settings-profile'] });
+                      toast.success('Profile updated');
                     }}
                   />
                 </div>
@@ -151,12 +147,8 @@ export default function SettingsPage() {
                 </div>
                 <PasswordSettings
                   onSubmit={async (payload) => {
-                    try {
-                      await settingsService.changePassword(payload);
-                      toast.success('Password changed');
-                    } catch (error) {
-                      toast.error(error?.response?.data?.message || 'Password change failed');
-                    }
+                    await settingsService.changePassword(payload);
+                    toast.success('Password changed');
                   }}
                 />
               </CardBody>

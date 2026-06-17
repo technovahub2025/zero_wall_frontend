@@ -20,6 +20,7 @@ import { useTeams, useCreateTeam, useDeleteTeam, useUpdateTeam } from '../hooks/
 import { useInviteMember, usePendingInvites, useRevokeInvite, useResendInvite, useTeamMembers } from '../hooks/useTeam';
 import { useProjects } from '../hooks/useProjects';
 import { useUiStore } from '../store/uiStore';
+import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/button';
 import { Card, CardBody } from '../components/ui/card';
 import { EmptyState } from '../components/shared/EmptyState';
@@ -28,6 +29,7 @@ import { ModalShell } from '../components/shared/ModalShell';
 import { SearchInput } from '../components/shared/SearchInput';
 import { FilterChips } from '../components/shared/FilterChips';
 import { DropdownField } from '../components/shared/DropdownField';
+import { SubmitErrorAlert } from '../components/shared/SubmitErrorAlert';
 import { KanbanActionsMenu } from '../components/kanban/KanbanActionsMenu';
 import { TeamForm } from '../components/teams/TeamForm';
 import { Badge as StatusBadge } from '../components/ui/badge';
@@ -51,6 +53,7 @@ export default function TeamsPage() {
   const updateTeam = useUpdateTeam();
   const deleteTeam = useDeleteTeam();
   const openConfirm = useUiStore((state) => state.openConfirm);
+  const currentUserRole = useAuthStore((state) => state.user?.role || 'employee');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [teamModalOpen, setTeamModalOpen] = useState(false);
@@ -62,6 +65,8 @@ export default function TeamsPage() {
   const [inviteForm, setInviteForm] = useState(emptyInviteForm);
   const [editingTeam, setEditingTeam] = useState(null);
   const [selectedTeamId, setSelectedTeamId] = useState('');
+  const [inviteSubmitError, setInviteSubmitError] = useState('');
+  const [manageProjectsError, setManageProjectsError] = useState('');
   const inviteMember = useInviteMember();
   const pendingInvitesQuery = usePendingInvites({ enabled: pendingInvitesOpen });
   const resendInvite = useResendInvite();
@@ -101,6 +106,15 @@ export default function TeamsPage() {
           .join(' '),
       })),
     [projects],
+  );
+  const roleOptions = useMemo(
+    () => [
+      ...(currentUserRole === 'superadmin' ? [{ value: 'superadmin', label: 'Superadmin' }] : []),
+      { value: 'employee', label: 'Employee' },
+      { value: 'project_manager', label: 'Project Manager' },
+      { value: 'admin', label: 'Admin' },
+    ],
+    [currentUserRole],
   );
 
   const stats = useMemo(() => {
@@ -183,11 +197,14 @@ export default function TeamsPage() {
 
   function openTeamModal(team = null) {
     setEditingTeam(team);
+    setInviteSubmitError('');
+    setManageProjectsError('');
     setTeamModalOpen(true);
   }
 
   function openManageProjects(team) {
     setManageProjectsTeam(team);
+    setManageProjectsError('');
     setManageProjectsSelection(
       Array.isArray(team?.projectIds)
         ? team.projectIds
@@ -198,28 +215,23 @@ export default function TeamsPage() {
   }
 
   async function handleSaveTeam(values) {
-    try {
-      const payload = {
-        name: values.name?.trim(),
-        description: values.description || '',
-        color: values.color || '#3b82f6',
-        members: Array.isArray(values.members) ? values.members : [],
-        projectIds: Array.isArray(values.projectIds) ? values.projectIds : [],
-        isActive: Boolean(values.isActive),
-      };
+    const payload = {
+      name: values.name?.trim(),
+      description: values.description || '',
+      color: values.color || '#3b82f6',
+      members: Array.isArray(values.members) ? values.members : [],
+      projectIds: Array.isArray(values.projectIds) ? values.projectIds : [],
+      isActive: Boolean(values.isActive),
+    };
 
-      if (editingTeam?.id) {
-        await updateTeam.mutateAsync({ id: editingTeam.id, payload });
-      } else {
-        await createTeam.mutateAsync(payload);
-      }
-
-      setTeamModalOpen(false);
-      setEditingTeam(null);
-    } catch (error) {
-      const message = error?.response?.data?.message || error?.message || 'Could not save team';
-      toast.error(message);
+    if (editingTeam?.id) {
+      await updateTeam.mutateAsync({ id: editingTeam.id, payload });
+    } else {
+      await createTeam.mutateAsync(payload);
     }
+
+    setTeamModalOpen(false);
+    setEditingTeam(null);
   }
 
   function handleDeleteTeam(team) {
@@ -247,25 +259,51 @@ export default function TeamsPage() {
       sendInvite: Boolean(inviteForm.sendInvite),
     };
 
-    await inviteMember.mutateAsync(payload);
-    setInviteOpen(false);
-    setInviteForm(emptyInviteForm);
-    setSelectedEmployeeId('');
+    const submitInvite = async () => {
+      try {
+        setInviteSubmitError('');
+        await inviteMember.mutateAsync(payload);
+        setInviteOpen(false);
+        setInviteForm(emptyInviteForm);
+        setSelectedEmployeeId('');
+      } catch (error) {
+        setInviteSubmitError(error?.response?.data?.message || error?.message || 'Could not send invite');
+      }
+    };
+
+    if (payload.role === 'superadmin') {
+      openConfirm({
+        title: 'Invite superadmin',
+        message: 'Superadmin invitations grant full system access. Continue only if this is intentional.',
+        confirmLabel: 'Send invite',
+        cancelLabel: 'Cancel',
+        tone: 'amber',
+        onConfirm: submitInvite,
+      });
+      return;
+    }
+
+    await submitInvite();
   }
 
   async function handleManageProjectsSubmit(event) {
     event.preventDefault();
     if (!manageProjectsTeam?.id) return;
 
-    await updateTeam.mutateAsync({
-      id: manageProjectsTeam.id,
-      payload: {
-        projectIds: Array.isArray(manageProjectsSelection) ? manageProjectsSelection : [],
-      },
-    });
+    try {
+      setManageProjectsError('');
+      await updateTeam.mutateAsync({
+        id: manageProjectsTeam.id,
+        payload: {
+          projectIds: Array.isArray(manageProjectsSelection) ? manageProjectsSelection : [],
+        },
+      });
 
-    setManageProjectsTeam(null);
-    setManageProjectsSelection([]);
+      setManageProjectsTeam(null);
+      setManageProjectsSelection([]);
+    } catch (error) {
+      setManageProjectsError(error?.response?.data?.message || error?.message || 'Could not save projects');
+    }
   }
 
   function handleRevokePending(invite) {
@@ -312,7 +350,13 @@ export default function TeamsPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setInviteOpen(true)}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setInviteSubmitError('');
+                setInviteOpen(true);
+              }}
+            >
               <UserPlus className="h-4 w-4" />
               Invite Member
             </Button>
@@ -720,11 +764,7 @@ export default function TeamsPage() {
               label="Role"
               value={inviteForm.role}
               onChange={(value) => setInviteForm((current) => ({ ...current, role: value }))}
-              options={[
-                { value: 'employee', label: 'Employee' },
-                { value: 'project_manager', label: 'Project Manager' },
-                { value: 'admin', label: 'Admin' },
-              ]}
+              options={roleOptions}
               placeholder="Select role"
             />
             <Field label="Department">
@@ -760,6 +800,7 @@ export default function TeamsPage() {
               />
               <span className="text-sm font-semibold text-[rgb(var(--text))]">Send invite email</span>
             </label>
+            <SubmitErrorAlert className="sm:col-span-2" message={inviteSubmitError} title="Could not send invite" />
             <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
               <Button type="button" variant="secondary" onClick={() => setInviteOpen(false)}>
                 Cancel
@@ -878,6 +919,7 @@ export default function TeamsPage() {
               searchPlaceholder="Search projects..."
               className="sm:col-span-2"
             />
+            <SubmitErrorAlert className="sm:col-span-2" message={manageProjectsError} title="Could not save projects" />
 
             <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
               <Button

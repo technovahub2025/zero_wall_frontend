@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
+import { useAuthStore } from '../../store/authStore';
 
 const phoneMessage = 'Must be exactly 10 digits';
 const phoneSchema = z
@@ -15,7 +18,7 @@ const schema = z.object({
   employeeId: z.string().min(1, 'Employee ID is required'),
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
-  role: z.enum(['admin', 'project_manager', 'employee']).optional().default('employee'),
+  role: z.enum(['superadmin', 'admin', 'project_manager', 'employee']).optional().default('employee'),
   phone: phoneSchema,
   emergencyPhone: phoneSchema,
   designation: z.string().optional(),
@@ -37,6 +40,10 @@ const schema = z.object({
 });
 
 export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
+  const currentUserRole = useAuthStore((state) => state.user?.role || 'employee');
+  const [submitError, setSubmitError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -67,6 +74,13 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
   const sendInvite = watch('sendInvite');
   const role = watch('role');
   const department = watch('department');
+  const canCreateSuperadmin = currentUserRole === 'superadmin';
+  const roleOptions = [
+    ...(canCreateSuperadmin ? [{ value: 'superadmin', label: 'Superadmin' }] : []),
+    { value: 'employee', label: 'Employee' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'project_manager', label: 'Project Manager' },
+  ];
 
   useEffect(() => {
     if (initialValues) {
@@ -92,7 +106,14 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
   return (
     <form
       className="grid gap-4 sm:grid-cols-2"
-      onSubmit={handleSubmit(async (values) => onSubmit(values))}
+      onSubmit={handleSubmit(async (values) => {
+        try {
+          setSubmitError('');
+          await onSubmit(values);
+        } catch (error) {
+          setSubmitError(error?.response?.data?.message || error?.message || 'Could not save employee');
+        }
+      })}
     >
       <Field label="Employee ID" required error={errors.employeeId?.message}><input className="input" {...register('employeeId')} /></Field>
       <Field label="Name" required error={errors.name?.message}><input className="input" {...register('name')} /></Field>
@@ -104,13 +125,14 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
         <DropdownField
           value={role}
           onChange={(nextValue) => setValue('role', nextValue, { shouldDirty: true, shouldValidate: true })}
-          options={[
-            { value: 'employee', label: 'Employee' },
-            { value: 'admin', label: 'Admin' },
-            { value: 'project_manager', label: 'Project Manager' },
-          ]}
+          options={roleOptions}
           placeholder="Select role"
         />
+        {role === 'superadmin' ? (
+          <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+            Superadmin has full system access. Creation should be used carefully.
+          </div>
+        ) : null}
       </Field>
       <Field label="Designation"><input className="input" {...register('designation')} /></Field>
       <Field label="Department">
@@ -141,15 +163,44 @@ export function EmployeeForm({ initialValues, onSubmit, onCancel }) {
         </label>
       </Field>
       {!sendInvite ? (
-        <Field label="Password">
-          <input type="password" className="input" {...register('password')} />
+        <Field label="Password" error={errors.password?.message}>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              className="input pr-12"
+              {...register('password')}
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </Field>
       ) : null}
       {!sendInvite ? (
-        <Field label="Confirm Password">
-          <input type="password" className="input" {...register('confirmPassword')} />
+        <Field label="Confirm Password" error={errors.confirmPassword?.message}>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              className="input pr-12"
+              {...register('confirmPassword')}
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+              onClick={() => setShowConfirmPassword((value) => !value)}
+              aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+            >
+              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </Field>
       ) : null}
+      <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save employee" />
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting}>Save Employee</Button>

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getHomePathForRole } from '../../utils/roleUtils';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z
   .object({
@@ -37,7 +38,9 @@ export function ResetPasswordForm({ token }) {
   const resetPassword = useAuth((state) => state.resetPassword);
   const homePath = useAuth((state) => state.homePath);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [password, setPassword] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   const {
     register,
@@ -58,11 +61,12 @@ export function ResetPasswordForm({ token }) {
 
   const onSubmit = async (values) => {
     try {
+      setSubmitError('');
       await resetPassword(token, { password: values.password });
       toast.success('Password updated');
       navigate(homePath() || getHomePathForRole('employee'), { replace: true });
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Reset failed');
+      setSubmitError(error?.response?.data?.message || 'Reset failed');
     }
   };
 
@@ -112,14 +116,25 @@ export function ResetPasswordForm({ token }) {
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-200">Confirm password</label>
-        <input
-          {...register('confirmPassword')}
-          type="password"
-          placeholder="Repeat the new password"
-          className="input rounded-xl"
-        />
+        <div className="relative">
+          <input
+            {...register('confirmPassword')}
+            type={showConfirmPassword ? 'text' : 'password'}
+            placeholder="Repeat the new password"
+            className="input rounded-xl pr-12"
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200"
+            onClick={() => setShowConfirmPassword((value) => !value)}
+            aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+          >
+            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
         {errors.confirmPassword ? <p className="mt-2 text-xs text-rose-300">{errors.confirmPassword.message}</p> : null}
       </div>
+      <SubmitErrorAlert message={submitError} title="Could not reset password" />
 
       <button
         type="submit"

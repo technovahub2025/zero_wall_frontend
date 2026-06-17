@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getHomePathForRole } from '../../utils/roleUtils';
 import { cn } from '../../lib/utils';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -19,6 +20,7 @@ export function LoginForm() {
   const login = useAuth((state) => state.login);
   const homePath = useAuth((state) => state.homePath);
   const [showPassword, setShowPassword] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const {
     register,
@@ -34,11 +36,13 @@ export function LoginForm() {
 
   const onSubmit = async (values) => {
     try {
+      setSubmitError('');
       await login(values);
       toast.success('Signed in');
       navigate(homePath() || getHomePathForRole('employee'), { replace: true });
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Unable to sign in');
+      const message = error?.response?.data?.message || 'Unable to sign in';
+      setSubmitError(message);
     }
   };
 
@@ -81,6 +85,7 @@ export function LoginForm() {
           Forgot password?
         </Link>
       </div>
+      <SubmitErrorAlert message={submitError} title="Could not sign in" />
 
       <button
         type="submit"

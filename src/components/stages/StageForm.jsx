@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
   stageNo: z.string().min(1),
@@ -26,13 +27,14 @@ const schema = z.object({
 });
 
 export function StageForm({ initialValues, employees = [], onSubmit, onCancel }) {
+  const [submitError, setSubmitError] = useState('');
   const {
     register,
     handleSubmit,
     reset,
     setValue,
     watch,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -82,18 +84,28 @@ export function StageForm({ initialValues, employees = [], onSubmit, onCancel })
   }, [initialValues, reset]);
 
   return (
-    <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
-      <Field label="Stage No"><input className="input" {...register('stageNo')} /></Field>
-      <Field label="Stage Name"><input className="input" {...register('stageName')} /></Field>
+    <form
+      className="grid gap-4 sm:grid-cols-2"
+      onSubmit={handleSubmit(async (values) => {
+        try {
+          setSubmitError('');
+          await onSubmit(values);
+        } catch (error) {
+          setSubmitError(error?.response?.data?.message || error?.message || 'Could not save stage');
+        }
+      })}
+    >
+      <Field label="Stage No" error={errors.stageNo?.message}><input className="input" {...register('stageNo')} /></Field>
+      <Field label="Stage Name" error={errors.stageName?.message}><input className="input" {...register('stageName')} /></Field>
       <Field label="Description" className="sm:col-span-2"><textarea className="input min-h-[96px]" {...register('stageDescription')} /></Field>
       <Field label="Stage Start"><input className="input" type="date" {...register('stageStart')} /></Field>
       <Field label="Planned End"><input className="input" type="date" {...register('stageEndPlanned')} /></Field>
       <Field label="Actual End"><input className="input" type="date" {...register('stageEndActual')} /></Field>
-      <Field label="Stage Status"><input className="input" {...register('stageStatus')} /></Field>
-      <Field label="Deliverable"><input className="input" {...register('deliverable')} /></Field>
-      <Field label="Approval Status"><input className="input" {...register('clientApprovalStatus')} /></Field>
-      <Field label="Approval Date"><input className="input" type="date" {...register('clientApprovalDate')} /></Field>
-      <Field label="Submitted To Client On"><input className="input" type="date" {...register('submittedToClientOn')} /></Field>
+      <Field label="Stage Status" error={errors.stageStatus?.message}><input className="input" {...register('stageStatus')} /></Field>
+      <Field label="Deliverable" error={errors.deliverable?.message}><input className="input" {...register('deliverable')} /></Field>
+      <Field label="Approval Status" error={errors.clientApprovalStatus?.message}><input className="input" {...register('clientApprovalStatus')} /></Field>
+      <Field label="Approval Date" error={errors.clientApprovalDate?.message}><input className="input" type="date" {...register('clientApprovalDate')} /></Field>
+      <Field label="Submitted To Client On" error={errors.submittedToClientOn?.message}><input className="input" type="date" {...register('submittedToClientOn')} /></Field>
       <DropdownField
         label="Responsible Engineer"
         value={responsibleEngineer}
@@ -114,11 +126,12 @@ export function StageForm({ initialValues, employees = [], onSubmit, onCancel })
         })}
         emptyValue=""
       />
-      <Field label="Approval Required"><input className="input" {...register('approvalRequired')} /></Field>
-      <Field label="Disciplines" className="sm:col-span-2"><input className="input" {...register('disciplines')} /></Field>
-      <Field label="Duration"><input className="input" {...register('duration')} /></Field>
-      <Field label="Comments"><input className="input" {...register('clientComments')} /></Field>
-      <Field label="Next Action" className="sm:col-span-2"><input className="input" {...register('nextAction')} /></Field>
+      <Field label="Approval Required" error={errors.approvalRequired?.message}><input className="input" {...register('approvalRequired')} /></Field>
+      <Field label="Disciplines" error={errors.disciplines?.message} className="sm:col-span-2"><input className="input" {...register('disciplines')} /></Field>
+      <Field label="Duration" error={errors.duration?.message}><input className="input" {...register('duration')} /></Field>
+      <Field label="Comments" error={errors.clientComments?.message}><input className="input" {...register('clientComments')} /></Field>
+      <Field label="Next Action" error={errors.nextAction?.message} className="sm:col-span-2"><input className="input" {...register('nextAction')} /></Field>
+      <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save stage" />
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting}>Save Stage</Button>
@@ -127,11 +140,12 @@ export function StageForm({ initialValues, employees = [], onSubmit, onCancel })
   );
 }
 
-function Field({ label, children, className = '' }) {
+function Field({ label, error, children, className = '' }) {
   return (
     <label className={`block ${className}`}>
       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</span>
       {children}
+      {error ? <span className="mt-1 block text-xs text-rose-300">{error}</span> : null}
     </label>
   );
 }

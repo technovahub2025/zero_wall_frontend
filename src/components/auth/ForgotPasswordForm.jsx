@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoaderCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -11,6 +13,7 @@ const schema = z.object({
 
 export function ForgotPasswordForm({ onSuccess }) {
   const forgotPassword = useAuth((state) => state.forgotPassword);
+  const [submitError, setSubmitError] = useState('');
 
   const {
     register,
@@ -23,11 +26,12 @@ export function ForgotPasswordForm({ onSuccess }) {
 
   const onSubmit = async (values) => {
     try {
+      setSubmitError('');
       await forgotPassword(values);
       toast.success('Reset link sent');
       onSuccess?.(values.email);
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Could not send reset link');
+      setSubmitError(error?.response?.data?.message || 'Could not send reset link');
     }
   };
 
@@ -43,6 +47,7 @@ export function ForgotPasswordForm({ onSuccess }) {
         />
         {errors.email ? <p className="mt-2 text-xs text-rose-300">{errors.email.message}</p> : null}
       </div>
+      <SubmitErrorAlert message={submitError} title="Could not send reset link" />
 
       <button
         type="submit"

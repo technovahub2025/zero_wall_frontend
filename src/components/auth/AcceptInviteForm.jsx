@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLE_LABELS, getHomePathForRole } from '../../utils/roleUtils';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z
   .object({
@@ -39,7 +40,9 @@ export function AcceptInviteForm({ invite, token }) {
   const acceptInvite = useAuth((state) => state.acceptInvite);
   const homePath = useAuth((state) => state.homePath);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [password, setPassword] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   const {
     register,
@@ -63,11 +66,12 @@ export function AcceptInviteForm({ invite, token }) {
 
   const onSubmit = async (values) => {
     try {
+      setSubmitError('');
       await acceptInvite(token, values);
       toast.success('Welcome to PG Infrastructure');
       navigate(homePath() || getHomePathForRole(invite?.role || 'employee'), { replace: true });
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Could not join');
+      setSubmitError(error?.response?.data?.message || 'Could not join');
     }
   };
 
@@ -140,9 +144,25 @@ export function AcceptInviteForm({ invite, token }) {
 
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-200">Confirm password</label>
-        <input {...register('confirmPassword')} type="password" className="input rounded-xl" placeholder="Repeat password" />
+        <div className="relative">
+          <input
+            {...register('confirmPassword')}
+            type={showConfirmPassword ? 'text' : 'password'}
+            className="input rounded-xl pr-12"
+            placeholder="Repeat password"
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200"
+            onClick={() => setShowConfirmPassword((value) => !value)}
+            aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+          >
+            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
         {errors.confirmPassword ? <p className="mt-2 text-xs text-rose-300">{errors.confirmPassword.message}</p> : null}
       </div>
+      <SubmitErrorAlert message={submitError} title="Could not join" />
 
       <button
         type="submit"

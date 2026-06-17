@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const STATUS_OPTIONS = ['In Progress', 'Completed', 'On Hold', 'Cancelled'];
 const PRIORITY_OPTIONS = ['Critical', 'High', 'Medium', 'Low'];
@@ -46,6 +47,7 @@ const schema = z.object({
 });
 
 export function ProjectForm({ initialValues, employees = [], onSubmit, onCancel }) {
+  const [submitError, setSubmitError] = useState('');
   const {
     register,
     handleSubmit,
@@ -117,20 +119,25 @@ export function ProjectForm({ initialValues, employees = [], onSubmit, onCancel 
   }, [initialValues, reset]);
 
   const submit = handleSubmit(async (values) => {
-    await onSubmit({
-      ...values,
-      projectType: values.projectType ? values.projectType.split(',').map((item) => item.trim()).filter(Boolean) : [],
-      projectValue: Number(values.projectValue || 0),
-      stageCompletion: Number(values.stageCompletion || 0),
-      clientApprovalDate: values.clientApprovalDate || undefined,
-      actualEnd: values.actualEnd || undefined,
-      responsibleEngineer: values.responsibleEngineer || undefined,
-      remarksOrBlockers: values.remarksOrBlockers || '',
-      ceoMdReview: values.ceoMdReview || '',
-      estimatedCompletion: Number(values.estimatedCompletion || 0),
-      recv: Number(values.recv || 0),
-      balance: Number(values.balance || 0),
-    });
+    try {
+      setSubmitError('');
+      await onSubmit({
+        ...values,
+        projectType: values.projectType ? values.projectType.split(',').map((item) => item.trim()).filter(Boolean) : [],
+        projectValue: Number(values.projectValue || 0),
+        stageCompletion: Number(values.stageCompletion || 0),
+        clientApprovalDate: values.clientApprovalDate || undefined,
+        actualEnd: values.actualEnd || undefined,
+        responsibleEngineer: values.responsibleEngineer || undefined,
+        remarksOrBlockers: values.remarksOrBlockers || '',
+        ceoMdReview: values.ceoMdReview || '',
+        estimatedCompletion: Number(values.estimatedCompletion || 0),
+        recv: Number(values.recv || 0),
+        balance: Number(values.balance || 0),
+      });
+    } catch (error) {
+      setSubmitError(error?.response?.data?.message || error?.message || 'Could not save project');
+    }
   });
 
   return (
@@ -235,6 +242,7 @@ export function ProjectForm({ initialValues, employees = [], onSubmit, onCancel 
       <Field label="Balance">
         <input className="input" type="number" step="0.01" {...register('balance')} />
       </Field>
+      <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save project" />
 
       <div className="sm:col-span-2 mt-2 flex flex-col gap-3 border-t border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.96)] px-5 py-4 -mx-5 sm:flex-row sm:justify-end">
         <Button type="button" variant="secondary" onClick={onCancel}>

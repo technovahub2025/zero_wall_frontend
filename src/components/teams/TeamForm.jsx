@@ -1,9 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
   name: z.string().min(2, 'Team name is required'),
@@ -26,13 +27,14 @@ function extractIds(value) {
 }
 
 export function TeamForm({ initialValues, members = [], projects = [], onSubmit, onCancel }) {
+  const [submitError, setSubmitError] = useState('');
   const {
     register,
     handleSubmit,
     reset,
     setValue,
     watch,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -124,8 +126,18 @@ export function TeamForm({ initialValues, members = [], projects = [], onSubmit,
   }, [initialValues, reset]);
 
   return (
-    <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
-      <Field label="Team Name" className="sm:col-span-1">
+    <form
+      className="grid gap-4 sm:grid-cols-2"
+      onSubmit={handleSubmit(async (values) => {
+        try {
+          setSubmitError('');
+          await onSubmit(values);
+        } catch (error) {
+          setSubmitError(error?.response?.data?.message || error?.message || 'Could not save team');
+        }
+      })}
+    >
+      <Field label="Team Name" error={errors.name?.message} className="sm:col-span-1">
         <input className="input" {...register('name')} />
       </Field>
       <Field label="Color" className="sm:col-span-1">
@@ -162,6 +174,7 @@ export function TeamForm({ initialValues, members = [], projects = [], onSubmit,
         <input type="checkbox" className="h-4 w-4" {...register('isActive')} />
         <span className="text-sm font-semibold text-[rgb(var(--text))]">Active team</span>
       </label>
+      <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save team" />
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
@@ -174,11 +187,12 @@ export function TeamForm({ initialValues, members = [], projects = [], onSubmit,
   );
 }
 
-function Field({ label, children, className = '' }) {
+function Field({ label, error, children, className = '' }) {
   return (
     <label className={`block ${className}`}>
       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</span>
       {children}
+      {error ? <span className="mt-1 block text-xs text-rose-300">{error}</span> : null}
     </label>
   );
 }

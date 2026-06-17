@@ -40,6 +40,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardBody } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { FilterChips } from '../components/shared/FilterChips';
+import { SubmitErrorAlert } from '../components/shared/SubmitErrorAlert';
 import { useProjects } from '../hooks/useProjects';
 import { useTeams } from '../hooks/useTeams';
 import { useUiStore } from '../store/uiStore';
@@ -470,23 +471,39 @@ export default function EmployeeProfile() {
 
 function RoleChangeForm({ role, onSubmit, onCancel }) {
   const [nextRole, setNextRole] = useState(role || 'employee');
+  const currentUserRole = useAuthStore((state) => state.user?.role || 'employee');
+  const [submitError, setSubmitError] = useState('');
+  const roleOptions = [
+    ...(currentUserRole === 'superadmin' ? [{ value: 'superadmin', label: 'Superadmin' }] : []),
+    { value: 'employee', label: 'Employee' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'project_manager', label: 'Project Manager' },
+  ];
   return (
     <div className="space-y-4">
       <Field label="Role">
         <DropdownField
           value={nextRole}
           onChange={(nextValue) => setNextRole(nextValue)}
-          options={[
-            { value: 'employee', label: 'Employee' },
-            { value: 'admin', label: 'Admin' },
-            { value: 'project_manager', label: 'Project Manager' },
-          ]}
+          options={roleOptions}
           placeholder="Select role"
         />
       </Field>
+      <SubmitErrorAlert message={submitError} title="Could not save role" />
       <div className="flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-        <Button onClick={() => onSubmit({ role: nextRole })}>Save</Button>
+        <Button
+          onClick={async () => {
+            try {
+              setSubmitError('');
+              await onSubmit({ role: nextRole });
+            } catch (error) {
+              setSubmitError(error?.response?.data?.message || error?.message || 'Could not save role');
+            }
+          }}
+        >
+          Save
+        </Button>
       </div>
     </div>
   );

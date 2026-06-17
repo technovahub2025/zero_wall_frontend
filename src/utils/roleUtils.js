@@ -28,7 +28,7 @@ export function canDo(userRole, action) {
     inviteMember: ['superadmin', 'admin', 'project_manager'],
     addEmployee: ['superadmin', 'admin', 'project_manager'],
     deleteEmployee: ['superadmin'],
-    viewClients: ['superadmin', 'admin', 'project_manager', 'employee'],
+    viewClients: ['superadmin', 'admin'],
     createClient: ['superadmin', 'admin', 'project_manager'],
     editClient: ['superadmin', 'admin', 'project_manager'],
     deleteClient: ['superadmin', 'admin'],

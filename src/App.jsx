@@ -144,8 +144,8 @@ export default function App() {
                 <Route path="/my-timesheets" element={<MyTimesheetsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<Notifications />} />
-                <Route path="/clients" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager', 'employee']} fallback={<Navigate to="/my-tasks" replace />}><Clients /></RoleGuard>} />
-                <Route path="/clients/:id" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager', 'employee']} fallback={<Navigate to="/my-tasks" replace />}><Clients /></RoleGuard>} />
+                <Route path="/clients" element={<RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}><Clients /></RoleGuard>} />
+                <Route path="/clients/:id" element={<RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}><Clients /></RoleGuard>} />
                 <Route path="/employees" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}><Employees /></RoleGuard>} />
                 <Route path="/employees/:id" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}><EmployeeProfile /></RoleGuard>} />
                 <Route

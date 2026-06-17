@@ -40,7 +40,7 @@ export function TimerManualEntry({ projects = [], tasks = [], initialValues, onS
 
   return (
     <form
-      className="grid gap-4 sm:grid-cols-2"
+      className="grid gap-3 sm:grid-cols-2 sm:gap-4"
       onSubmit={handleSubmit(async (values) => {
         try {
           setSubmitError('');
@@ -88,11 +88,11 @@ export function TimerManualEntry({ projects = [], tasks = [], initialValues, onS
       </Field>
       <div className="sm:col-span-2">
         <Field label="Note">
-          <textarea className="input min-h-[96px]" {...register('note')} />
+          <textarea className="input min-h-[120px]" {...register('note')} />
         </Field>
       </div>
       <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save entry" />
-      <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
+      <div className="sm:col-span-2 mt-2 flex flex-col gap-3 border-t border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.96)] px-5 py-4 -mx-5 sm:flex-row sm:justify-end">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isSubmitting}>Save Entry</Button>
       </div>

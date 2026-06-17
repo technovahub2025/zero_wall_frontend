@@ -6,10 +6,10 @@ export const ROLE_PERMISSIONS = {
     routes: ['/dashboard', '/projects', '/projects/:id', '/kanban', '/stages', '/employees', '/employees/:id', '/team', '/billing', '/reports', '/clients', '/clients/:id'],
   },
   project_manager: {
-    routes: ['/dashboard', '/projects', '/projects/:id', '/kanban', '/stages', '/employees', '/employees/:id', '/team', '/reports', '/clients', '/clients/:id'],
+    routes: ['/dashboard', '/projects', '/projects/:id', '/kanban', '/stages', '/employees', '/employees/:id', '/team', '/reports'],
   },
   employee: {
-    routes: ['/my-tasks', '/my-timesheets', '/profile', '/notifications', '/clients', '/clients/:id'],
+    routes: ['/my-tasks', '/my-timesheets', '/profile', '/notifications'],
   },
 };
 

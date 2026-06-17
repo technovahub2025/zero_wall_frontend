@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { Card, CardBody, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { DropdownField } from '../shared/DropdownField';
+import { ModalShell } from '../shared/ModalShell';
 import { TimesheetCalendar } from '../timer/TimesheetCalendar';
 import { TimesheetInsights } from './TimesheetInsights';
 import { TimesheetTable } from './TimesheetTable';
@@ -111,7 +112,17 @@ function downloadBlob(blob, fileName) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function getExportFileName(responseHeader, fallbackName) {
+  const match = String(responseHeader || '').match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
+  if (!match?.[1]) return fallbackName;
+  try {
+    return decodeURIComponent(match[1].replace(/"/g, ''));
+  } catch {
+    return match[1].replace(/"/g, '');
+  }
 }
 
 export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry = false }) {
@@ -365,12 +376,25 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   }
 
   async function handleExport(selectedOnly = false) {
+    if (selectedOnly && !selectedIds.length) {
+      toast.error('Select at least one row to export');
+      return;
+    }
+
     const params = { ...queryArgs };
     if (selectedOnly && selectedIds.length) {
       params.ids = selectedIds.join(',');
     }
-    const blob = scope === 'employee' && employeeId ? await timesheetService.exportEmployee(employeeId, params) : await timesheetService.exportMine(params);
-    downloadBlob(blob, buildExportName(scope, selectedRange, selectedOnly));
+
+    try {
+      const result = scope === 'employee' && employeeId
+        ? await timesheetService.exportEmployee(employeeId, params)
+        : await timesheetService.exportMine(params);
+      downloadBlob(result.blob, getExportFileName(result.fileName, buildExportName(scope, selectedRange, selectedOnly)));
+      toast.success(selectedOnly ? 'Selected logs exported' : 'Timesheets exported');
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to export timesheets');
+    }
   }
 
   async function handleSaveFilter() {
@@ -445,27 +469,21 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
       </section>
 
       {manualOpen ? (
-        <Card>
-          <CardHeader className="justify-between gap-4">
-            <div>
-              <CardTitle>Manual Entry</CardTitle>
-              <div className="mt-1 text-xs text-slate-500">Add a timesheet record without leaving the page.</div>
-            </div>
-            <Button size="sm" variant="ghost" onClick={() => setManualOpen(false)}>
-              Close
-            </Button>
-          </CardHeader>
-          <CardBody>
-            <TimerManualEntry
-              projects={manualProjects}
-              tasks={manualTasks}
-              onCancel={() => setManualOpen(false)}
-              onSubmit={async (payload) => {
-                await manualMutation.mutateAsync(payload);
-              }}
-            />
-          </CardBody>
-        </Card>
+        <ModalShell
+          title="Manual Entry"
+          description="Add a timesheet record without leaving the page."
+          onClose={() => setManualOpen(false)}
+          widthClassName="max-w-5xl"
+        >
+          <TimerManualEntry
+            projects={manualProjects}
+            tasks={manualTasks}
+            onCancel={() => setManualOpen(false)}
+            onSubmit={async (payload) => {
+              await manualMutation.mutateAsync(payload);
+            }}
+          />
+        </ModalShell>
       ) : null}
 
       {showLoadingState ? (

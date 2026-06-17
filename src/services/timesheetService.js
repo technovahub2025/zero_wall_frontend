@@ -5,7 +5,10 @@ function unwrap(response) {
 }
 
 function getExport(response) {
-  return response.data;
+  return {
+    blob: response.data,
+    fileName: response.headers?.['content-disposition'] || '',
+  };
 }
 
 export const timesheetService = {

@@ -130,7 +130,6 @@ export function AppShell() {
                     <SidebarLink item={{ label: 'My Timesheets', path: '/my-timesheets', icon: 'BarChart3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     <SidebarLink item={{ label: 'Profile', path: '/profile', icon: 'Users' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     <SidebarLink item={{ label: 'Notifications', path: '/notifications', icon: 'Bell' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
-                    <SidebarLink item={{ label: 'Clients', path: '/clients', icon: 'Users' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     <RoleGuard roles={['employee']}>
                       <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     </RoleGuard>
@@ -145,6 +144,9 @@ export function AppShell() {
                     <div className="space-y-1">
                       <SidebarLink item={{ label: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                       <SidebarLink item={{ label: 'Projects', path: '/projects', icon: 'FolderKanban' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <RoleGuard roles={['superadmin', 'admin']}>
+                        <SidebarLink item={{ label: 'Clients', path: '/clients', icon: 'Users' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      </RoleGuard>
                       <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                       <SidebarLink item={{ label: 'Stage Detail', path: '/stages', icon: 'Route' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                       <SidebarLink item={{ label: 'Employees', path: '/employees', icon: 'Users' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />

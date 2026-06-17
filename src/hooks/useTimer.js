@@ -89,7 +89,11 @@ export function useTimer() {
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
-    onError: () => toast.error('Failed to start timer'),
+    onError: (error, variables) => {
+      if (!variables?.suppressToast) {
+        toast.error(error?.response?.data?.message || error?.message || 'Failed to start timer');
+      }
+    },
   });
 
   const stopMutation = useMutation({
@@ -103,7 +107,11 @@ export function useTimer() {
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
-    onError: () => toast.error('Failed to stop timer'),
+    onError: (error, variables) => {
+      if (!variables?.suppressToast) {
+        toast.error(error?.response?.data?.message || error?.message || 'No active timer to stop');
+      }
+    },
   });
 
   const manualMutation = useMutation({
@@ -147,9 +155,9 @@ export function useTimer() {
       dailySummary: logsQuery.data?.dailySummary || [],
       activeQuery,
       logsQuery,
-      startTimer: (taskId, projectId, stageId, note = '') =>
-        startMutation.mutateAsync({ taskId, projectId, stageId, note }),
-      stopTimer: () => stopMutation.mutateAsync(),
+      startTimer: (taskId, projectId, stageId, note = '', options = {}) =>
+        startMutation.mutateAsync({ taskId, projectId, stageId, note, ...options }),
+      stopTimer: (options = {}) => stopMutation.mutateAsync(options),
       addManualLog: (payload) => manualMutation.mutateAsync(payload),
       deleteLog: (id) => deleteMutation.mutateAsync(id),
       refetchActive: () => queryClient.invalidateQueries({ queryKey: ['timer-active'] }),

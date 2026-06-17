@@ -30,7 +30,6 @@ import { ROLE_LABELS } from '../../utils/roleUtils';
 import logo from '../../assets/logo.png';
 import { ConfirmModal } from '../shared/ConfirmModal';
 import { TimerWidget } from '../timer/TimerWidget';
-import { useTimer } from '../../hooks/useTimer';
 import { useSocket } from '../../hooks/useSocket';
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead, useDeleteNotification } from '../../hooks/useNotifications';
 import { useNotificationStore } from '../../store/notificationStore';
@@ -52,7 +51,6 @@ export function AppShell() {
   const markRead = useMarkNotificationRead();
   const deleteNotification = useDeleteNotification();
   useSocket();
-  useTimer();
   useNotifications();
 
   useEffect(() => {

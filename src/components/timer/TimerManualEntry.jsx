@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { DateTimeField } from '../shared/DatePickerField';
 import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
@@ -80,12 +81,8 @@ export function TimerManualEntry({ projects = [], tasks = [], initialValues, onS
           placeholder="Optional task"
         />
       </Field>
-      <Field label="Start Time">
-        <input type="datetime-local" className="input" {...register('startTime')} />
-      </Field>
-      <Field label="End Time">
-        <input type="datetime-local" className="input" {...register('endTime')} />
-      </Field>
+      <DateTimeField label="Start Time" value={watch('startTime')} onChange={(nextValue) => setValue('startTime', nextValue, { shouldDirty: true, shouldValidate: true })} />
+      <DateTimeField label="End Time" value={watch('endTime')} onChange={(nextValue) => setValue('endTime', nextValue, { shouldDirty: true, shouldValidate: true })} />
       <div className="sm:col-span-2">
         <Field label="Note">
           <textarea className="input min-h-[120px]" {...register('note')} />

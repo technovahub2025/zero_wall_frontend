@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 import { DropdownField } from '../shared/DropdownField';
 import { FilterChips } from '../shared/FilterChips';
+import { DatePickerField } from '../shared/DatePickerField';
 
 const PERIOD_OPTIONS = [
   { value: 'all', label: 'All time' },
@@ -165,24 +166,8 @@ export function ReportFilters({
 
                 {value.period === 'custom' ? (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">From</span>
-                      <input
-                        type="date"
-                        value={value.from}
-                        onChange={(event) => updateFilters({ from: event.target.value })}
-                        className="h-11 w-full rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)] px-4 text-sm text-[rgb(var(--text))] outline-none transition focus:border-sky-400"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">To</span>
-                      <input
-                        type="date"
-                        value={value.to}
-                        onChange={(event) => updateFilters({ to: event.target.value })}
-                        className="h-11 w-full rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)] px-4 text-sm text-[rgb(var(--text))] outline-none transition focus:border-sky-400"
-                      />
-                    </label>
+                    <DatePickerField label="From" value={value.from} onChange={(from) => updateFilters({ from })} />
+                    <DatePickerField label="To" value={value.to} onChange={(to) => updateFilters({ to })} />
                   </div>
                 ) : null}
               </div>

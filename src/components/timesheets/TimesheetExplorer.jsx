@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { Card, CardBody, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { DropdownField } from '../shared/DropdownField';
+import { DatePickerField } from '../shared/DatePickerField';
 import { ModalShell } from '../shared/ModalShell';
 import { TimesheetCalendar } from '../timer/TimesheetCalendar';
 import { TimesheetInsights } from './TimesheetInsights';
@@ -559,8 +560,20 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                     placeholder="Select preset"
                     className="xl:col-span-1"
                   />
-                  <input className="input" type="date" value={filters.start} onChange={(event) => updateFilter('start', event.target.value)} />
-                  <input className="input" type="date" value={filters.end} onChange={(event) => updateFilter('end', event.target.value)} />
+                  <DatePickerField
+                    label="Start date"
+                    value={filters.start}
+                    onChange={(start) => updateFilter('start', start)}
+                    placeholder="Select start date"
+                    className="xl:col-span-1"
+                  />
+                  <DatePickerField
+                    label="End date"
+                    value={filters.end}
+                    onChange={(end) => updateFilter('end', end)}
+                    placeholder="Select end date"
+                    className="xl:col-span-1"
+                  />
                   <DropdownField
                     label="Project"
                     value={filters.project}

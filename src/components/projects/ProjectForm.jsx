@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { DatePickerField } from '../shared/DatePickerField';
 import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const STATUS_OPTIONS = ['In Progress', 'Completed', 'On Hold', 'Cancelled'];
@@ -160,15 +161,9 @@ export function ProjectForm({ initialValues, employees = [], onSubmit, onCancel 
       <Field label="Project Value">
         <input className="input" type="number" step="0.01" {...register('projectValue')} />
       </Field>
-      <Field label="Start Date">
-        <input className="input" type="date" {...register('startDate')} />
-      </Field>
-      <Field label="Planned End">
-        <input className="input" type="date" {...register('targetDate')} />
-      </Field>
-      <Field label="Actual End">
-        <input className="input" type="date" {...register('actualEnd')} />
-      </Field>
+      <DatePickerField label="Start Date" value={watch('startDate')} onChange={(nextValue) => setValue('startDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
+      <DatePickerField label="Planned End" value={watch('targetDate')} onChange={(nextValue) => setValue('targetDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
+      <DatePickerField label="Actual End" value={watch('actualEnd')} onChange={(nextValue) => setValue('actualEnd', nextValue, { shouldDirty: true, shouldValidate: true })} />
       <DropdownField
         label="Overall Status"
         value={overallStatus}
@@ -186,9 +181,7 @@ export function ProjectForm({ initialValues, employees = [], onSubmit, onCancel 
       <Field label="Client Approval">
         <input className="input" {...register('clientApprovalStatus')} />
       </Field>
-      <Field label="Client Approval Date">
-        <input className="input" type="date" {...register('clientApprovalDate')} />
-      </Field>
+      <DatePickerField label="Client Approval Date" value={watch('clientApprovalDate')} onChange={(nextValue) => setValue('clientApprovalDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
       <DropdownField
         label="Responsible Engineer"
         value={responsibleEngineer}

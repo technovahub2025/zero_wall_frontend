@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { DatePickerField } from '../shared/DatePickerField';
 import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
@@ -96,12 +97,8 @@ export function BillingForm({ initialValues, projects = [], onSubmit, onCancel }
       <Field label="Received">
         <input className="input" type="number" step="0.01" {...form.register('amountReceived')} />
       </Field>
-      <Field label="Due Date">
-        <input className="input" type="date" {...form.register('dueDate')} />
-      </Field>
-      <Field label="Paid Date">
-        <input className="input" type="date" {...form.register('paidDate')} />
-      </Field>
+      <DatePickerField label="Due Date" value={form.watch('dueDate')} onChange={(nextValue) => form.setValue('dueDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
+      <DatePickerField label="Paid Date" value={form.watch('paidDate')} onChange={(nextValue) => form.setValue('paidDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
       <Field label="Remarks" className="sm:col-span-2">
         <textarea className="input min-h-24" {...form.register('remarks')} />
       </Field>

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { DatePickerField } from '../shared/DatePickerField';
 import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
@@ -98,14 +99,14 @@ export function StageForm({ initialValues, employees = [], onSubmit, onCancel })
       <Field label="Stage No" error={errors.stageNo?.message}><input className="input" {...register('stageNo')} /></Field>
       <Field label="Stage Name" error={errors.stageName?.message}><input className="input" {...register('stageName')} /></Field>
       <Field label="Description" className="sm:col-span-2"><textarea className="input min-h-[96px]" {...register('stageDescription')} /></Field>
-      <Field label="Stage Start"><input className="input" type="date" {...register('stageStart')} /></Field>
-      <Field label="Planned End"><input className="input" type="date" {...register('stageEndPlanned')} /></Field>
-      <Field label="Actual End"><input className="input" type="date" {...register('stageEndActual')} /></Field>
+      <DatePickerField label="Stage Start" value={watch('stageStart')} onChange={(nextValue) => setValue('stageStart', nextValue, { shouldDirty: true, shouldValidate: true })} />
+      <DatePickerField label="Planned End" value={watch('stageEndPlanned')} onChange={(nextValue) => setValue('stageEndPlanned', nextValue, { shouldDirty: true, shouldValidate: true })} />
+      <DatePickerField label="Actual End" value={watch('stageEndActual')} onChange={(nextValue) => setValue('stageEndActual', nextValue, { shouldDirty: true, shouldValidate: true })} />
       <Field label="Stage Status" error={errors.stageStatus?.message}><input className="input" {...register('stageStatus')} /></Field>
       <Field label="Deliverable" error={errors.deliverable?.message}><input className="input" {...register('deliverable')} /></Field>
       <Field label="Approval Status" error={errors.clientApprovalStatus?.message}><input className="input" {...register('clientApprovalStatus')} /></Field>
-      <Field label="Approval Date" error={errors.clientApprovalDate?.message}><input className="input" type="date" {...register('clientApprovalDate')} /></Field>
-      <Field label="Submitted To Client On" error={errors.submittedToClientOn?.message}><input className="input" type="date" {...register('submittedToClientOn')} /></Field>
+      <DatePickerField label="Approval Date" value={watch('clientApprovalDate')} onChange={(nextValue) => setValue('clientApprovalDate', nextValue, { shouldDirty: true, shouldValidate: true })} error={errors.clientApprovalDate?.message} />
+      <DatePickerField label="Submitted To Client On" value={watch('submittedToClientOn')} onChange={(nextValue) => setValue('submittedToClientOn', nextValue, { shouldDirty: true, shouldValidate: true })} error={errors.submittedToClientOn?.message} />
       <DropdownField
         label="Responsible Engineer"
         value={responsibleEngineer}

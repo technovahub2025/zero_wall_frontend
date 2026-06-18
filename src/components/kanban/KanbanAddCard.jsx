@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { CalendarDays, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import { DropdownField } from '../shared/DropdownField';
+import { DatePickerField } from '../shared/DatePickerField';
 
 const PRIORITIES = ['Critical', 'High', 'Medium', 'Low'];
 
@@ -83,13 +84,7 @@ export function KanbanAddCard({
             placeholder="Select priority"
           />
 
-          <label className="block">
-            <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Due date</span>
-            <div className="relative">
-              <input className="input pr-10" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
-              <CalendarDays className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            </div>
-          </label>
+          <DatePickerField label="Due date" value={dueDate} onChange={setDueDate} />
         </div>
 
         <DropdownField

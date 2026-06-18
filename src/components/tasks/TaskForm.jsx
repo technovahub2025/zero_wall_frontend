@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '../ui/button';
 import { DropdownField } from '../shared/DropdownField';
+import { DatePickerField } from '../shared/DatePickerField';
 import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const PRIORITY_OPTIONS = ['Critical', 'High', 'Medium', 'Low'].map((value) => ({ value, label: value }));
@@ -325,8 +326,8 @@ export function TaskForm({
         options={STATUS_OPTIONS}
         emptyValue="todo"
       />
-      <Field label="Start Date"><input className="input" type="date" {...register('startDate')} /></Field>
-      <Field label="Due Date"><input className="input" type="date" {...register('dueDate')} /></Field>
+      <DatePickerField label="Start Date" value={watch('startDate')} onChange={(nextValue) => setValue('startDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
+      <DatePickerField label="Due Date" value={watch('dueDate')} onChange={(nextValue) => setValue('dueDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
       <div className="sm:col-span-2 rounded-3xl border border-amber-400/20 bg-amber-500/10 p-4">
         <div className="mb-3">
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Task Timer</div>

@@ -15,6 +15,7 @@ export function DropdownField({
   searchable = false,
   searchPlaceholder = 'Search...',
   className = '',
+  error = '',
 }) {
   const wrapRef = useRef(null);
   const menuRef = useRef(null);
@@ -247,6 +248,7 @@ export function DropdownField({
           <ChevronDown className={cn('h-4 w-4 flex-shrink-0 text-slate-400 transition-transform', open && 'rotate-180')} />
         </button>
       </div>
+      {error ? <span className="mt-1 block text-xs text-rose-600">{error}</span> : null}
       {menu}
     </label>
   );

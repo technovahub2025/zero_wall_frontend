@@ -79,8 +79,8 @@ export const useAuthStore = create((set, get) => ({
       });
     },
 
-  login: async ({ email, password }) => {
-    const response = await authService.login({ email, password });
+  login: async ({ identifier, password }) => {
+    const response = await authService.login({ identifier, password });
     get().setAuth(response);
     return response;
   },

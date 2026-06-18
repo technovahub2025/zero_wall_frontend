@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { motion } from 'framer-motion';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
@@ -11,7 +12,7 @@ import { cn } from '../../lib/utils';
 import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 
 const schema = z.object({
-  email: z.string().email('Invalid email'),
+  identifier: z.string().trim().min(1, 'Email or mobile number required'),
   password: z.string().min(1, 'Password required'),
 });
 
@@ -29,7 +30,7 @@ export function LoginForm() {
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: '',
+      identifier: '',
       password: '',
     },
   });
@@ -47,16 +48,22 @@ export function LoginForm() {
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+    <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
       <div>
-        <label className="mb-2 block text-sm font-medium text-slate-200">Email</label>
+        <label className="mb-2 block text-sm font-medium text-slate-200">Email or Mobile Number</label>
+        <p className="mb-2 text-xs leading-5 text-slate-400">Use your work email address or registered mobile number.</p>
         <input
-          {...register('email')}
-          type="email"
-          placeholder="name@company.com"
+          {...register('identifier')}
+          type="text"
+          inputMode="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck="false"
+          placeholder="name@company.com or 9876543210"
           className="input rounded-xl"
         />
-        {errors.email ? <p className="mt-2 text-xs text-rose-300">{errors.email.message}</p> : null}
+        {errors.identifier ? <p className="mt-2 text-xs text-rose-300">{errors.identifier.message}</p> : null}
       </div>
 
       <div>
@@ -65,7 +72,11 @@ export function LoginForm() {
           <input
             {...register('password')}
             type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
+            autoComplete="current-password"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck="false"
+            placeholder="Enter your password"
             className="input rounded-xl pr-12"
           />
           <button
@@ -85,18 +96,22 @@ export function LoginForm() {
           Forgot password?
         </Link>
       </div>
+
       <SubmitErrorAlert message={submitError} title="Could not sign in" />
 
-      <button
+      <motion.button
         type="submit"
         disabled={isSubmitting}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.985 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         className={cn(
           'inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2E83F5] px-4 text-sm font-semibold text-white transition hover:bg-[#1d6fe0] disabled:cursor-not-allowed disabled:opacity-60',
         )}
       >
         {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
         Sign In
-      </button>
+      </motion.button>
     </form>
   );
 }

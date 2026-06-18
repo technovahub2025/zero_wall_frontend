@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { motion } from 'framer-motion';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -136,14 +137,17 @@ export function ResetPasswordForm({ token }) {
       </div>
       <SubmitErrorAlert message={submitError} title="Could not reset password" />
 
-      <button
+      <motion.button
         type="submit"
         disabled={isSubmitting}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.985 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2E83F5] px-4 text-sm font-semibold text-white transition hover:bg-[#1d6fe0] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
         Reset Password
-      </button>
+      </motion.button>
     </form>
   );
 }

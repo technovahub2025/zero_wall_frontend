@@ -1,18 +1,31 @@
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, TimerReset, Users2 } from 'lucide-react';
 import { LoginForm } from '../components/auth/LoginForm';
+import { AuthPageShell } from '../components/auth/AuthPageShell';
 import { useAuthStore } from '../store/authStore';
 import { getHomePathForRole } from '../utils/roleUtils';
 import logo from '../assets/logo.png';
-import { cardVariants, staggerContainer, staggerItem } from '../utils/motionVariants';
+import { staggerContainer, staggerItem } from '../utils/motionVariants';
 
 function FeatureItem({ children }) {
   return (
-    <motion.li variants={staggerItem} className="flex items-start gap-3 text-sm text-slate-300">
+    <motion.li variants={staggerItem} className="flex items-start gap-3 text-sm text-white/82">
       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#F0A428]" />
       <span>{children}</span>
     </motion.li>
+  );
+}
+
+function HeroCard({ icon: Icon, title, description, toneClass = 'text-sky-300' }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-sm">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
+        <Icon className={`h-5 w-5 ${toneClass}`} />
+      </div>
+      <p className="mt-4 text-sm font-semibold text-slate-900">{title}</p>
+      <p className="mt-2 text-xs leading-5 text-slate-700">{description}</p>
+    </div>
   );
 }
 
@@ -25,52 +38,61 @@ export default function Login() {
   }
 
   return (
-    <motion.div
-      className="min-h-screen bg-[#0B1929] text-slate-100 lg:grid lg:grid-cols-[40%_60%]"
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={cardVariants}
-    >
-      <div className="relative hidden min-h-screen overflow-hidden bg-[#0F2236] lg:flex lg:flex-col lg:justify-center">
-        <div className="absolute inset-0 opacity-60" style={{
-          backgroundImage:
-            'linear-gradient(rgba(255, 255, 255, 0) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }} />
-        <div className="relative mx-auto flex w-full max-w-md flex-col items-start gap-8 px-10">
-          <img src={logo} alt="PG Infrastructure logo" className="h-16 w-16 object-contain" />
-          <div>
-            <p className="font-display text-4xl font-bold tracking-tight text-white">PG Infrastructure</p>
-            <p className="mt-3 text-lg text-slate-300">Project master tracker</p>
-          </div>
-          <motion.ul variants={staggerContainer} initial="initial" animate="animate" className="space-y-4">
-            <FeatureItem>Real-time project tracking</FeatureItem>
-            <FeatureItem>Role-based team collaboration</FeatureItem>
-            <FeatureItem>Stage-by-stage approval workflow</FeatureItem>
-          </motion.ul>
-        </div>
-      </div>
+    <AuthPageShell
+      mode="split"
+      title="Welcome back"
+      subtitle="Sign in to PG Infrastructure with your work credentials."
+      footer={<p className="text-center text-sm text-white/72">Don&apos;t have an account? Contact your admin</p>}
+      hero={
+        <div className="hidden min-h-full flex-col justify-center lg:flex">
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-4 rounded-3xl border border-white/10 bg-white/5 px-5 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.16)] backdrop-blur-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/95 shadow-sm">
+                <img src={logo} alt="PG Infrastructure logo" className="h-7 w-7 object-contain" />
+              </div>
+              <span className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-900">Project master tracker</span>
+            </div>
 
-      <div className="relative flex min-h-screen items-center justify-center px-5 py-10 sm:px-8">
-        <div className="absolute inset-0 bg-[#0B1929]" />
-        <motion.div
-          className="relative w-full max-w-md rounded-[20px] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-8"
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          <div className="mb-8">
-            <img src={logo} alt="PG Infrastructure logo" className="mb-5 h-12 w-12 object-contain" />
-            <h1 className="font-display text-3xl font-bold tracking-tight text-white">Welcome back</h1>
-            <p className="mt-2 text-sm text-slate-400">Sign in to PG Infrastructure</p>
+            <h1 className="mt-8 font-display text-5xl font-bold tracking-tight text-white xl:text-6xl">
+              Workflows that stay
+              <span className="block text-sky-300">fast, visible, and controlled.</span>
+            </h1>
+            <p className="mt-5 max-w-lg text-base leading-7 text-white/82">
+              Sign in with your work email or mobile number to track projects, manage approvals, and keep time entries
+              in sync across the team.
+            </p>
+
+            <motion.ul variants={staggerContainer} initial="initial" animate="animate" className="mt-8 space-y-4">
+              <FeatureItem>Real-time project tracking</FeatureItem>
+              <FeatureItem>Role-based access for employees, admins, and super admins</FeatureItem>
+              <FeatureItem>Stage-by-stage approval workflow with live task timing</FeatureItem>
+            </motion.ul>
+
+            <div className="mt-10 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+              <HeroCard
+                icon={ShieldCheck}
+                title="Secure access"
+                description="Role-aware login and permissions."
+                toneClass="text-sky-300"
+              />
+              <HeroCard
+                icon={TimerReset}
+                title="Live timer"
+                description="Track time without page refreshes."
+                toneClass="text-amber-300"
+              />
+              <HeroCard
+                icon={Users2}
+                title="Team view"
+                description="Shared visibility across projects."
+                toneClass="text-emerald-300"
+              />
+            </div>
           </div>
-          <LoginForm />
-          <p className="mt-6 text-center text-sm text-slate-400">
-            Don&apos;t have an account? Contact your admin
-          </p>
-        </motion.div>
-      </div>
-    </motion.div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </AuthPageShell>
   );
 }

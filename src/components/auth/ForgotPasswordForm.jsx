@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { motion } from 'framer-motion';
 import { LoaderCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
@@ -49,14 +50,17 @@ export function ForgotPasswordForm({ onSuccess }) {
       </div>
       <SubmitErrorAlert message={submitError} title="Could not send reset link" />
 
-      <button
+      <motion.button
         type="submit"
         disabled={isSubmitting}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.985 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2E83F5] px-4 text-sm font-semibold text-white transition hover:bg-[#1d6fe0] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
         Send Reset Link
-      </button>
+      </motion.button>
     </form>
   );
 }

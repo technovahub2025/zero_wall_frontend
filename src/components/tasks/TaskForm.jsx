@@ -17,25 +17,27 @@ const STATUS_OPTIONS = [
 ];
 const EMPTY_ARRAY = [];
 
-const schema = z.object({
-  title: z.string().min(2, 'Task title is required'),
-  description: z.string().optional(),
-  project: z.string().min(1, 'Project is required'),
-  stage: z.string().optional(),
-  team: z.string().optional(),
-  priority: z.string().optional(),
-  status: z.string().optional(),
-  startDate: z.string().optional(),
-  dueDate: z.string().optional(),
-  estimatedDurationHours: z.coerce.number().min(0).optional(),
-  estimatedDurationMinutesRemainder: z.coerce.number().min(0).max(59).optional(),
-  assignee: z.string().optional(),
-  reporter: z.string().optional(),
-  backupReviewer: z.string().optional(),
-  assignedTeam: z.array(z.string()).optional(),
-  nextAction: z.string().optional(),
-  tags: z.string().optional(),
-});
+function buildSchema(isEditing) {
+  return z.object({
+    title: z.string().min(2, 'Task title is required'),
+    description: z.string().optional(),
+    project: z.string().min(1, 'Project is required'),
+    stage: z.string().optional(),
+    team: z.string().optional(),
+    priority: z.string().optional(),
+    status: z.string().optional(),
+    startDate: isEditing ? z.string().optional() : z.string().min(1, 'Start date is required'),
+    dueDate: z.string().min(1, 'End date is required'),
+    estimatedDurationHours: z.coerce.number().min(0).optional(),
+    estimatedDurationMinutesRemainder: z.coerce.number().min(0).max(59).optional(),
+    assignee: isEditing ? z.string().optional() : z.string().min(1, 'Assignee is required'),
+    reporter: z.string().optional(),
+    backupReviewer: z.string().optional(),
+    assignedTeam: z.array(z.string()).optional(),
+    nextAction: z.string().optional(),
+    tags: z.string().optional(),
+  });
+}
 
 function extractId(value) {
   if (!value) return '';
@@ -61,6 +63,8 @@ export function TaskForm({
   onSubmit,
   onCancel,
 }) {
+  const isEditing = Boolean(initialValues?.id || initialValues?._id);
+  const schema = useMemo(() => buildSchema(isEditing), [isEditing]);
   const [submitError, setSubmitError] = useState('');
   const {
     register,
@@ -326,8 +330,20 @@ export function TaskForm({
         options={STATUS_OPTIONS}
         emptyValue="todo"
       />
-      <DatePickerField label="Start Date" value={watch('startDate')} onChange={(nextValue) => setValue('startDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
-      <DatePickerField label="Due Date" value={watch('dueDate')} onChange={(nextValue) => setValue('dueDate', nextValue, { shouldDirty: true, shouldValidate: true })} />
+      <DatePickerField
+        label="Start Date"
+        value={watch('startDate')}
+        onChange={(nextValue) => setValue('startDate', nextValue, { shouldDirty: true, shouldValidate: true })}
+        error={errors.startDate?.message}
+        clearable={isEditing}
+      />
+      <DatePickerField
+        label="End Date"
+        value={watch('dueDate')}
+        onChange={(nextValue) => setValue('dueDate', nextValue, { shouldDirty: true, shouldValidate: true })}
+        error={errors.dueDate?.message}
+        clearable={false}
+      />
       <div className="sm:col-span-2 rounded-3xl border border-amber-400/20 bg-amber-500/10 p-4">
         <div className="mb-3">
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Task Timer</div>
@@ -360,8 +376,8 @@ export function TaskForm({
         searchPlaceholder="Search employees..."
         emptyValue=""
         className="sm:col-span-1"
+        error={errors.assignee?.message}
       />
-      <FieldError message={errors.assignee?.message} />
       <DropdownField
         label="Backup Reviewer"
         value={backupReviewerValue}

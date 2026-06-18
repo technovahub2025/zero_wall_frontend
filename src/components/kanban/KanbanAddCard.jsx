@@ -18,27 +18,48 @@ export function KanbanAddCard({
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState(defaultPriority);
+  const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [assignee, setAssignee] = useState(defaultAssigneeId);
+  const [startDateError, setStartDateError] = useState('');
+  const [assigneeError, setAssigneeError] = useState('');
+  const [dueDateError, setDueDateError] = useState('');
 
   const employeesOptions = useMemo(() => employees || [], [employees]);
 
   function resetForm() {
     setTitle('');
     setPriority(defaultPriority);
+    setStartDate('');
     setDueDate('');
     setAssignee(defaultAssigneeId);
+    setStartDateError('');
+    setAssigneeError('');
+    setDueDateError('');
   }
 
   function handleSubmit() {
     const nextTitle = title.trim();
     if (!nextTitle) return;
+    if (!startDate) {
+      setStartDateError('Start date is required');
+    }
+    if (!assignee) {
+      setAssigneeError('Assignee is required');
+    }
+    if (!dueDate) {
+      setDueDateError('Due date is required');
+    }
+    if (!startDate || !assignee || !dueDate) {
+      return;
+    }
     onAdd?.({
       title: nextTitle,
       status: defaultStatus,
       priority,
-      dueDate: dueDate || undefined,
-      assignee: assignee || undefined,
+      startDate,
+      dueDate,
+      assignee,
       project: projectId || undefined,
     });
     resetForm();
@@ -84,15 +105,17 @@ export function KanbanAddCard({
             placeholder="Select priority"
           />
 
-          <DatePickerField label="Due date" value={dueDate} onChange={setDueDate} />
+          <DatePickerField label="Start date" value={startDate} onChange={(nextValue) => { setStartDate(nextValue); setStartDateError(''); }} error={startDateError} clearable={false} />
+          <DatePickerField label="End date" value={dueDate} onChange={(nextValue) => { setDueDate(nextValue); setDueDateError(''); }} error={dueDateError} clearable={false} />
         </div>
 
         <DropdownField
           label="Assignee"
           value={assignee}
-          onChange={(value) => setAssignee(value)}
+          onChange={(value) => { setAssignee(value); setAssigneeError(''); }}
           options={[{ value: '', label: 'Unassigned' }, ...employeesOptions.map((employee) => ({ value: employee.id, label: employee.name }))]}
           placeholder="Unassigned"
+          error={assigneeError}
         />
 
         <div className="flex gap-2 pt-1">

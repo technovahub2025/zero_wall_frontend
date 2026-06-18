@@ -30,11 +30,11 @@ import { useNavigate } from 'react-router-dom';
 
 const FILTER_OPTIONS = [
   { label: 'All', value: 'all' },
-  { label: 'Today', value: 'today' },
-  { label: 'Overdue', value: 'overdue' },
-  { label: 'Due Soon', value: 'due-soon' },
   { label: 'In Progress', value: 'in-progress' },
-  { label: 'Done', value: 'done' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Hold', value: 'hold' },
+  { label: 'Canceled', value: 'canceled' },
 ];
 
 const SORT_OPTIONS = [
@@ -494,7 +494,7 @@ export default function MyTasksPage() {
               </div>
 
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="overflow-x-auto pb-1">
+                <div className="pb-1">
                   <FilterChips value={filter} onChange={setFilter} options={FILTER_OPTIONS} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -798,11 +798,11 @@ function SidebarSelect({ label, value, onChange, options, placeholder, searchabl
 }
 
 function matchesScopeFilter(item, filter, todayKey, now) {
-  if (filter === 'today') return item.dueDayKey ? item.dueDayKey === todayKey : false;
-  if (filter === 'overdue') return item.isOverdue;
-  if (filter === 'due-soon') return item.isDueSoon;
   if (filter === 'in-progress') return item.statusKey === 'in-progress';
-  if (filter === 'done') return item.statusKey === 'done';
+  if (filter === 'completed') return item.statusKey === 'done' || item.statusKey === 'completed';
+  if (filter === 'pending') return item.statusKey === 'todo' || item.statusKey === 'pending';
+  if (filter === 'hold') return item.statusKey === 'blocked' || item.statusKey === 'hold' || item.statusKey === 'on-hold';
+  if (filter === 'canceled') return item.statusKey === 'canceled' || item.statusKey === 'cancelled' || item.statusKey === 'cancel';
   return true;
 }
 

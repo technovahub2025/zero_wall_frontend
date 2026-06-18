@@ -1,9 +1,10 @@
-import { format } from 'date-fns';
 import { Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { DataTable } from '../shared/DataTable';
 import { formatDuration } from '../../store/timerStore';
+import { formatIndiaDate, formatIndiaTime } from '../../utils/formatters';
+import { getTimerActionLabel, getTimerActionTone, getTimerReason } from '../../utils/timerLogDisplay';
 
 function safeDate(value) {
   if (!value) return '-';
@@ -16,13 +17,14 @@ export function TimerLog({ logs = [], onDelete }) {
   return (
     <DataTable
       columns={[
-        { key: 'date', label: 'Date', render: (row) => format(safeDate(row.date || row.startTime), 'dd MMM yyyy') },
+        { key: 'date', label: 'Date', render: (row) => formatIndiaDate(safeDate(row.date || row.startTime)) },
         { key: 'task', label: 'Task', render: (row) => row.task?.title || row.task?.name || '-' },
         { key: 'project', label: 'Project', render: (row) => row.project?.projectName || row.project?.name || '-' },
-        { key: 'start', label: 'Start', render: (row) => format(safeDate(row.startTime), 'hh:mm a') },
-        { key: 'end', label: 'Stop', render: (row) => (row.endTime ? format(safeDate(row.endTime), 'hh:mm a') : '-') },
+        { key: 'start', label: 'Start', render: (row) => formatIndiaTime(safeDate(row.startTime)) },
+        { key: 'end', label: 'Stop', render: (row) => (row.endTime ? formatIndiaTime(safeDate(row.endTime)) : '-') },
         { key: 'duration', label: 'Duration', render: (row) => formatDuration(row.duration) },
-        { key: 'note', label: 'Note', hideOnMobile: true, render: (row) => row.note || '-' },
+        { key: 'action', label: 'Action', render: (row) => <Badge tone={getTimerActionTone(row)}>{getTimerActionLabel(row)}</Badge> },
+        { key: 'reason', label: 'Reason / Comment', hideOnMobile: true, render: (row) => getTimerReason(row) || '-' },
         { key: 'manual', label: 'Manual', hideOnMobile: true, render: (row) => <Badge tone={row.isManual ? 'amber' : 'slate'}>{row.isManual ? 'Yes' : 'No'}</Badge> },
         {
           key: 'actions',

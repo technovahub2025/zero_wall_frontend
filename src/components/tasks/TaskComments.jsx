@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { format } from 'date-fns';
 import { MessageSquareText, SendHorizonal } from 'lucide-react';
 import { Button } from '../ui/button';
 import { VirtualList } from '../shared/VirtualList';
+import { formatIndiaDateTime } from '../../utils/formatters';
 
 export function TaskComments({ comments = [], onAdd, maxHeightClassName = 'max-h-80' }) {
   const [text, setText] = useState('');
@@ -89,9 +89,7 @@ export function TaskComments({ comments = [], onAdd, maxHeightClassName = 'max-h
 
 function formatCommentTime(value) {
   if (!value) return 'Just now';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Just now';
-  return format(date, 'dd MMM, hh:mm a');
+  return formatIndiaDateTime(value);
 }
 
 function CommentItem({ comment }) {

@@ -68,7 +68,7 @@ const TASK_TABLE_GRID_TEMPLATE = 'minmax(260px,1.4fr) 104px 104px 150px 150px 17
 export default function MyTasksPage() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { elapsedSeconds, startTimer } = useTimer();
+  const { elapsedSeconds, startTimer, resumeTimer, pausedTasks } = useTimer();
   const tasksQuery = useMyTasks();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -81,6 +81,7 @@ export default function MyTasksPage() {
   const filtersRootRef = useRef(null);
 
   const tasks = tasksQuery.data || [];
+  const pausedTaskList = pausedTasks || [];
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
   const hasAnySearch = Boolean(deferredSearch);
   const hasQuickFilters = filter !== 'all' || sortBy !== 'priority' || savedView !== 'open';
@@ -355,6 +356,56 @@ export default function MyTasksPage() {
 
       {!tasksQuery.isLoading && !tasksQuery.isError ? (
         <div className="space-y-4">
+          {pausedTaskList.length ? (
+            <Card className="border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.97)] shadow-[0_18px_50px_-40px_rgba(15,23,42,0.48)] ring-1 ring-[rgb(var(--line)/0.05)] backdrop-blur">
+              <CardBody className="space-y-4 p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Paused Tasks</div>
+                    <div className="mt-1 text-sm text-[rgb(var(--muted))]">
+                      {pausedTaskList.length} task{pausedTaskList.length === 1 ? '' : 's'} ready to resume
+                    </div>
+                  </div>
+                  <Badge tone="amber">{pausedTaskList.length}</Badge>
+                </div>
+
+                <div className="grid gap-3">
+                  {pausedTaskList.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex flex-col gap-3 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.72)] px-4 py-3 transition hover:border-[rgb(var(--line)/0.22)] hover:bg-[rgb(var(--panel-2)/0.9)] sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{task.title}</div>
+                        <div className="mt-1 truncate text-xs text-[rgb(var(--muted))]">
+                          {task.projectName || 'No project'}
+                          {task.stageName ? ` - ${task.stageName}` : ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 self-start sm:self-center">
+                        <Badge tone="amber">{formatDuration(Math.max(0, Number(task.remainingSeconds || 0)))} left</Badge>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() =>
+                            resumeTimer(
+                              task.id,
+                              task.project?.id || task.projectId || undefined,
+                              task.stage?.id || task.stageId || undefined,
+                              '',
+                            )
+                          }
+                        >
+                          Resume
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          ) : null}
+
           <Card className={`relative isolate ${filtersOpen ? 'z-50' : 'z-10'} overflow-visible border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.97)] shadow-[0_18px_50px_-40px_rgba(15,23,42,0.48)] ring-1 ring-[rgb(var(--line)/0.05)] backdrop-blur`}>
             <CardBody className="space-y-4 p-4 sm:p-5">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">

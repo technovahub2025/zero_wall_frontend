@@ -16,6 +16,7 @@ import {
   MoonStar,
   PanelLeftClose,
   PanelLeftOpen,
+  Radar,
   Route,
   SunMedium,
   Users,
@@ -150,6 +151,7 @@ export function AppShell() {
                       <SidebarLink item={{ label: 'Kanban', path: '/kanban', icon: 'Columns3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                       <SidebarLink item={{ label: 'Stage Detail', path: '/stages', icon: 'Route' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                       <SidebarLink item={{ label: 'Employees', path: '/employees', icon: 'Users' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                      <SidebarLink item={{ label: 'Monitor', path: '/monitor', icon: 'Radar' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                       <SidebarLink item={{ label: 'Teams', path: '/teams', icon: 'FolderKanban' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                       <SidebarLink item={{ label: 'Reports', path: '/reports', icon: 'BarChart3' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     </div>

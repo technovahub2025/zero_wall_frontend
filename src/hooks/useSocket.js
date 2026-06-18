@@ -75,6 +75,7 @@ export function useSocket() {
       queryClient.invalidateQueries({ queryKey: ['billing'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['activity-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['monitor'] });
     };
 
     const handleTimerChanged = (payload) => {
@@ -101,6 +102,10 @@ export function useSocket() {
       handleProjectChanged();
     };
 
+    const handleMonitorPresenceChanged = () => {
+      queryClient.invalidateQueries({ queryKey: ['monitor'] });
+    };
+
     socket.on('notification:new', handleNotification);
     socket.on('notification:count', handleUnreadCount);
     socket.on('project:created', handleProjectChanged);
@@ -119,6 +124,7 @@ export function useSocket() {
     socket.on('timer:manual', handleProjectChanged);
     socket.on('timer:deleted', handleTimerStopped);
     socket.on('activity:created', handleProjectChanged);
+    socket.on('monitor:presence:changed', handleMonitorPresenceChanged);
 
     return () => {
       socket.off('notification:new', handleNotification);
@@ -139,6 +145,7 @@ export function useSocket() {
       socket.off('timer:manual', handleProjectChanged);
       socket.off('timer:deleted', handleTimerStopped);
       socket.off('activity:created', handleProjectChanged);
+      socket.off('monitor:presence:changed', handleMonitorPresenceChanged);
       socket.emit('leave:user', user.id);
       if (['superadmin', 'admin', 'project_manager'].includes(user.role)) {
         socket.emit('leave:admin');

@@ -10,7 +10,7 @@ import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { useNotificationStore } from '../store/notificationStore';
 import { VirtualList } from '../components/shared/VirtualList';
-import { formatDate } from '../utils/formatters';
+import { formatIndiaDateTime } from '../utils/formatters';
 
 const filterOptions = [
   { label: 'All', value: 'all' },
@@ -213,7 +213,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }) {
           </div>
         </div>
         <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">
-          {formatDate(notification.createdAt, 'dd MMM yyyy, hh:mm a')}
+          {formatIndiaDateTime(notification.createdAt)}
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">

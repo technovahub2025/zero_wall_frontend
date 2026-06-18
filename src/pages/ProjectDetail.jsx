@@ -38,6 +38,7 @@ import { useUiStore } from '../store/uiStore';
 import { Button } from '../components/ui/button';
 import { Card, CardBody } from '../components/ui/card';
 import { ProjectForm } from '../components/projects/ProjectForm';
+import { formatIndiaTime } from '../utils/formatters';
 import { StageTimeline } from '../components/stages/StageTimeline';
 import { StageTable } from '../components/stages/StageTable';
 import { StageForm } from '../components/stages/StageForm';
@@ -764,7 +765,7 @@ export default function ProjectDetail() {
                         <div className="shrink-0 text-right text-[10px] uppercase tracking-[0.18em] text-slate-500">
                           <div>{item.occurredAt ? format(new Date(item.occurredAt), 'dd MMM yyyy') : '-'}</div>
                           <div className="mt-1 text-[9px] tracking-[0.24em] text-slate-400">
-                            {item.occurredAt ? format(new Date(item.occurredAt), 'hh:mm a') : ''}
+                            {item.occurredAt ? formatIndiaTime(new Date(item.occurredAt)) : ''}
                           </div>
                         </div>
                       </div>

@@ -1,7 +1,7 @@
 ﻿import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { ChevronDown, Download, Filter, Plus, Table2, Trash2 } from 'lucide-react';
+import { ChevronDown, Download, Filter, Loader2, Plus, Table2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/button';
 import { Card, CardBody, CardHeader, CardTitle } from '../ui/card';
@@ -105,6 +105,30 @@ function sortNewestFirst(logs = []) {
   });
 }
 
+function applyBillableUpdate(data, ids = [], isBillable = false) {
+  if (!data || typeof data !== 'object') return data;
+  const idSet = new Set(ids.map(String));
+  const updateRows = (rows = []) =>
+    Array.isArray(rows)
+      ? rows.map((row) => (idSet.has(String(row.id || row._id)) ? { ...row, isBillable } : row))
+      : rows;
+  const nextAllLogs = updateRows(data.allLogs || []);
+  const sourceLogs = nextAllLogs.length ? nextAllLogs : updateRows(data.items || []);
+  const totalSeconds = sourceLogs.reduce((sum, log) => sum + Number(log.duration || 0), 0);
+  const billableSeconds = sourceLogs.reduce((sum, log) => sum + (log.isBillable ? Number(log.duration || 0) : 0), 0);
+
+  return {
+    ...data,
+    items: updateRows(data.items || []),
+    allLogs: nextAllLogs,
+    summary: {
+      ...(data.summary || {}),
+      billableSeconds,
+      billableRate: totalSeconds ? Number(((billableSeconds / totalSeconds) * 100).toFixed(1)) : 0,
+    },
+  };
+}
+
 function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -138,6 +162,7 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   const [saveName, setSaveName] = useState('');
   const [savedFilterId, setSavedFilterId] = useState('');
   const [calendarResetToken, setCalendarResetToken] = useState(0);
+  const [billableUpdatingIds, setBillableUpdatingIds] = useState([]);
   const deferredSearch = useDeferredValue(filters.search);
 
   const queryFilters = useMemo(() => ({ ...filters, search: deferredSearch }), [deferredSearch, filters]);
@@ -156,12 +181,37 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
 
   const bulkUpdateMutation = useMutation({
     mutationFn: (payload) => (scope === 'employee' && employeeId ? timesheetService.bulkUpdateEmployee(employeeId, payload) : timesheetService.bulkUpdateMine(payload)),
-    onSuccess: () => {
-      toast.success('Timesheets updated');
+    onMutate: async (payload) => {
+      const ids = (payload?.ids || []).map(String);
+      setBillableUpdatingIds(ids);
+      await queryClient.cancelQueries({ queryKey: ['timesheets', scope, employeeId || 'self'] });
+      const previous = queryClient.getQueriesData({ queryKey: ['timesheets', scope, employeeId || 'self'] });
+      if (payload?.isBillable !== undefined) {
+        queryClient.setQueriesData(
+          { queryKey: ['timesheets', scope, employeeId || 'self'] },
+          (current) => applyBillableUpdate(current, ids, Boolean(payload.isBillable)),
+        );
+      }
+      return { previous, ids, isBillable: payload?.isBillable };
+    },
+    onSuccess: (_data, _variables, context) => {
+      const count = context?.ids?.length || 0;
+      const label = context?.isBillable ? 'billable' : 'non-billable';
+      toast.success(count ? `${count} timesheet ${count === 1 ? 'row' : 'rows'} marked ${label}` : 'Timesheets updated');
       queryClient.invalidateQueries({ queryKey: ['timesheets', scope, employeeId || 'self'] });
       queryClient.invalidateQueries({ queryKey: ['timer-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['report-timesheet-analytics'] });
     },
-    onError: () => toast.error('Failed to update timesheets'),
+    onError: (error, _variables, context) => {
+      context?.previous?.forEach(([key, value]) => {
+        queryClient.setQueryData(key, value);
+      });
+      toast.error(error?.response?.data?.message || 'Failed to update timesheets');
+    },
+    onSettled: () => {
+      setBillableUpdatingIds([]);
+    },
   });
 
   const bulkDeleteMutation = useMutation({
@@ -245,6 +295,9 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
     const selectedSet = new Set(selectedIds.map(String));
     return allLogs.filter((log) => selectedSet.has(String(log.id || log._id)));
   }, [allLogs, selectedIds]);
+  const selectedBillableCount = selectedRows.filter((row) => row.isBillable).length;
+  const selectedNonBillableCount = selectedRows.length - selectedBillableCount;
+  const billableUpdatePending = bulkUpdateMutation.isPending;
 
   useEffect(() => {
     setSelectedIds([]);
@@ -352,8 +405,9 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   }
 
   function handleBulkBillable(isBillable) {
-    if (!selectedIds.length) return;
-    if (!window.confirm(`Update ${selectedIds.length} selected logs?`)) return;
+    if (!selectedIds.length || billableUpdatePending) return;
+    const nextLabel = isBillable ? 'billable' : 'non-billable';
+    if (!window.confirm(`Mark ${selectedIds.length} selected logs as ${nextLabel}?`)) return;
     bulkUpdateMutation.mutate({ ids: selectedIds, isBillable });
   }
 
@@ -367,6 +421,7 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
 
   function handleRowBillable(row) {
     const logId = String(row.id || row._id);
+    if (!logId || billableUpdatePending) return;
     bulkUpdateMutation.mutate({ ids: [logId], isBillable: !row.isBillable });
   }
 
@@ -687,9 +742,25 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                   <Badge tone={hasSelection ? 'amber' : 'slate'}>{selectedIds.length || 0} selected</Badge>
                   </CardHeader>
                   <CardBody className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Billable</div>
+                        <div className="mt-1 text-xl font-semibold text-[rgb(var(--text))]">{selectedBillableCount}</div>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Non-billable</div>
+                        <div className="mt-1 text-xl font-semibold text-[rgb(var(--text))]">{selectedNonBillableCount}</div>
+                      </div>
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => handleBulkBillable(true)} disabled={!selectedIds.length}>Mark billable</Button>
-                      <Button size="sm" variant="secondary" onClick={() => handleBulkBillable(false)} disabled={!selectedIds.length}>Mark non-billable</Button>
+                      <Button size="sm" variant="secondary" onClick={() => handleBulkBillable(true)} disabled={!selectedNonBillableCount || billableUpdatePending}>
+                        {billableUpdatePending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        Mark billable
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => handleBulkBillable(false)} disabled={!selectedBillableCount || billableUpdatePending}>
+                        {billableUpdatePending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        Mark non-billable
+                      </Button>
                       <Button size="sm" variant="danger" onClick={handleBulkDelete} disabled={!selectedIds.length}>Delete</Button>
                       <Button size="sm" variant="secondary" onClick={() => handleExport(true)} disabled={!selectedIds.length}>
                         <Download className="h-4 w-4" />
@@ -747,6 +818,18 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                       {hasSelection ? 'Clear All' : 'Select All'}
                     </Button>
                     {hasSelection ? (
+                      <>
+                        <Button size="sm" variant="secondary" onClick={() => handleBulkBillable(true)} disabled={billableUpdatePending || !selectedNonBillableCount}>
+                          {billableUpdatePending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Mark billable
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => handleBulkBillable(false)} disabled={billableUpdatePending || !selectedBillableCount}>
+                          {billableUpdatePending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Mark non-billable
+                        </Button>
+                      </>
+                    ) : null}
+                    {hasSelection ? (
                       <Button size="sm" variant="danger" onClick={handleBulkDelete} className="gap-2">
                         <Trash2 className="h-4 w-4" />
                         Delete
@@ -777,6 +860,7 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                 onToggleBillable={handleRowBillable}
                 canEditBillable
                 canDelete
+                billableUpdatingIds={billableUpdatingIds}
                 showSelectionColumn={hasSelection}
                 scrollClassName="scrollbar-none max-h-[62vh] pb-2"
               />

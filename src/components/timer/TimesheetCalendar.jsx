@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { addMonths, addYears, eachDayOfInterval, endOfDay, endOfMonth, endOfWeek, endOfYear, format, getMonth, getYear, isAfter, isBefore, isSameDay, isSameMonth, isWeekend, max, min, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays } from 'date-fns';
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Flame, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { formatDuration } from '../../store/timerStore';
+import { formatIndiaMinutesToTime, formatIndiaTime } from '../../utils/formatters';
+import { getTimerActionLabel, getTimerReason } from '../../utils/timerLogDisplay';
 
 function intensity(duration = 0) {
   if (duration <= 0) return 0;
@@ -99,7 +101,9 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
   const [browseDate, setBrowseDate] = useState(() => getBrowseSeed(range, dailySummary));
   const [pickerStage, setPickerStage] = useState('calendar');
   const [isPending, startTransition] = useTransition();
+  const [calendarPanelHeight, setCalendarPanelHeight] = useState(0);
   const ignoreClickRef = useRef(false);
+  const calendarPanelRef = useRef(null);
 
   const { summaryDays, calendarDays, totalHours, activeDays, peakDay, averageHours, summaryMap, topDays } = useMemo(() => {
     const map = new Map(
@@ -186,6 +190,13 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
         projectName: log.project?.projectName || log.projectName || '-',
         taskTitle: log.task?.title || log.taskTitle || '-',
         note: log.note || '',
+        reason: log.reason || '',
+        action: log.action || '',
+        actionLabel: log.actionLabel || '',
+        switchReason: log.switchReason || '',
+        switchFromLog: log.switchFromLog || null,
+        switchToTask: log.switchToTask || null,
+        pausedAt: log.pausedAt || null,
         isBillable: Boolean(log.isBillable),
         isManual: Boolean(log.isManual),
         duration: Number(log.duration || 0),
@@ -249,6 +260,25 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
     setPickerStage('calendar');
     setFocusedDayKey(toIndiaDateKey(getIndiaToday()));
   }, [resetViewToken]);
+
+  useLayoutEffect(() => {
+    const element = calendarPanelRef.current;
+    if (!element) return undefined;
+
+    const updateHeight = () => {
+      setCalendarPanelHeight(Math.round(element.getBoundingClientRect().height));
+    };
+
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver(() => updateHeight());
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [browseDate, calendarDays.length, pickerStage, selectedLogs.length, selectedSummary?.date, topDays.length]);
 
   function commitRange(start, end) {
     if (!start || !end) return;
@@ -452,10 +482,10 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
         </div>
       </div>
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
         <div className="min-w-0">
           {pickerStage === 'year' ? (
-            <div className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-sm transition-all duration-300 sm:p-5">
+            <div ref={calendarPanelRef} className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-sm transition-all duration-300 sm:p-5">
               <div className="mb-4">
                 <div className="text-base font-semibold text-[rgb(var(--text))] sm:text-lg">{browseYearLabel}</div>
                 <div className="mt-1 text-xs text-slate-500">Click a year to browse months.</div>
@@ -479,7 +509,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
               </div>
             </div>
           ) : pickerStage === 'month' ? (
-            <div className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-sm transition-all duration-300 sm:p-5">
+            <div ref={calendarPanelRef} className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-sm transition-all duration-300 sm:p-5">
               <div className="mb-4">
                 <div className="text-base font-semibold text-[rgb(var(--text))] sm:text-lg">{browseMonthLabel} {browseYearLabel}</div>
                 <div className="mt-1 text-xs text-slate-500">Click a month to return to the calendar.</div>
@@ -506,7 +536,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
               </div>
             </div>
           ) : (
-            <>
+            <div ref={calendarPanelRef}>
               <div className="mb-2 grid grid-cols-7 gap-1.5 px-0 text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400 sm:gap-2 sm:px-1 sm:text-[10px] sm:tracking-[0.18em]">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                   <span key={day} className="text-center">
@@ -530,9 +560,9 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                       onPointerUp={(event) => handleDayPointerUp(day, event)}
                       onPointerCancel={handleDayPointerCancel}
                       onPointerLeave={() => setHoveredDay(null)}
-                    onClick={(event) => handleDayClick(day, event)}
-                    title={`${format(day.date, 'dd MMM yyyy')} - ${formatDuration(day.duration)} across ${day.entries} entries and ${day.tasks} tasks`}
-                    className={cn(
+                      onClick={(event) => handleDayClick(day, event)}
+                      title={`${format(day.date, 'dd MMM yyyy')} - ${formatDuration(day.duration)} across ${day.entries} entries and ${day.tasks} tasks`}
+                      className={cn(
                         'group relative flex aspect-square flex-col items-center justify-center rounded-xl border text-[9px] transition-all duration-300 ease-out will-change-transform sm:rounded-2xl sm:text-[10px]',
                         day.inMonth ? '' : 'opacity-45',
                         day.level === 0
@@ -550,7 +580,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                         isDragging ? 'cursor-grabbing' : 'cursor-pointer',
                         isHovered ? 'scale-[1.02] shadow-md shadow-sky-200/40' : 'hover:-translate-y-[1px] hover:shadow-sm',
                       )}
-                      >
+                    >
                       <span className="font-semibold leading-none">{format(day.date, 'dd')}</span>
                       <span className="mt-0.5 opacity-80 leading-none">{formatHours(day.duration)}</span>
                       {day.entries > 0 ? <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-white/80 sm:right-2 sm:top-2 sm:h-2 sm:w-2" /> : null}
@@ -559,52 +589,58 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                   );
                 })}
               </div>
-            </>
+            </div>
           )}
         </div>
 
-        <aside className="space-y-4 rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] p-4 transition-all duration-300">
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{selectedSummary ? 'Day details' : 'Top days'}</div>
-            <div className="mt-2 space-y-2">
-              {selectedSummary ? (
-                <div className="rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.88)] p-3 shadow-sm transition-all duration-300">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(selectedSummary.date, 'dd MMM yyyy')}</div>
-                      <div className="text-xs text-slate-500">{format(selectedSummary.date, 'EEEE')}</div>
-                    </div>
-                    <Badge tone="sky">{formatHours(selectedSummary.duration)}</Badge>
+        <aside
+          className="flex min-h-0 self-start flex-col overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] p-4 transition-all duration-300 sm:p-5"
+          style={calendarPanelHeight ? { height: `${calendarPanelHeight}px`, maxHeight: `${calendarPanelHeight}px` } : undefined}
+        >
+          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{selectedSummary ? 'Day details' : 'Top days'}</div>
+          <div className="mt-3 flex min-h-0 flex-col">
+            {selectedSummary ? (
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.88)] p-3 shadow-sm transition-all duration-300">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(selectedSummary.date, 'dd MMM yyyy')}</div>
+                    <div className="text-xs text-slate-500">{format(selectedSummary.date, 'EEEE')}</div>
                   </div>
-                  <div className="mt-3 grid gap-2 text-xs text-slate-600">
-                    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
-                      <span>Entries</span>
-                      <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.entries || selectedLogs.length || 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
-                      <span>Tasks</span>
-                      <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.tasks || selectedLogs.length || 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
-                      <span>Billable</span>
-                      <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.billable ? `${formatHours(selectedSummary.billable)}` : selectedLogs.some((log) => log.isBillable) ? 'Yes' : 'No'}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
-                      <span>Avg start</span>
-                      <span className="font-semibold text-[rgb(var(--text))]">
-                        {Number.isFinite(selectedSummary.averageStartMinutes) && selectedSummary.averageStartMinutes > 0
-                          ? `${String(Math.floor(selectedSummary.averageStartMinutes / 60)).padStart(2, '0')}:${String(Math.round(selectedSummary.averageStartMinutes % 60)).padStart(2, '0')}`
-                          : selectedLogs.length
-                            ? format(new Date(selectedLogs[0].startTime), 'HH:mm')
-                            : '-'}
-                      </span>
-                    </div>
+                  <Badge tone="sky">{formatHours(selectedSummary.duration)}</Badge>
+                </div>
+                <div className="mt-3 grid gap-2 text-xs text-slate-600">
+                  <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
+                    <span>Entries</span>
+                    <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.entries || selectedLogs.length || 0}</span>
                   </div>
-                  <div className="mt-4 space-y-2">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Logs</div>
+                  <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
+                    <span>Tasks</span>
+                    <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.tasks || selectedLogs.length || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
+                    <span>Billable</span>
+                    <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.billable ? `${formatHours(selectedSummary.billable)}` : selectedLogs.some((log) => log.isBillable) ? 'Yes' : 'No'}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
+                    <span>Avg start</span>
+                    <span className="font-semibold text-[rgb(var(--text))]">
+                      {Number.isFinite(selectedSummary.averageStartMinutes) && selectedSummary.averageStartMinutes > 0
+                        ? formatIndiaMinutesToTime(selectedSummary.averageStartMinutes)
+                        : selectedLogs.length
+                          ? formatIndiaTime(new Date(selectedLogs[0].startTime))
+                          : '-'}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 flex min-h-0 flex-1 flex-col">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Logs</div>
+                  <div className="scrollbar-none mt-1 flex-1 space-y-1.5 overflow-y-auto pr-0.5">
                     {selectedLogs.length ? (
-                      selectedLogs.map((log) => (
-                        <div key={log.id} className="rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.74)] px-3 py-2 text-xs transition-all duration-200 hover:bg-[rgb(var(--panel)/0.9)]">
+                      selectedLogs.map((log) => {
+                        const actionLabel = getTimerActionLabel(log);
+                        const reason = getTimerReason(log);
+                        return (
+                        <div key={log.id} className="rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.74)] px-2.5 py-1.5 text-xs transition-all duration-200 hover:bg-[rgb(var(--panel)/0.9)]">
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               <div className="truncate font-semibold text-[rgb(var(--text))]">{log.projectName}</div>
@@ -612,19 +648,22 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                             </div>
                             <Badge tone={log.isBillable ? 'green' : 'slate'}>{formatHours(log.duration)}</Badge>
                           </div>
-                          <div className="mt-1 flex items-center justify-between gap-3 text-[11px] text-slate-500">
-                            <span>{log.startTime ? format(new Date(log.startTime), 'HH:mm') : '-'}</span>
-                            <span>{log.note || log.isManual ? 'Manual' : ''}</span>
+                          <div className="mt-0.5 flex items-center justify-between gap-3 text-[11px] text-slate-500">
+                            <span>{log.startTime ? formatIndiaTime(new Date(log.startTime)) : '-'}</span>
+                            <span className="min-w-0 truncate text-right">{reason ? `${actionLabel}: ${reason}` : actionLabel}</span>
                           </div>
                         </div>
-                      ))
+                        );
+                      })
                     ) : (
                       <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logs for this day.</div>
                     )}
                   </div>
                 </div>
-              ) : topDays.length ? (
-                topDays.map((item) => (
+              </div>
+            ) : topDays.length ? (
+              <div className="grid content-start gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                {topDays.map((item) => (
                   <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.78)] px-3 py-2 transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-sm">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(item.date, 'dd MMM')}</div>
@@ -632,11 +671,11 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
                     </div>
                     <Badge tone="sky">{formatHours(item.duration)}</Badge>
                   </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logged days yet.</div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logged days yet.</div>
+            )}
           </div>
         </aside>
       </div>

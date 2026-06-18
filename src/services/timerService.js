@@ -13,8 +13,20 @@ export const timerService = {
     const response = await api.post('/timer/start', payload);
     return unwrap(response);
   },
-  async stop() {
-    const response = await api.put('/timer/stop');
+  async switch(payload) {
+    const response = await api.post('/timer/switch', payload);
+    return unwrap(response);
+  },
+  async resume(payload) {
+    const response = await api.post('/timer/resume', payload);
+    return unwrap(response);
+  },
+  async pause(payload) {
+    const response = await api.put('/timer/pause', payload);
+    return unwrap(response);
+  },
+  async stop(payload) {
+    const response = await api.put('/timer/stop', payload);
     return unwrap(response);
   },
   async mine(params) {

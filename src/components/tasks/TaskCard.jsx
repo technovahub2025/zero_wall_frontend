@@ -16,13 +16,15 @@ import { format, parseISO } from 'date-fns';
 export const TaskCard = memo(function TaskCard({ task, onClick, showProject = false, selected = false, compact = false }) {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { isRunning, activeLog, elapsedSeconds, startTimer, stopTimer } = useTimer();
+  const { isRunning, activeLog, elapsedSeconds, startTimer, stopTimer, resumeTimer } = useTimer();
   const updateTask = useUpdateTask();
   const requestExtension = useRequestTaskTimeExtension();
   const [now, setNow] = useState(Date.now());
   const [requestOpen, setRequestOpen] = useState(false);
+  const [stopReasonOpen, setStopReasonOpen] = useState(false);
   const [requestedMinutes, setRequestedMinutes] = useState(30);
   const [reason, setReason] = useState('');
+  const [stopReason, setStopReason] = useState('');
   const taskId = task.id || task._id;
   const projectId = task.project?.id || task.project?._id || task.projectId || task.project;
   const stageId = task.stage?.id || task.stage?._id || task.stageId || task.stage;
@@ -38,11 +40,14 @@ export const TaskCard = memo(function TaskCard({ task, onClick, showProject = fa
     taskTeamMemberIds.some((memberId) => String(memberId) === String(user?.id));
   const isThisTaskActive = isRunning && String(activeLog?.task?.id || activeLog?.task?._id || activeLog?.task) === String(taskId);
   const isBudgeted = Number(task.estimatedDurationMinutes || 0) > 0;
+  const totalBudgetSeconds = (Number(task.estimatedDurationMinutes || 0) + Number(task.extraTimeMinutesGranted || 0)) * 60;
   const timerExpiresAt = task.timerExpiresAt ? new Date(task.timerExpiresAt).getTime() : null;
   const remainingSeconds = timerExpiresAt ? Math.floor((timerExpiresAt - now) / 1000) : null;
+  const remainingBudgetSeconds = Math.max(0, totalBudgetSeconds - Number(task.totalTimeLogged || 0));
+  const isPausedTask = task.timerStatus === 'paused';
   const timerExpired =
     (isBudgeted && task.timerStatus === 'expired') ||
-    (isBudgeted && timerExpiresAt && remainingSeconds <= 0 && task.status !== 'done');
+    (isBudgeted && timerExpiresAt && remainingSeconds <= 0 && task.status !== 'done' && !isPausedTask);
   const pendingRequest = task.pendingTimeExtensionRequest;
   const latestRequest = task.latestTimeExtensionRequest;
   const assigneeName = task.assignee?.name || task.assigneeName || 'Unassigned';
@@ -129,11 +134,13 @@ export const TaskCard = memo(function TaskCard({ task, onClick, showProject = fa
           {isBudgeted ? (
             <Badge tone={timerExpired ? 'rose' : isThisTaskActive ? 'amber' : 'slate'}>
               <Clock3 className="h-3.5 w-3.5" />
-              {timerExpiresAt
-                ? timerExpired
-                  ? 'Timer expired'
-                  : `${formatDuration(Math.max(0, remainingSeconds || 0))} left`
-                : `${formatDuration(Number(task.estimatedDurationMinutes || 0) * 60)} budget`}
+              {isPausedTask
+                ? `Paused - ${formatDuration(remainingBudgetSeconds)} remaining`
+                : timerExpiresAt
+                  ? timerExpired
+                    ? 'Timer expired'
+                    : `${formatDuration(Math.max(0, remainingSeconds || 0))} left`
+                  : `${formatDuration(totalBudgetSeconds)} budget`}
             </Badge>
           ) : null}
           {latestRequest ? (
@@ -165,7 +172,7 @@ export const TaskCard = memo(function TaskCard({ task, onClick, showProject = fa
                   className="inline-flex items-center gap-2 rounded-full bg-rose-500/15 px-3 py-2 text-xs font-semibold text-rose-300 ring-1 ring-rose-400/20"
                   onClick={(event) => {
                     event.stopPropagation();
-                    stopTimer();
+                    setStopReasonOpen((current) => !current);
                   }}
                 >
                   <PauseCircle className="h-4 w-4" />
@@ -173,6 +180,19 @@ export const TaskCard = memo(function TaskCard({ task, onClick, showProject = fa
                   <span className="rounded-full bg-rose-400/20 px-2 py-0.5 text-[10px]">{formatDuration(elapsedSeconds)}</span>
                 </button>
               )
+            ) : isPausedTask && canStart ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-3 py-2 text-xs font-semibold text-blue-700 ring-1 ring-blue-400/20"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  resumeTimer(taskId, projectId, stageId, '');
+                }}
+              >
+                <PlayCircle className="h-4 w-4" />
+                Resume Timer
+                <span className="rounded-full bg-blue-400/20 px-2 py-0.5 text-[10px]">{formatDuration(remainingBudgetSeconds)}</span>
+              </button>
             ) : canStart ? (
               <button
                 type="button"
@@ -200,6 +220,30 @@ export const TaskCard = memo(function TaskCard({ task, onClick, showProject = fa
                 {pendingRequest ? 'Extra time pending' : 'Request extra time'}
               </button>
             ) : null}
+          </div>
+        ) : null}
+        {stopReasonOpen ? (
+          <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3" onClick={(event) => event.stopPropagation()}>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <input
+                className="input h-10"
+                value={stopReason}
+                onChange={(event) => setStopReason(event.target.value)}
+                placeholder="Reason for stopping timer"
+              />
+              <button
+                type="button"
+                className="rounded-xl bg-rose-500 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                disabled={!stopReason.trim()}
+                onClick={async () => {
+                  await stopTimer({ reason: stopReason });
+                  setStopReason('');
+                  setStopReasonOpen(false);
+                }}
+              >
+                Stop Timer
+              </button>
+            </div>
           </div>
         ) : null}
         {requestOpen && !pendingRequest ? (

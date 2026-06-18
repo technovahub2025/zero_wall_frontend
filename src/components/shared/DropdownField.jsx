@@ -16,6 +16,8 @@ export function DropdownField({
   searchPlaceholder = 'Search...',
   className = '',
   error = '',
+  triggerClassName = '',
+  labelClassName = '',
 }) {
   const wrapRef = useRef(null);
   const menuRef = useRef(null);
@@ -140,7 +142,7 @@ export function DropdownField({
                 </label>
               ) : null}
             </div>
-            <div className="scrollbar-none overflow-y-auto py-1" style={{ maxHeight: menuStyle.listMaxHeight }}>
+            <div className="scrollbar-none overflow-y-auto py-1.5 pb-3" style={{ maxHeight: menuStyle.listMaxHeight }}>
               {multiple ? (
                 <>
                   <button
@@ -237,12 +239,15 @@ export function DropdownField({
 
   return (
     <label className={cn('block', className)}>
-      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</span>
+      <span className={cn('mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500', labelClassName)}>{label}</span>
       <div ref={wrapRef} className="relative">
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
-          className="flex h-11 w-full items-center gap-3 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.72)] px-4 text-left text-sm text-[rgb(var(--text))] shadow-sm transition hover:border-sky-400/30 hover:bg-[rgb(var(--panel-2)/0.92)]"
+          className={cn(
+            'flex h-14 w-full items-center gap-3 rounded-3xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.72)] px-4 text-left text-sm text-[rgb(var(--text))] shadow-[0_12px_28px_-24px_rgba(15,23,42,0.45)] transition hover:border-sky-400/30 hover:bg-[rgb(var(--panel-2)/0.92)]',
+            triggerClassName,
+          )}
         >
           <span className="min-w-0 flex-1 truncate">{activeLabel}</span>
           <ChevronDown className={cn('h-4 w-4 flex-shrink-0 text-slate-400 transition-transform', open && 'rotate-180')} />

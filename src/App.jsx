@@ -29,6 +29,7 @@ const MyTimesheetsPage = lazy(() => import('./pages/MyTimesheetsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const Employees = lazy(() => import('./pages/Employees'));
 const EmployeeProfile = lazy(() => import('./pages/EmployeeProfile'));
+const Monitor = lazy(() => import('./pages/Monitor'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Clients = lazy(() => import('./pages/Clients'));
@@ -148,6 +149,7 @@ export default function App() {
                 <Route path="/clients/:id" element={<RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}><Clients /></RoleGuard>} />
                 <Route path="/employees" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}><Employees /></RoleGuard>} />
                 <Route path="/employees/:id" element={<RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}><EmployeeProfile /></RoleGuard>} />
+                <Route path="/monitor" element={<RoleGuard roles={['superadmin', 'admin']} fallback={<Navigate to="/my-tasks" replace />}><Monitor /></RoleGuard>} />
                 <Route
                   path="/teams"
                   element={

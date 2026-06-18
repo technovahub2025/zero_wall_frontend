@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -12,8 +13,11 @@ import {
   FolderKanban,
   MessageSquareText,
   MessagesSquare,
+  PauseCircle,
   PencilLine,
   PlayCircle,
+  Shuffle,
+  StopCircle,
   TimerReset,
   Tag,
   Trash2,
@@ -31,6 +35,7 @@ import {
   useDeleteTask,
   useRequestTaskTimeExtension,
   useTask,
+  useTaskTimerLogs,
   useUpdateTask,
 } from '../hooks/useTasks';
 import { useTimer } from '../hooks/useTimer';
@@ -46,6 +51,8 @@ import { TaskPriorityBadge } from '../components/tasks/TaskPriorityBadge';
 import { TaskStatusBadge } from '../components/tasks/TaskStatusBadge';
 import { TimeExtensionRequestsPanel } from '../components/tasks/TimeExtensionRequestsPanel';
 import { formatDuration } from '../store/timerStore';
+import { formatIndiaDateTime } from '../utils/formatters';
+import { getTimerActionLabel, getTimerActionTone, getTimerReason } from '../utils/timerLogDisplay';
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -276,6 +283,7 @@ export default function TaskDetail() {
             task={task}
             projectId={projectId}
             stageId={stageId}
+            canStart={canStart}
             onComplete={handleComplete}
           />
         </div>
@@ -364,21 +372,89 @@ function MetaItem({ label, value, icon: Icon }) {
 }
 
 function TaskTimerPanel({ task, projectId, stageId, canStart, onComplete }) {
-  const { activeLog, isRunning, startTimer } = useTimer();
+  const queryClient = useQueryClient();
+  const { activeLog, isRunning, startTimer, switchTimer, resumeTimer, pauseTimer, stopTimer } = useTimer();
+  const taskLogsQuery = useTaskTimerLogs(task?.id);
   const requestExtension = useRequestTaskTimeExtension();
   const [requestOpen, setRequestOpen] = useState(false);
   const [requestedMinutes, setRequestedMinutes] = useState(30);
   const [reason, setReason] = useState('');
+  const [timerAction, setTimerAction] = useState(null);
+  const [timerReason, setTimerReason] = useState('');
 
   const isThisTaskActive = isRunning && String(activeLog?.task?.id || activeLog?.task?._id || activeLog?.task) === String(task.id);
+  const isAnotherTaskActive = isRunning && !isThisTaskActive;
   const isBudgeted = Number(task?.estimatedDurationMinutes || 0) > 0;
+  const totalBudgetSeconds = Number(task?.timerBudgetSeconds || 0) || (Number(task?.estimatedDurationMinutes || 0) + Number(task?.extraTimeMinutesGranted || 0)) * 60;
   const timerExpiresAt = task?.timerExpiresAt ? new Date(task.timerExpiresAt).getTime() : null;
   const remainingSeconds = timerExpiresAt ? Math.floor((timerExpiresAt - Date.now()) / 1000) : null;
+  const remainingBudgetSeconds = Number.isFinite(Number(task?.timerRemainingSeconds)) && Number(task?.timerRemainingSeconds) > 0
+    ? Number(task.timerRemainingSeconds)
+    : Math.max(0, totalBudgetSeconds - Number(task?.totalTimeLogged || 0));
+  const isPausedTask = task?.timerStatus === 'paused';
   const timerExpired =
     (isBudgeted && task?.timerStatus === 'expired') ||
-    (isBudgeted && timerExpiresAt && remainingSeconds <= 0 && task?.status !== 'done');
-  const timerLabel = task.timerExpiresAt ? (timerExpired ? 'Expired' : formatDuration(Math.max(0, remainingSeconds || 0))) : 'Not started';
-  const timerStatusTone = timerExpired ? 'rose' : isThisTaskActive ? 'green' : 'slate';
+    (isBudgeted && timerExpiresAt && remainingSeconds <= 0 && task?.status !== 'done' && !isPausedTask);
+  const timerLabel = isPausedTask
+    ? `Paused - ${formatDuration(remainingBudgetSeconds)} remaining`
+    : isThisTaskActive
+      ? 'Running'
+      : task.timerExpiresAt
+      ? (timerExpired ? 'Expired' : formatDuration(Math.max(0, remainingSeconds || 0)))
+      : 'Not started';
+  const timerStatusTone = timerExpired ? 'rose' : isPausedTask ? 'amber' : isThisTaskActive ? 'green' : 'slate';
+  const timerLogs = taskLogsQuery.data || [];
+  const activeTimerReason = isThisTaskActive ? getTimerReason(activeLog) : '';
+  const actionConfig = {
+    pause: {
+      title: 'Pause timer',
+      description: 'Add the reason for pausing this task timer.',
+      label: 'Pause reason',
+      placeholder: 'Why are you pausing this timer?',
+      submitLabel: 'Pause Timer',
+      handler: async () => pauseTimer(timerReason),
+    },
+    stop: {
+      title: 'Stop timer',
+      description: 'Add the reason for stopping and finalizing this timer.',
+      label: 'Stop reason',
+      placeholder: 'Why are you stopping this timer?',
+      submitLabel: 'Stop Timer',
+      handler: async () => stopTimer({ reason: timerReason }),
+    },
+    switch: {
+      title: 'Switch to this task',
+      description: 'Add the reason for switching from the current timer to this task.',
+      label: 'Switch reason',
+      placeholder: 'Why are you switching to this task?',
+      submitLabel: 'Switch Timer',
+      handler: async () => switchTimer(task.id, projectId, stageId, timerReason),
+    },
+  };
+  const activeAction = timerAction ? actionConfig[timerAction] : null;
+
+  async function refreshTaskTimerState() {
+    queryClient.invalidateQueries({ queryKey: ['task', task.id] });
+    queryClient.invalidateQueries({ queryKey: ['timer-logs', 'task', task.id] });
+  }
+
+  async function handleStart() {
+    await startTimer(task.id, projectId, stageId, '');
+    refreshTaskTimerState();
+  }
+
+  async function handleResume() {
+    await resumeTimer(task.id, projectId, stageId, '');
+    refreshTaskTimerState();
+  }
+
+  async function handleTimerReasonSubmit() {
+    if (!activeAction || !timerReason.trim()) return;
+    await activeAction.handler();
+    setTimerReason('');
+    setTimerAction(null);
+    refreshTaskTimerState();
+  }
 
   return (
     <Card id="task-timer" className="overflow-hidden border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.98)] shadow-[0_22px_70px_-48px_rgba(15,23,42,0.45)] ring-1 ring-[rgb(var(--line)/0.06)]">
@@ -395,10 +471,17 @@ function TaskTimerPanel({ task, projectId, stageId, canStart, onComplete }) {
               </div>
               <div className="mt-2 text-3xl font-semibold text-[rgb(var(--text))]">{timerLabel}</div>
               <div className="mt-1 text-xs text-slate-500">
-                {task.estimatedDurationMinutes ? `${formatDuration(Number(task.estimatedDurationMinutes) * 60)} budget` : 'No completion timer configured'}
+                {isThisTaskActive ? 'This task timer is active now' : task.estimatedDurationMinutes ? `${formatDuration(Number(task.estimatedDurationMinutes) * 60)} budget` : 'No completion timer configured'}
               </div>
+              {activeTimerReason ? (
+                <div className="mt-2 max-w-sm rounded-xl bg-white/60 px-3 py-2 text-xs font-medium text-slate-600 ring-1 ring-[rgb(var(--line)/0.12)]">
+                  {getTimerActionLabel(activeLog)}: {activeTimerReason}
+                </div>
+              ) : null}
             </div>
-            <Badge tone={timerStatusTone}>{timerExpired ? 'Expired' : isThisTaskActive ? 'Running' : task.timerStatus || 'Not started'}</Badge>
+            <Badge tone={timerStatusTone}>
+              {timerExpired ? 'Expired' : isPausedTask ? 'Paused' : isThisTaskActive ? 'Running' : task.timerStatus || 'Not started'}
+            </Badge>
           </div>
         </div>
 
@@ -413,13 +496,36 @@ function TaskTimerPanel({ task, projectId, stageId, canStart, onComplete }) {
 
         {task.status !== 'done' ? (
           <div className="flex flex-wrap gap-2 border-t border-[rgb(var(--line)/0.16)] pt-4">
-            {isThisTaskActive && isBudgeted ? (
-              <Button onClick={onComplete}>
-                <CheckCircle2 className="h-4 w-4" />
-                Complete Task
+            {isThisTaskActive ? (
+              <>
+                <Button variant="secondary" onClick={() => setTimerAction('pause')}>
+                  <PauseCircle className="h-4 w-4" />
+                  Pause
+                </Button>
+                <Button variant="danger" onClick={() => setTimerAction('stop')}>
+                  <StopCircle className="h-4 w-4" />
+                  Stop
+                </Button>
+                {isBudgeted ? (
+                  <Button onClick={onComplete}>
+                    <CheckCircle2 className="h-4 w-4" />
+                    Complete Task
+                  </Button>
+                ) : null}
+              </>
+            ) : isPausedTask && canStart ? (
+              <Button onClick={handleResume}>
+                <PlayCircle className="h-4 w-4" />
+                Resume Timer
+                <span className="rounded-full bg-blue-400/20 px-2 py-0.5 text-[10px]">{formatDuration(remainingBudgetSeconds)}</span>
+              </Button>
+            ) : isAnotherTaskActive && canStart && !timerExpired ? (
+              <Button variant="secondary" onClick={() => setTimerAction('switch')}>
+                <Shuffle className="h-4 w-4" />
+                Switch to this task
               </Button>
             ) : canStart && !timerExpired ? (
-              <Button onClick={() => startTimer(task.id, projectId, stageId, '')}>
+              <Button onClick={handleStart}>
                 <PlayCircle className="h-4 w-4" />
                 Start Timer
               </Button>
@@ -431,6 +537,40 @@ function TaskTimerPanel({ task, projectId, stageId, canStart, onComplete }) {
             ) : null}
           </div>
         ) : null}
+
+        <div className="rounded-2xl border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.84)] p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Timer Activity</div>
+            <Badge tone="slate">{timerLogs.length}</Badge>
+          </div>
+          <div className="scrollbar-none mt-3 max-h-[18rem] space-y-2 overflow-y-auto pr-1">
+            {timerLogs.length ? (
+              timerLogs.map((log) => {
+                const actionLabel = getTimerActionLabel(log);
+                const reasonText = getTimerReason(log);
+                return (
+                  <div key={log.id || log._id} className="rounded-2xl border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel-2)/0.72)] px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <Badge tone={getTimerActionTone(log)}>{actionLabel}</Badge>
+                      <span className="text-slate-500">{formatDateTime(log.startTime || log.date || log.createdAt)}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <span className="font-semibold text-[rgb(var(--text))]">{formatDuration(log.duration || 0)}</span>
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Reason</span>
+                    </div>
+                    <div className="mt-1 break-words rounded-xl bg-[rgb(var(--panel)/0.74)] px-3 py-2 text-slate-600">
+                      {reasonText ? `${actionLabel}: ${reasonText}` : `${actionLabel}: No reason/comment recorded`}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.14)] px-3 py-4 text-sm text-slate-500">
+                No timer activity recorded for this task yet.
+              </div>
+            )}
+          </div>
+        </div>
 
         {requestOpen && !task.pendingTimeExtensionRequest ? (
           <div className="grid gap-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3">
@@ -457,6 +597,28 @@ function TaskTimerPanel({ task, projectId, stageId, canStart, onComplete }) {
           />
         ) : null}
       </CardBody>
+      {activeAction ? (
+        <ModalShell title={activeAction.title} description={activeAction.description} onClose={() => { setTimerAction(null); setTimerReason(''); }} widthClassName="max-w-lg">
+          <div className="space-y-4">
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{activeAction.label}</span>
+              <textarea
+                className="input min-h-[120px]"
+                value={timerReason}
+                onChange={(event) => setTimerReason(event.target.value)}
+                placeholder={activeAction.placeholder}
+                autoFocus
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => { setTimerAction(null); setTimerReason(''); }}>Cancel</Button>
+              <Button variant={timerAction === 'stop' ? 'danger' : 'primary'} disabled={!timerReason.trim()} onClick={handleTimerReasonSubmit}>
+                {activeAction.submitLabel}
+              </Button>
+            </div>
+          </div>
+        </ModalShell>
+      ) : null}
     </Card>
   );
 }
@@ -470,7 +632,5 @@ function formatDate(value) {
 
 function formatDateTime(value) {
   if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '-';
-  return format(date, 'dd MMM yyyy, hh:mm a');
+  return formatIndiaDateTime(value);
 }

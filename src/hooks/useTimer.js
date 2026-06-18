@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { timerService } from '../services/timerService';
@@ -47,17 +47,27 @@ export function useTimer() {
     queryFn: timerService.active,
   });
 
+  const applyActivePayload = (payload) => {
+    const active = payload && Object.prototype.hasOwnProperty.call(payload, 'activeLog') ? payload.activeLog : payload || null;
+    if (active) {
+      setActiveLog(normalizeLog(active));
+      startTicker();
+      tick();
+      return;
+    }
+    clearActiveLog();
+    stopTicker();
+  };
+
   useEffect(() => {
     setSyncing(activeQuery.isLoading);
     if (activeQuery.data) {
-      setActiveLog(normalizeLog(activeQuery.data));
-      startTicker();
-      tick();
+      applyActivePayload(activeQuery.data);
     } else if (activeQuery.data === null) {
       clearActiveLog();
       stopTicker();
     }
-  }, [activeQuery.data, activeQuery.isLoading, setSyncing, setActiveLog, clearActiveLog, startTicker, stopTicker, tick]);
+  }, [activeQuery.data, activeQuery.isLoading, clearActiveLog, setSyncing, setActiveLog, startTicker, stopTicker, tick]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -80,9 +90,7 @@ export function useTimer() {
     mutationFn: ({ taskId, projectId, stageId, note }) =>
       timerService.start({ taskId, projectId, stageId, note }),
     onSuccess: (data) => {
-      setActiveLog(normalizeLog(data));
-      startTicker();
-      tick();
+      applyActivePayload(data);
       toast.success('Timer started');
       queryClient.invalidateQueries({ queryKey: ['timer-active'] });
       queryClient.invalidateQueries({ queryKey: ['timer-logs'] });
@@ -96,8 +104,63 @@ export function useTimer() {
     },
   });
 
+  const switchMutation = useMutation({
+    mutationFn: ({ taskId, projectId, stageId, note }) =>
+      timerService.switch({ taskId, projectId, stageId, note }),
+    onSuccess: (data) => {
+      applyActivePayload(data);
+      toast.success('Timer switched');
+      queryClient.invalidateQueries({ queryKey: ['timer-active'] });
+      queryClient.invalidateQueries({ queryKey: ['timer-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+    onError: (error, variables) => {
+      if (!variables?.suppressToast) {
+        toast.error(error?.response?.data?.message || error?.message || 'Failed to switch timer');
+      }
+    },
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: ({ taskId, projectId, stageId, note }) =>
+      timerService.resume({ taskId, projectId, stageId, note }),
+    onSuccess: (data) => {
+      applyActivePayload(data);
+      toast.success('Timer resumed');
+      queryClient.invalidateQueries({ queryKey: ['timer-active'] });
+      queryClient.invalidateQueries({ queryKey: ['timer-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+    onError: (error, variables) => {
+      if (!variables?.suppressToast) {
+        toast.error(error?.response?.data?.message || error?.message || 'Failed to resume timer');
+      }
+    },
+  });
+
+  const pauseMutation = useMutation({
+    mutationFn: ({ reason, note }) =>
+      timerService.pause({ reason, note: note || reason }),
+    onSuccess: () => {
+      clearActiveLog();
+      stopTicker();
+      toast.success('Timer paused');
+      queryClient.invalidateQueries({ queryKey: ['timer-active'] });
+      queryClient.invalidateQueries({ queryKey: ['timer-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+    onError: (error, variables) => {
+      if (!variables?.suppressToast) {
+        toast.error(error?.response?.data?.message || error?.message || 'Failed to pause timer');
+      }
+    },
+  });
+
   const stopMutation = useMutation({
-    mutationFn: () => timerService.stop(),
+    mutationFn: ({ reason, note } = {}) => timerService.stop({ reason, note: note || reason }),
     onSuccess: () => {
       clearActiveLog();
       stopTicker();
@@ -142,6 +205,7 @@ export function useTimer() {
   });
 
   const logs = logsQuery.data?.items || [];
+  const pausedTasks = activeQuery.data?.pausedTasks || [];
 
   return useMemo(
     () => ({
@@ -151,12 +215,18 @@ export function useTimer() {
       warningLevel,
       syncing,
       logs,
+      pausedTasks,
       grouped: groupLogsByDate(logs),
       dailySummary: logsQuery.data?.dailySummary || [],
       activeQuery,
       logsQuery,
       startTimer: (taskId, projectId, stageId, note = '', options = {}) =>
         startMutation.mutateAsync({ taskId, projectId, stageId, note, ...options }),
+      switchTimer: (taskId, projectId, stageId, note = '', options = {}) =>
+        switchMutation.mutateAsync({ taskId, projectId, stageId, note, ...options }),
+      resumeTimer: (taskId, projectId, stageId, note = '', options = {}) =>
+        resumeMutation.mutateAsync({ taskId, projectId, stageId, note, ...options }),
+      pauseTimer: (reason, options = {}) => pauseMutation.mutateAsync({ reason, ...options }),
       stopTimer: (options = {}) => stopMutation.mutateAsync(options),
       addManualLog: (payload) => manualMutation.mutateAsync(payload),
       deleteLog: (id) => deleteMutation.mutateAsync(id),
@@ -166,12 +236,17 @@ export function useTimer() {
       activeLog,
       isRunning,
       elapsedSeconds,
+      warningLevel,
       syncing,
       logs,
+      pausedTasks,
       logsQuery.data,
       activeQuery,
       logsQuery,
       startMutation,
+      switchMutation,
+      resumeMutation,
+      pauseMutation,
       stopMutation,
       manualMutation,
       deleteMutation,
@@ -179,4 +254,3 @@ export function useTimer() {
     ],
   );
 }
-

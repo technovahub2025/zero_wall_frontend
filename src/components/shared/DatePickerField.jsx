@@ -19,6 +19,7 @@ import {
   startOfToday,
 } from 'date-fns';
 import { cn } from '../../lib/utils';
+import { formatIndiaDate, formatIndiaDateTime, formatIndiaTime, parseIndiaTimeInput } from '../../utils/formatters';
 
 function toValidDate(value) {
   if (!value) return null;
@@ -33,13 +34,13 @@ function toDateValue(date) {
 
 function toDateTimeValue(date, time = '09:00') {
   if (!date) return '';
-  const safeTime = /^\d{2}:\d{2}$/.test(time) ? time : '09:00';
+  const safeTime = parseIndiaTimeInput(time) || '09:00';
   return `${format(date, 'yyyy-MM-dd')}T${safeTime}`;
 }
 
 function getDisplayValue(value, placeholder) {
   const date = toValidDate(value);
-  return date ? format(date, 'dd MMM yyyy') : placeholder;
+  return date ? formatIndiaDate(date) : placeholder;
 }
 
 function getPopoverStyle(anchor, width, height) {
@@ -279,12 +280,12 @@ export function DateTimeField({
     if (Number.isNaN(parsed.getTime())) return { date: null, time: '09:00' };
     return {
       date: parsed,
-      time: format(parsed, 'HH:mm'),
+      time: formatIndiaTime(parsed),
     };
   }, [value]);
   const [month, setMonth] = useState(() => startOfMonth(current.date || new Date()));
   const [time, setTime] = useState(current.time);
-  const displayValue = current.date ? `${format(current.date, 'dd MMM yyyy')}, ${current.time}` : placeholder;
+  const displayValue = current.date ? formatIndiaDateTime(current.date) : placeholder;
 
   useEffect(() => {
     if (current.date) {
@@ -338,7 +339,9 @@ export function DateTimeField({
       onChange?.('');
       return;
     }
-    onChange?.(toDateTimeValue(nextDate, nextTime));
+    const normalizedTime = parseIndiaTimeInput(nextTime);
+    if (!normalizedTime) return;
+    onChange?.(toDateTimeValue(nextDate, normalizedTime));
   }
 
   return (
@@ -430,14 +433,14 @@ export function DateTimeField({
               <span className="mb-1 block text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">Time</span>
               <input
                 type="text"
-                inputMode="numeric"
-                placeholder="HH:MM"
+                inputMode="text"
+                placeholder="hh:mm AM"
                 value={time}
                 onChange={(event) => {
                   setTime(event.target.value);
                 }}
                 onBlur={() => {
-                  if (current.date && /^\d{2}:\d{2}$/.test(time)) {
+                  if (current.date && parseIndiaTimeInput(time)) {
                     commit(current.date, time);
                   }
                 }}
@@ -451,8 +454,9 @@ export function DateTimeField({
                 onClick={() => {
                   const today = new Date();
                   setMonth(startOfMonth(today));
-                  setTime(format(today, 'HH:mm'));
-                  onChange?.(toDateTimeValue(today, format(today, 'HH:mm')));
+                  const nextTime = formatIndiaTime(today);
+                  setTime(nextTime);
+                  onChange?.(toDateTimeValue(today, nextTime));
                 }}
               >
                 Today
@@ -474,7 +478,7 @@ export function DateTimeField({
               type="button"
               className="text-xs font-medium text-sky-600 transition hover:text-sky-700"
               onClick={() => {
-                if (current.date && /^\d{2}:\d{2}$/.test(time)) {
+                if (current.date && parseIndiaTimeInput(time)) {
                   commit(current.date, time);
                   setOpen(false);
                 }

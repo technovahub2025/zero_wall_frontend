@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { normalizeProject, normalizeTask } from '../lib/phase2';
 import { kanbanService } from '../services/kanbanService';
 import { taskService } from '../services/taskService';
+import { timerService } from '../services/timerService';
 import { projectService } from '../services/projectService';
 import { useAuthStore } from '../store/authStore';
 
@@ -106,6 +107,21 @@ export function useTask(id, queryOptions = {}) {
       return normalizeTask(payload);
     },
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    ...queryOptions,
+  });
+}
+
+export function useTaskTimerLogs(taskId, queryOptions = {}) {
+  const user = useAuthStore((state) => state.user);
+  return useQuery({
+    queryKey: ['timer-logs', 'task', taskId, user?.id],
+    enabled: Boolean(taskId && user?.id),
+    queryFn: async () => {
+      const payload = await timerService.mine({ task: taskId, limit: 50 });
+      return payload.logs || payload.items || [];
+    },
+    staleTime: 15_000,
     refetchOnWindowFocus: false,
     ...queryOptions,
   });

@@ -58,7 +58,7 @@ function getPopoverStyle(anchor, width, height) {
     left,
     top,
     width,
-    maxHeight: `min(${height}px, calc(100vh - 1rem))`,
+    maxHeight: 'calc(100vh - 1rem)',
   };
 }
 
@@ -115,7 +115,7 @@ export function DatePickerField({
 
     const updatePosition = () => {
       const anchor = rootRef.current.getBoundingClientRect();
-      setPanelStyle(getPopoverStyle(anchor, Math.min(296, window.innerWidth - 16), 320));
+      setPanelStyle(getPopoverStyle(anchor, Math.min(296, window.innerWidth - 16), 364));
     };
 
     updatePosition();
@@ -170,7 +170,7 @@ export function DatePickerField({
         ? createPortal(
             <div
               ref={panelRef}
-              className="z-[999] w-[min(18.5rem,calc(100vw-1rem))] overflow-auto rounded-[20px] border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.99)] p-2.5 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur"
+              className="scrollbar-none z-[999] w-[min(18.5rem,calc(100vw-1rem))] overflow-x-hidden overflow-y-auto rounded-[20px] border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.99)] p-2.5 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur"
               style={panelStyle}
             >
           <div className="flex items-center justify-between gap-2 border-b border-[rgb(var(--line)/0.08)] pb-2.5">
@@ -322,7 +322,7 @@ export function DateTimeField({
 
     const updatePosition = () => {
       const anchor = rootRef.current.getBoundingClientRect();
-      setPanelStyle(getPopoverStyle(anchor, Math.min(320, window.innerWidth - 16), 420));
+      setPanelStyle(getPopoverStyle(anchor, Math.min(320, window.innerWidth - 16), 464));
     };
 
     updatePosition();
@@ -365,7 +365,7 @@ export function DateTimeField({
         ? createPortal(
             <div
               ref={panelRef}
-              className="z-[999] w-[min(18.5rem,calc(100vw-1rem))] overflow-auto rounded-[20px] border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.99)] p-2.5 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur"
+              className="scrollbar-none z-[999] w-[min(18.5rem,calc(100vw-1rem))] overflow-x-hidden overflow-y-auto rounded-[20px] border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.99)] p-2.5 shadow-[0_20px_50px_rgba(15,23,42,0.16)] backdrop-blur"
               style={panelStyle}
             >
           <div className="flex items-center justify-between gap-2 border-b border-[rgb(var(--line)/0.08)] pb-2.5">

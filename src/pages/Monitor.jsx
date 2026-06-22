@@ -15,7 +15,6 @@ import {
   UserX,
   Users,
 } from 'lucide-react';
-import { keepPreviousData } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { pageVariants, staggerItem } from '../utils/motionVariants';
 import { useMonitor } from '../hooks/useMonitor';
@@ -276,7 +275,6 @@ export default function Monitor() {
   );
 
   const monitorQuery = useMonitor(queryParams, {
-    placeholderData: keepPreviousData,
     staleTime: 15_000,
     refetchOnWindowFocus: false,
   });

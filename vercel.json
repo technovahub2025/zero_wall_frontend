@@ -1,7 +1,15 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/test_pg_infrastructure/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/test_pg_infrastructure/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/test_pg_infrastructure",
       "destination": "/index.html"
     }
   ]

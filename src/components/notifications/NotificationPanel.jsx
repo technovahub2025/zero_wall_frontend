@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { EmptyState } from '../shared/EmptyState';
 import { NotificationItem } from './NotificationItem';
 import { VirtualList } from '../shared/VirtualList';
+import { resolveAppHref } from '../../lib/utils';
 
 export function NotificationPanel({ open, notifications = [], onClose, onRead, onDelete, onMarkAllRead }) {
   if (!open) return null;
@@ -15,7 +16,7 @@ export function NotificationPanel({ open, notifications = [], onClose, onRead, o
       onDelete={onDelete}
       onClick={() => {
         if (notification.link) {
-          window.location.assign(notification.link);
+          window.location.assign(resolveAppHref(notification.link));
         }
         if (!notification.isRead) {
           onRead?.(notification.id);

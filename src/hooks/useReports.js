@@ -6,7 +6,6 @@ export function useReportsBundle(params = {}, queryOptions = {}) {
     queryKey: ['reports', 'bundle', params],
     queryFn: () => reportService.getBundle(params),
     staleTime: 120_000,
-    placeholderData: (previousData) => previousData,
     ...queryOptions,
   });
 }

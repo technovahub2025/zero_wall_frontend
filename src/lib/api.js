@@ -1,17 +1,39 @@
 import axios from 'axios';
 import { clearStoredAccessToken, getStoredAccessToken, setStoredAccessToken } from './authToken';
 
+function resolveApiBaseUrl() {
+  const explicit = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_BACKEND_URL;
+  if (explicit) return explicit;
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/api`;
+  }
+
+  return 'http://localhost:5000/api';
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: resolveApiBaseUrl(),
   withCredentials: true,
 });
 
 const refreshClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: resolveApiBaseUrl(),
   withCredentials: true,
 });
 
 let refreshPromise = null;
+
+const NON_REFRESHABLE_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/accept-invite',
+  '/auth/invite',
+  '/auth/refresh-token',
+  '/auth/logout',
+];
 
 api.interceptors.request.use((config) => {
   const token = getStoredAccessToken();
@@ -25,6 +47,11 @@ api.interceptors.request.use((config) => {
 });
 
 async function refreshAccessToken() {
+  if (!getStoredAccessToken()) {
+    clearStoredAccessToken();
+    return null;
+  }
+
   if (!refreshPromise) {
     refreshPromise = refreshClient
       .post('/auth/refresh-token')
@@ -53,13 +80,14 @@ api.interceptors.response.use(
     const originalRequest = error?.config;
     const status = error?.response?.status;
     const requestUrl = originalRequest?.url || '';
+    const shouldSkipRefresh = NON_REFRESHABLE_PATHS.some((path) => requestUrl.includes(path));
 
     if (
       status !== 401 ||
       !originalRequest ||
       originalRequest._retry ||
-      requestUrl.includes('/auth/refresh-token') ||
-      requestUrl.includes('/auth/logout')
+      shouldSkipRefresh ||
+      !getStoredAccessToken()
     ) {
       return Promise.reject(error);
     }

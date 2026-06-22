@@ -30,7 +30,7 @@ export function normalizeProject(record = {}) {
   return {
     id: String(record.id || record._id || record.projectId || record.name || ''),
     dbId: String(record._id || record.id || record.projectId || ''),
-    projectName: record.projectName || record.name || 'Untitled Project',
+    projectName: record.projectName || record.name || '',
     clientName: record.clientName || record.client || '',
     companySegment: record.companySegment || record.type || '',
     projectType,
@@ -61,7 +61,7 @@ export function normalizeProject(record = {}) {
     createdBy,
     createdAt: record.createdAt || null,
     updatedAt: record.updatedAt || null,
-    name: record.projectName || record.name || 'Untitled Project',
+    name: record.projectName || record.name || '',
     client: record.clientName || record.client || '',
     type: record.companySegment || record.type || '',
     typeShort: pickFirst(projectType),
@@ -226,7 +226,7 @@ export function normalizeTeam(record = {}) {
   return {
     id: String(record.id || record._id || ''),
     dbId: String(record._id || record.id || ''),
-    name: record.name || 'Untitled Team',
+    name: record.name || '',
     description: record.description || '',
     color: record.color || '#3b82f6',
     members,
@@ -260,23 +260,23 @@ export function buildDashboardData(projects = [], tasks = []) {
     .map((task, index) => ({
       id: task.id,
       n: String(index + 1).padStart(2, '0'),
-      projectName: task.projectName || task.project?.projectName || 'Project',
+      projectName: task.projectName || task.project?.projectName || '',
       projectClient: task.projectClient || task.project?.clientName || '',
       status: task.status,
       projectStatus: task.projectStatus || task.project?.overallStatus || '',
       priority: task.priority,
       projectStage: task.projectStage || task.stage?.stageName || '',
       nextAction: task.description || task.title,
-      assigneeName: task.assigneeName || task.projectEngineer || 'Unassigned',
+      assigneeName: task.assigneeName || task.projectEngineer || '',
       dueDate: task.dueDate || null,
-      decision: task.backupReviewerName || 'Pending',
+      decision: task.backupReviewerName || '',
       // legacy aliases used by older table views
-      proj: task.projectName || task.project?.projectName || 'Project',
+      proj: task.projectName || task.project?.projectName || '',
       client: task.projectClient || task.project?.clientName || '',
       pri: task.priority,
       stage: task.projectStage || task.stage?.stageName || '',
       action: task.description || task.title,
-      resp: task.assigneeName || task.projectEngineer || 'Unassigned',
+      resp: task.assigneeName || task.projectEngineer || '',
       target: task.dueDate || null,
     }));
 
@@ -288,7 +288,7 @@ export function buildDashboardData(projects = [], tasks = []) {
 
   const teamMap = new Map();
   projectRows.forEach((project) => {
-    const engineer = project.engineer || 'Unassigned';
+    const engineer = project.engineer || '';
     if (!teamMap.has(engineer)) {
       teamMap.set(engineer, { name: engineer, projects: 0, color: '#2E83F5' });
     }

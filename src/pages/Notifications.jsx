@@ -11,6 +11,7 @@ import { Button } from '../components/ui/button';
 import { useNotificationStore } from '../store/notificationStore';
 import { VirtualList } from '../components/shared/VirtualList';
 import { formatIndiaDateTime } from '../utils/formatters';
+import { resolveAppHref } from '../lib/utils';
 
 const filterOptions = [
   { label: 'All', value: 'all' },
@@ -184,7 +185,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }) {
       className="w-full rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.78)] p-4 text-left transition hover:bg-[rgb(var(--panel-2)/0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60"
       onClick={() => {
         if (notification.link) {
-          window.location.assign(notification.link);
+          window.location.assign(resolveAppHref(notification.link));
         }
         if (!notification.isRead) {
           onMarkRead.mutate(notification.id);
@@ -194,7 +195,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }) {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           if (notification.link) {
-            window.location.assign(notification.link);
+            window.location.assign(resolveAppHref(notification.link));
           }
           if (!notification.isRead) {
             onMarkRead.mutate(notification.id);

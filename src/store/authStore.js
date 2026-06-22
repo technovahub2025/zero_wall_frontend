@@ -9,6 +9,7 @@ const emptyState = {
   isAuthenticated: false,
   loading: true,
   initialized: false,
+  initializing: false,
 };
 
 function normalizeUser(data) {
@@ -23,8 +24,20 @@ export const useAuthStore = create((set, get) => ({
   ...emptyState,
 
   initialize: async () => {
-    if (get().initialized) return;
-    set({ loading: true });
+    if (get().initialized || get().initializing) return;
+
+    const storedToken = getStoredAccessToken();
+    if (!storedToken) {
+      set({
+        ...emptyState,
+        loading: false,
+        initialized: true,
+        initializing: false,
+      });
+      return;
+    }
+
+    set({ loading: true, initializing: true });
 
     try {
       const meResponse = await authService.me();
@@ -34,6 +47,7 @@ export const useAuthStore = create((set, get) => ({
         isAuthenticated: true,
         loading: false,
         initialized: true,
+        initializing: false,
       });
       return;
     } catch (error) {
@@ -51,6 +65,7 @@ export const useAuthStore = create((set, get) => ({
             isAuthenticated: true,
             loading: false,
             initialized: true,
+            initializing: false,
           });
           return;
         } catch (refreshError) {
@@ -63,6 +78,7 @@ export const useAuthStore = create((set, get) => ({
       ...emptyState,
       loading: false,
       initialized: true,
+      initializing: false,
     });
   },
 

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -24,7 +25,6 @@ import { DropdownField } from '../components/shared/DropdownField';
 import { FilterChips } from '../components/shared/FilterChips';
 import { SearchInput } from '../components/shared/SearchInput';
 import { SkeletonCard } from '../components/shared/SkeletonCard';
-import { VirtualList } from '../components/shared/VirtualList';
 import { formatDuration } from '../store/timerStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -79,6 +79,8 @@ export default function MyTasksPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const filtersRootRef = useRef(null);
+  const filtersPanelRef = useRef(null);
+  const [filtersPanelRect, setFiltersPanelRect] = useState(null);
 
   const tasks = tasksQuery.data || [];
   const pausedTaskList = pausedTasks || [];
@@ -98,7 +100,9 @@ export default function MyTasksPage() {
     function handlePointerDown(event) {
       if (!filtersRootRef.current) return;
       if (event.target?.closest?.('[data-dropdown-portal]')) return;
-      if (!filtersRootRef.current.contains(event.target)) setFiltersOpen(false);
+      if (filtersRootRef.current.contains(event.target)) return;
+      if (filtersPanelRef.current?.contains(event.target)) return;
+      setFiltersOpen(false);
     }
 
     function handleKeyDown(event) {
@@ -112,6 +116,27 @@ export default function MyTasksPage() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  useEffect(() => {
+    if (!filtersOpen) {
+      setFiltersPanelRect(null);
+      return undefined;
+    }
+
+    const updateRect = () => {
+      if (!filtersRootRef.current) return;
+      setFiltersPanelRect(filtersRootRef.current.getBoundingClientRect());
+    };
+
+    updateRect();
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect, true);
+
+    return () => {
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect, true);
+    };
+  }, [filtersOpen]);
 
   const todayKey = useMemo(() => format(new Date(now), 'yyyy-MM-dd'), [now]);
 
@@ -262,7 +287,6 @@ export default function MyTasksPage() {
     return filtered;
   }, [deferredSearch, filter, now, normalizedTasks, savedView, sidebarFilters, sortBy, todayKey]);
 
-  const shouldVirtualize = filteredTasks.length > 12;
   const lastTaskId = filteredTasks.at(-1)?.taskId || null;
   const sidebarCounts = useMemo(
     () => ({
@@ -295,6 +319,109 @@ export default function MyTasksPage() {
     setSidebarFilters(DEFAULT_SIDEBAR_FILTERS);
     setFilter('all');
   }
+
+  const filtersPanel =
+    filtersOpen && filtersPanelRect && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            ref={filtersPanelRef}
+            data-dropdown-portal="true"
+            className="fixed z-[96] w-[min(100vw-1.5rem,980px)] rounded-[28px] border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.98)] p-0 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.45)] backdrop-blur-xl"
+            style={{
+              left: Math.max(12, Math.min(filtersPanelRect.right - Math.min(window.innerWidth - 24, 980), window.innerWidth - Math.min(window.innerWidth - 24, 980) - 12)),
+              top: filtersPanelRect.bottom + 12,
+            }}
+          >
+            <div className="border-b border-[rgb(var(--line)/0.10)] bg-[rgb(var(--panel-2)/0.26)] px-4 py-4 sm:px-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Saved views</div>
+                  <div className="mt-1 text-xs text-[rgb(var(--muted))]">Quick presets and filters for the current task set.</div>
+                </div>
+                <Badge tone={sidebarDirty ? 'amber' : 'slate'}>{sidebarDirty ? 'Unsaved' : 'Synced'}</Badge>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+                {savedViews.map((view) => (
+                  <button
+                    key={view.id}
+                    type="button"
+                    onClick={() => handleSavedViewChange(view.id)}
+                    className={`group flex min-h-[72px] items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                      savedView === view.id
+                        ? 'border-sky-300/60 bg-sky-500/10 shadow-[0_10px_24px_rgba(14,165,233,0.10)]'
+                        : 'border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel))] hover:border-sky-200 hover:bg-[rgb(var(--panel-2)/0.80)]'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{view.label}</div>
+                      <div className="mt-0.5 truncate text-xs text-[rgb(var(--muted))]">{view.description}</div>
+                    </div>
+                    <Badge tone={savedView === view.id ? 'blue' : 'slate'} className="shrink-0">
+                      {view.count}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-4 py-4 sm:px-5">
+              <div className="space-y-4">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Filters</div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <SidebarSelect
+                    label={`Project (${sidebarCounts.project})`}
+                    value={sidebarDraft.project}
+                    onChange={(value) => setSidebarDraft((current) => ({ ...current, project: value }))}
+                    options={['all', ...projectOptions]}
+                    placeholder="All projects"
+                    searchable
+                  />
+                  <SidebarSelect
+                    label={`Assignee (${sidebarCounts.assignee})`}
+                    value={sidebarDraft.assignee}
+                    onChange={(value) => setSidebarDraft((current) => ({ ...current, assignee: value }))}
+                    options={['all', ...assigneeOptions]}
+                    placeholder="All assignees"
+                    searchable
+                  />
+                  <SidebarSelect
+                    label={`Priority (${sidebarCounts.priority})`}
+                    value={sidebarDraft.priority}
+                    onChange={(value) => setSidebarDraft((current) => ({ ...current, priority: value }))}
+                    options={['all', 'critical', 'high', 'medium', 'low']}
+                    placeholder="All priorities"
+                  />
+                  <SidebarSelect
+                    label={`Status (${sidebarCounts.status})`}
+                    value={sidebarDraft.status}
+                    onChange={(value) => setSidebarDraft((current) => ({ ...current, status: value }))}
+                    options={['all', 'todo', 'in-progress', 'review', 'blocked', 'done']}
+                    placeholder="All statuses"
+                  />
+                  <SidebarSelect
+                    label="Due date"
+                    value={sidebarDraft.due}
+                    onChange={(value) => setSidebarDraft((current) => ({ ...current, due: value }))}
+                    options={SIDEBAR_DUE_OPTIONS}
+                    placeholder="Any time"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <Button variant="secondary" className="sm:w-[160px]" onClick={clearSidebarFilters} disabled={!hasActiveFilters}>
+                    Clear
+                  </Button>
+                  <Button variant="primary" className="sm:w-[180px]" onClick={applySidebarFilters} disabled={!sidebarDirty}>
+                    Apply filters
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <motion.div variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-6 overflow-x-hidden pb-8">
@@ -416,7 +543,7 @@ export default function MyTasksPage() {
                     {deferredSearch ? ` for "${search.trim()}"` : ''}
                   </div>
                 </div>
-                <div className="flex min-w-0 flex-col gap-3 xl:min-w-[640px]">
+                <div ref={filtersRootRef} className="relative flex min-w-0 flex-col gap-3 xl:min-w-[640px]">
                   <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-start">
                     <div className="min-w-0 lg:flex-1">
                       <SearchInput
@@ -439,7 +566,7 @@ export default function MyTasksPage() {
                         />
                       </div>
 
-                      <div ref={filtersRootRef} className="relative z-40">
+                      <div className="z-40">
                         <Button variant={filtersOpen ? 'primary' : 'secondary'} className="h-11 px-4" onClick={() => setFiltersOpen((current) => !current)}>
                           <Filter className="h-4 w-4" />
                           Filters
@@ -448,96 +575,7 @@ export default function MyTasksPage() {
                           </Badge>
                         </Button>
 
-                        {filtersOpen ? (
-                          <div className="absolute right-0 top-full z-50 mt-3 w-[min(92vw,1040px)] rounded-[28px] border border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.98)] p-0 shadow-[0_30px_90px_-42px_rgba(15,23,42,0.35)] backdrop-blur-xl">
-                            <div className="border-b border-[rgb(var(--line)/0.10)] bg-[rgb(var(--panel-2)/0.26)] px-4 py-4 sm:px-5">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Saved views</div>
-                                  <div className="mt-1 text-xs text-[rgb(var(--muted))]">Quick presets and filters for the current task set.</div>
-                                </div>
-                                <Badge tone={sidebarDirty ? 'amber' : 'slate'}>{sidebarDirty ? 'Unsaved' : 'Synced'}</Badge>
-                              </div>
-
-                              <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-                                {savedViews.map((view) => (
-                                  <button
-                                    key={view.id}
-                                    type="button"
-                                    onClick={() => handleSavedViewChange(view.id)}
-                                    className={`group flex min-h-[72px] items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
-                                      savedView === view.id
-                                        ? 'border-sky-300/60 bg-sky-500/10 shadow-[0_10px_24px_rgba(14,165,233,0.10)]'
-                                        : 'border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel))] hover:border-sky-200 hover:bg-[rgb(var(--panel-2)/0.80)]'
-                                    }`}
-                                  >
-                                    <div className="min-w-0">
-                                      <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{view.label}</div>
-                                      <div className="mt-0.5 truncate text-xs text-[rgb(var(--muted))]">{view.description}</div>
-                                    </div>
-                                    <Badge tone={savedView === view.id ? 'blue' : 'slate'} className="shrink-0">
-                                      {view.count}
-                                    </Badge>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="px-4 py-4 sm:px-5">
-                              <div className="space-y-4">
-                                <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Filters</div>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                  <SidebarSelect
-                                    label={`Project (${sidebarCounts.project})`}
-                                    value={sidebarDraft.project}
-                                    onChange={(value) => setSidebarDraft((current) => ({ ...current, project: value }))}
-                                    options={['all', ...projectOptions]}
-                                    placeholder="All projects"
-                                    searchable
-                                  />
-                                  <SidebarSelect
-                                    label={`Assignee (${sidebarCounts.assignee})`}
-                                    value={sidebarDraft.assignee}
-                                    onChange={(value) => setSidebarDraft((current) => ({ ...current, assignee: value }))}
-                                    options={['all', ...assigneeOptions]}
-                                    placeholder="All assignees"
-                                    searchable
-                                  />
-                                  <SidebarSelect
-                                    label={`Priority (${sidebarCounts.priority})`}
-                                    value={sidebarDraft.priority}
-                                    onChange={(value) => setSidebarDraft((current) => ({ ...current, priority: value }))}
-                                    options={['all', 'critical', 'high', 'medium', 'low']}
-                                    placeholder="All priorities"
-                                  />
-                                  <SidebarSelect
-                                    label={`Status (${sidebarCounts.status})`}
-                                    value={sidebarDraft.status}
-                                    onChange={(value) => setSidebarDraft((current) => ({ ...current, status: value }))}
-                                    options={['all', 'todo', 'in-progress', 'review', 'blocked', 'done']}
-                                    placeholder="All statuses"
-                                  />
-                                  <SidebarSelect
-                                    label="Due date"
-                                    value={sidebarDraft.due}
-                                    onChange={(value) => setSidebarDraft((current) => ({ ...current, due: value }))}
-                                    options={SIDEBAR_DUE_OPTIONS}
-                                    placeholder="Any time"
-                                  />
-                                </div>
-
-                                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                                  <Button variant="secondary" className="sm:w-[160px]" onClick={clearSidebarFilters} disabled={!hasActiveFilters}>
-                                    Clear
-                                  </Button>
-                                  <Button variant="primary" className="sm:w-[180px]" onClick={applySidebarFilters} disabled={!sidebarDirty}>
-                                    Apply filters
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ) : null}
+                        {filtersPanel}
                       </div>
                     </div>
                   </div>
@@ -549,7 +587,6 @@ export default function MyTasksPage() {
                   <FilterChips value={filter} onChange={setFilter} options={FILTER_OPTIONS} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={shouldVirtualize ? 'blue' : 'slate'}>{shouldVirtualize ? 'Virtualized' : 'Standard'}</Badge>
                   {hasActiveFilters ? (
                     <Button
                       size="sm"
@@ -577,13 +614,9 @@ export default function MyTasksPage() {
                 <div className="overflow-x-auto">
                   <div className="min-w-[1320px]">
                     <TaskTableHeader />
-                    {shouldVirtualize ? (
-                      <VirtualList
-                        items={filteredTasks}
-                        estimateSize={112}
-                        className="h-[calc(100dvh-30rem)] pb-10"
-                        overscan={10}
-                        renderItem={(row) => (
+                    <div className="relative">
+                      <div className="scrollbar-thin max-h-[calc(100dvh-30rem)] overflow-y-auto overflow-x-hidden pb-12 pr-1">
+                        {filteredTasks.map((row) => (
                           <TaskTableRow
                             key={row.taskId}
                             row={row}
@@ -591,29 +624,15 @@ export default function MyTasksPage() {
                             startTimer={startTimer}
                             isLast={row.taskId === lastTaskId}
                           />
-                        )}
-                      />
-                    ) : (
-                      <div className="scrollbar-gutter-stable max-h-[calc(100dvh-30rem)] overflow-y-auto overflow-x-hidden pb-10">
-                        <div>
-                          {filteredTasks.map((row) => (
-                            <TaskTableRow
-                              key={row.taskId}
-                              row={row}
-                              navigate={navigate}
-                              startTimer={startTimer}
-                              isLast={row.taskId === lastTaskId}
-                            />
-                          ))}
-                        </div>
+                        ))}
                       </div>
-                    )}
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent via-[rgb(var(--panel)/0.06)] to-[rgb(var(--panel)/0.98)]"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-b from-transparent via-[rgb(var(--panel)/0.06)] to-[rgb(var(--panel)/0.98)]"
-                />
               </div>
             </Card>
           ) : (

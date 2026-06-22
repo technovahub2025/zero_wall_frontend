@@ -1,16 +1,8 @@
 {
-  "rewrites": [
-    {
-      "source": "/test_pg_infrastructure/assets/(.*)",
-      "destination": "/assets/$1"
-    },
-    {
-      "source": "/test_pg_infrastructure/(.*)",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/test_pg_infrastructure",
-      "destination": "/index.html"
-    }
+  "routes": [
+    { "src": "/test_pg_infrastructure/assets/(.*)", "dest": "/assets/$1" },
+    { "handle": "filesystem" },
+    { "src": "/test_pg_infrastructure(?:/(.*))?", "dest": "/index.html" },
+    { "src": "/.*", "dest": "/index.html" }
   ]
 }

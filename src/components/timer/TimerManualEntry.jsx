@@ -14,6 +14,13 @@ const schema = z.object({
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
   note: z.string().optional(),
+}).refine((values) => {
+  const start = new Date(values.startTime);
+  const end = new Date(values.endTime);
+  return !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end.getTime() > start.getTime();
+}, {
+  path: ['endTime'],
+  message: 'End time must be after start time',
 });
 
 export function TimerManualEntry({ projects = [], tasks = [], initialValues, onSubmit, onCancel }) {
@@ -47,6 +54,10 @@ export function TimerManualEntry({ projects = [], tasks = [], initialValues, onS
           setSubmitError('');
           const start = new Date(values.startTime);
           const end = new Date(values.endTime);
+          if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end.getTime() <= start.getTime()) {
+            setSubmitError('End time must be after start time');
+            return;
+          }
           await onSubmit({
             ...values,
             duration: Math.max(0, Math.floor((end.getTime() - start.getTime()) / 1000)),

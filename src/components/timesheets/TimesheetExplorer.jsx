@@ -1,5 +1,6 @@
 ﻿import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { format } from 'date-fns';
 import { ChevronDown, Download, Filter, Loader2, Plus, Table2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -16,6 +17,7 @@ import { TimerManualEntry } from '../timer/TimerManualEntry';
 import { timesheetService } from '../../services/timesheetService';
 import { timerService } from '../../services/timerService';
 import { formatDuration } from '../../store/timerStore';
+import { useUiStore } from '../../store/uiStore';
 
 const DEFAULT_FILTERS = {
   preset: 'last-30-days',
@@ -45,9 +47,21 @@ function toManualTaskOptions(tasks = []) {
 
 function normalizeRange(range = {}) {
   return {
-    start: range.start ? format(new Date(range.start), 'yyyy-MM-dd') : '',
-    end: range.end ? format(new Date(range.end), 'yyyy-MM-dd') : '',
+    start: toDateInput(range.start),
+    end: toDateInput(range.end),
   };
+}
+
+function toDateInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : format(date, 'yyyy-MM-dd');
+}
+
+function normalizeBoolean(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return ['true', '1', 'yes', 'billable'].includes(value.toLowerCase());
+  return Boolean(value);
 }
 
 function getIndiaToday() {
@@ -105,6 +119,51 @@ function sortNewestFirst(logs = []) {
   });
 }
 
+function normalizeLog(log = {}, index = 0) {
+  const sourceDate = log.date || log.startTime || log.createdAt || log.endTime || null;
+  const validDate = sourceDate && !Number.isNaN(new Date(sourceDate).getTime()) ? sourceDate : null;
+  const startTime = log.startTime && !Number.isNaN(new Date(log.startTime).getTime()) ? log.startTime : validDate;
+  const endTime = log.endTime && !Number.isNaN(new Date(log.endTime).getTime()) ? log.endTime : null;
+  const duration = Number(log.duration || 0);
+  const id = String(log.id || log._id || `${validDate || 'timesheet'}-${index}`);
+
+  return {
+    ...log,
+    id,
+    _id: log._id || id,
+    date: validDate,
+    startTime,
+    endTime,
+    duration: Number.isFinite(duration) ? duration : 0,
+    isBillable: normalizeBoolean(log.isBillable ?? log.billable),
+    isManual: normalizeBoolean(log.isManual ?? log.manual),
+    projectName: log.project?.projectName || log.projectName || log.project?.name || '-',
+    taskTitle: log.task?.title || log.taskTitle || log.task?.name || '-',
+    note: log.note || log.comment || '',
+  };
+}
+
+function normalizeDailySummary(rows = []) {
+  return Array.isArray(rows)
+    ? rows
+        .map((row) => {
+          const date = row?.date && !Number.isNaN(new Date(row.date).getTime()) ? row.date : null;
+          if (!date) return null;
+          return {
+            ...row,
+            date,
+            duration: Number(row.duration || 0),
+            entries: Number(row.entries || 0),
+            tasks: Number(row.tasks || 0),
+            projects: Number(row.projects || 0),
+            billable: Number(row.billable || 0),
+            averageStartMinutes: Number(row.averageStartMinutes || 0),
+          };
+        })
+        .filter(Boolean)
+    : [];
+}
+
 function applyBillableUpdate(data, ids = [], isBillable = false) {
   if (!data || typeof data !== 'object') return data;
   const idSet = new Set(ids.map(String));
@@ -152,8 +211,11 @@ function getExportFileName(responseHeader, fallbackName) {
 
 export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry = false }) {
   const queryClient = useQueryClient();
+  const openConfirm = useUiStore((state) => state.openConfirm);
   const searchRef = useRef(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(50);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [activePanel, setActivePanel] = useState('heatmap');
@@ -165,13 +227,14 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   const [billableUpdatingIds, setBillableUpdatingIds] = useState([]);
   const deferredSearch = useDeferredValue(filters.search);
 
-  const queryFilters = useMemo(() => ({ ...filters, search: deferredSearch }), [deferredSearch, filters]);
+  const queryFilters = useMemo(() => ({ ...filters, search: deferredSearch, page, limit: pageSize }), [deferredSearch, filters, page, pageSize]);
   const queryArgs = useMemo(() => buildQuery(queryFilters), [queryFilters]);
   const queryKey = useMemo(() => ['timesheets', scope, employeeId || 'self', queryArgs], [employeeId, queryArgs, scope]);
 
   const timesheetQuery = useQuery({
     queryKey,
     queryFn: () => (scope === 'employee' && employeeId ? timesheetService.listEmployee(employeeId, queryArgs) : timesheetService.listMine(queryArgs)),
+    placeholderData: (previousData) => previousData,
   });
 
   const savedFiltersQuery = useQuery({
@@ -276,32 +339,55 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   });
 
   const data = timesheetQuery.data || {};
-  const items = useMemo(() => sortNewestFirst(data.items || []), [data.items]);
-  const allLogs = useMemo(() => sortNewestFirst(data.allLogs || []), [data.allLogs]);
-  const summary = data.summary || {};
-  const dailySummary = data.dailySummary || [];
-  const insights = data.insights || {};
-  const filterOptions = data.filterOptions || {};
+  const items = useMemo(() => sortNewestFirst(Array.isArray(data.items) ? data.items.map(normalizeLog) : []), [data.items]);
+  const allLogs = useMemo(() => sortNewestFirst(Array.isArray(data.allLogs) ? data.allLogs.map(normalizeLog) : []), [data.allLogs]);
+  const summary = useMemo(() => data.summary || {}, [data.summary]);
+  const dailySummary = useMemo(() => normalizeDailySummary(data.dailySummary || []), [data.dailySummary]);
+  const insights = useMemo(() => data.insights || {}, [data.insights]);
+  const filterOptions = useMemo(() => data.filterOptions || {}, [data.filterOptions]);
   const totalRows = data.total ?? summary.totalEntries ?? items.length;
-  const savedFilters = savedFiltersQuery.data || [];
-  const savedFilterOptions = savedFilters.map((filter) => ({
-    value: filter.id || filter._id,
-    label: filter.name,
-  }));
-  const selectedRange = normalizeRange(data.range || {});
+  const savedFilters = useMemo(() => (Array.isArray(savedFiltersQuery.data) ? savedFiltersQuery.data : []), [savedFiltersQuery.data]);
+  const savedFilterOptions = useMemo(
+    () =>
+      savedFilters.map((filter) => ({
+        value: filter.id || filter._id,
+        label: filter.name,
+      })),
+    [savedFilters],
+  );
+  const selectedRange = useMemo(() => normalizeRange(data.range || {}), [data.range]);
+  const pagination = useMemo(
+    () => ({
+      page: Number(data.pagination?.page || page || 1),
+      limit: Number(data.pagination?.limit || pageSize),
+      total: Number(data.pagination?.total ?? totalRows ?? 0),
+      totalPages: Math.max(1, Number(data.pagination?.totalPages || 1)),
+      hasNextPage: Boolean(data.pagination?.hasNextPage),
+      hasPreviousPage: Boolean(data.pagination?.hasPreviousPage),
+    }),
+    [data.pagination, page, pageSize, totalRows],
+  );
+  const allMatchingIds = useMemo(() => (Array.isArray(data.allMatchingIds) ? data.allMatchingIds.map(String) : allLogs.map((log) => String(log.id || log._id))), [allLogs, data.allMatchingIds]);
   const hasSelection = selectedIds.length > 0;
   const selectedRows = useMemo(() => {
     if (!selectedIds.length) return [];
     const selectedSet = new Set(selectedIds.map(String));
     return allLogs.filter((log) => selectedSet.has(String(log.id || log._id)));
   }, [allLogs, selectedIds]);
-  const selectedBillableCount = selectedRows.filter((row) => row.isBillable).length;
+  const selectedBillableCount = useMemo(() => selectedRows.filter((row) => row.isBillable).length, [selectedRows]);
   const selectedNonBillableCount = selectedRows.length - selectedBillableCount;
   const billableUpdatePending = bulkUpdateMutation.isPending;
 
   useEffect(() => {
     setSelectedIds([]);
+    setPage(1);
   }, [filters.preset, filters.project, filters.task, filters.entryType, filters.billable, filters.start, filters.end, deferredSearch]);
+
+  useEffect(() => {
+    if (!allMatchingIds.length || !selectedIds.length) return;
+    const allowed = new Set(allMatchingIds);
+    setSelectedIds((current) => current.filter((id) => allowed.has(String(id))));
+  }, [allMatchingIds, selectedIds.length]);
 
   useEffect(() => {
     function handleShortcuts(event) {
@@ -324,9 +410,9 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
     return () => window.removeEventListener('keydown', handleShortcuts);
   }, [hasSelection]);
 
-  function updateFilter(key, value) {
-    setFilters((current) => ({ ...current, [key]: value }));
-  }
+  const updateFilter = useCallback((key, value) => {
+    setFilters((current) => (current[key] === value ? current : { ...current, [key]: value }));
+  }, []);
 
   function applyPresetFilter(filter) {
     setFilters({
@@ -342,25 +428,33 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
     setSavedFilterId(filter.id || filter._id || '');
   }
 
-  function handleRangeChange(nextRange) {
+  const handleRangeChange = useCallback((nextRange) => {
     if (!nextRange.start || !nextRange.end) {
       const next = getIndiaMonthRange();
-      setFilters((current) => ({
-        ...current,
-        preset: 'custom',
-        start: next.start,
-        end: next.end,
-      }));
+      setFilters((current) => {
+        if (current.preset === 'custom' && current.start === next.start && current.end === next.end) return current;
+        return {
+          ...current,
+          preset: 'custom',
+          start: next.start,
+          end: next.end,
+        };
+      });
       return;
     }
 
-    setFilters((current) => ({
-      ...current,
-      preset: 'custom',
-      start: nextRange.start ? format(new Date(nextRange.start), 'yyyy-MM-dd') : '',
-      end: nextRange.end ? format(new Date(nextRange.end), 'yyyy-MM-dd') : '',
-    }));
-  }
+    const nextStart = toDateInput(nextRange.start);
+    const nextEnd = toDateInput(nextRange.end);
+    setFilters((current) => {
+      if (current.preset === 'custom' && current.start === nextStart && current.end === nextEnd) return current;
+      return {
+        ...current,
+        preset: 'custom',
+        start: nextStart,
+        end: nextEnd,
+      };
+    });
+  }, []);
 
   function clearFilters() {
     const next = getIndiaMonthRange();
@@ -389,7 +483,7 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   }
 
   function selectAllFiltered() {
-    setSelectedIds(allLogs.map((log) => String(log.id || log._id)));
+    setSelectedIds(allMatchingIds);
   }
 
   function clearAllSelected() {
@@ -407,16 +501,28 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   function handleBulkBillable(isBillable) {
     if (!selectedIds.length || billableUpdatePending) return;
     const nextLabel = isBillable ? 'billable' : 'non-billable';
-    if (!window.confirm(`Mark ${selectedIds.length} selected logs as ${nextLabel}?`)) return;
-    bulkUpdateMutation.mutate({ ids: selectedIds, isBillable });
+    openConfirm({
+      title: `Mark selected logs ${nextLabel}?`,
+      message: `This will update ${selectedIds.length} selected timesheet ${selectedIds.length === 1 ? 'row' : 'rows'}.`,
+      confirmLabel: isBillable ? 'Mark billable' : 'Mark non-billable',
+      tone: 'amber',
+      onConfirm: async () => bulkUpdateMutation.mutateAsync({ ids: selectedIds, isBillable }),
+    });
   }
 
   async function handleBulkDelete() {
     if (!selectedIds.length) return;
-    if (!window.confirm(`Delete ${selectedIds.length} selected logs? This cannot be undone.`)) return;
-    const deletedIds = [...selectedIds];
-    await bulkDeleteMutation.mutateAsync({ ids: deletedIds });
-    setSelectedIds((current) => current.filter((id) => !deletedIds.includes(id)));
+    openConfirm({
+      title: 'Delete selected logs?',
+      message: `Delete ${selectedIds.length} selected timesheet ${selectedIds.length === 1 ? 'row' : 'rows'}? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      tone: 'rose',
+      onConfirm: async () => {
+        const deletedIds = [...selectedIds];
+        await bulkDeleteMutation.mutateAsync({ ids: deletedIds });
+        setSelectedIds((current) => current.filter((id) => !deletedIds.includes(id)));
+      },
+    });
   }
 
   function handleRowBillable(row) {
@@ -426,9 +532,14 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   }
 
   async function handleRowDelete(row) {
-    if (!window.confirm('Delete this timesheet row?')) return;
     const logId = String(row.id || row._id);
-    await deleteMutation.mutateAsync(logId);
+    openConfirm({
+      title: 'Delete timesheet row?',
+      message: 'Delete this timesheet row? This cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'rose',
+      onConfirm: async () => deleteMutation.mutateAsync(logId),
+    });
   }
 
   async function handleExport(selectedOnly = false) {
@@ -437,7 +548,8 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
       return;
     }
 
-    const params = { ...queryArgs };
+    const { page: _page, limit: _limit, pageSize: _pageSize, ...exportFilters } = queryArgs;
+    const params = { ...exportFilters };
     if (selectedOnly && selectedIds.length) {
       params.ids = selectedIds.join(',');
     }
@@ -484,8 +596,13 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
   function handleDeleteSavedFilter() {
     const selected = savedFilters.find((item) => String(item.id || item._id) === String(savedFilterId));
     if (!selected) return;
-    if (!window.confirm(`Delete saved filter ${selected.name}?`)) return;
-    deleteFilterMutation.mutate(selected.id || selected._id);
+    openConfirm({
+      title: 'Delete saved filter?',
+      message: `Delete saved filter "${selected.name}"?`,
+      confirmLabel: 'Delete',
+      tone: 'rose',
+      onConfirm: async () => deleteFilterMutation.mutateAsync(selected.id || selected._id),
+    });
   }
 
   function handleApplySavedFilter() {
@@ -497,8 +614,8 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
 
   const hasData = items.length > 0;
   const showLoadingState = timesheetQuery.isLoading && !hasData;
-  const manualProjects = toManualProjectOptions(filterOptions.projects || []);
-  const manualTasks = toManualTaskOptions(filterOptions.tasks || []);
+  const manualProjects = useMemo(() => toManualProjectOptions(filterOptions.projects || []), [filterOptions.projects]);
+  const manualTasks = useMemo(() => toManualTaskOptions(filterOptions.tasks || []), [filterOptions.tasks]);
 
   return (
     <div className="space-y-6">
@@ -540,6 +657,27 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
             }}
           />
         </ModalShell>
+      ) : null}
+
+      {timesheetQuery.isError ? (
+        <Card className="border-rose-200 bg-rose-50/90">
+          <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="font-semibold text-rose-800">Timesheets could not be loaded</div>
+              <div className="mt-1 text-sm text-rose-700">{timesheetQuery.error?.response?.data?.message || timesheetQuery.error?.message || 'Please retry the request.'}</div>
+            </div>
+            <Button variant="secondary" onClick={() => timesheetQuery.refetch()}>
+              Retry
+            </Button>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {timesheetQuery.isFetching && !showLoadingState ? (
+        <div className="flex items-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 shadow-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Refreshing timesheet data...
+        </div>
       ) : null}
 
       {showLoadingState ? (
@@ -849,6 +987,17 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                   ) : null}
                 </div>
               </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <Button size="sm" variant="secondary" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={!pagination.hasPreviousPage || timesheetQuery.isFetching}>
+                  Previous
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setPage((current) => current + 1)} disabled={!pagination.hasNextPage || timesheetQuery.isFetching}>
+                  Next
+                </Button>
+              </div>
             </CardHeader>
             <CardBody className="p-0">
               <TimesheetTable
@@ -862,7 +1011,7 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                 canDelete
                 billableUpdatingIds={billableUpdatingIds}
                 showSelectionColumn={hasSelection}
-                scrollClassName="scrollbar-none max-h-[62vh] pb-2"
+                scrollClassName="scrollbar-x max-h-[62vh] pb-2"
               />
             </CardBody>
           </Card>

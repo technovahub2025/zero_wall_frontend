@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { addMonths, addYears, eachDayOfInterval, endOfDay, endOfMonth, endOfWeek, endOfYear, format, getMonth, getYear, isAfter, isBefore, isSameDay, isSameMonth, isWeekend, max, min, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays } from 'date-fns';
+import { memo, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { addMonths, addYears, eachDayOfInterval, endOfDay, endOfMonth, endOfWeek, format, getMonth, getYear, isAfter, isBefore, isSameDay, isSameMonth, isWeekend, max, min, startOfDay, startOfMonth, startOfWeek, subDays } from 'date-fns';
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Flame, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -17,7 +17,9 @@ function intensity(duration = 0) {
 }
 
 function formatHours(duration = 0) {
-  return `${Math.round(Number(duration || 0) / 3600)}h`;
+  const seconds = Number(duration || 0);
+  if (seconds > 0 && seconds < 3600) return '<1h';
+  return `${Math.round(seconds / 3600)}h`;
 }
 
 function normalizeRange(start, end) {
@@ -53,6 +55,8 @@ const MONTH_NAMES = [
   'December',
 ];
 
+const DRAG_THRESHOLD_PX = 8;
+
 function getIndiaToday() {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Kolkata',
@@ -67,7 +71,7 @@ function getIndiaToday() {
 }
 
 function getBrowseSeed(range, dailySummary) {
-  return new Date(range?.start || range?.end || getIndiaToday());
+  return new Date(range?.end || range?.start || getIndiaToday());
 }
 
 function getIndiaMonthRange() {
@@ -93,6 +97,12 @@ function toIndiaDateKey(value) {
   return year && month && day ? `${year}-${month}-${day}` : '';
 }
 
+function dateFromIndiaKey(key) {
+  const [year, month, day] = String(key || '').split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(Date.UTC(year, month - 1, day, 12));
+}
+
 export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRangeChange, resetViewToken = 0, className = '' }) {
   const [hoveredDay, setHoveredDay] = useState(null);
   const [focusedDayKey, setFocusedDayKey] = useState('');
@@ -101,9 +111,10 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
   const [browseDate, setBrowseDate] = useState(() => getBrowseSeed(range, dailySummary));
   const [pickerStage, setPickerStage] = useState('calendar');
   const [isPending, startTransition] = useTransition();
-  const [calendarPanelHeight, setCalendarPanelHeight] = useState(0);
+  const pendingPointerRef = useRef(null);
+  const dragRangeRef = useRef(null);
   const ignoreClickRef = useRef(false);
-  const calendarPanelRef = useRef(null);
+  const syncedRangeKeyRef = useRef('');
 
   const { summaryDays, calendarDays, totalHours, activeDays, peakDay, averageHours, summaryMap, topDays } = useMemo(() => {
     const map = new Map(
@@ -215,7 +226,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
 
     const duration = selectedLogs.reduce((total, log) => total + Number(log.duration || 0), 0);
     const billable = selectedLogs.reduce((total, log) => total + (log.isBillable ? Number(log.duration || 0) : 0), 0);
-    const summaryDate = activeRange?.start || selectedLogs[0]?.startTime || selectedLogs[0]?.date || null;
+    const summaryDate = dateFromIndiaKey(selectedDayKey) || selectedLogs[0]?.startTime || selectedLogs[0]?.date || null;
     const firstStart = selectedLogs[0]?.startTime || summaryDate;
     return {
       date: summaryDate || new Date(),
@@ -225,7 +236,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
       billable,
       averageStartMinutes: firstStart ? new Date(firstStart).getHours() * 60 + new Date(firstStart).getMinutes() : 0,
     };
-  }, [activeRange?.start, selectedDayKey, selectedLogs, summaryMap]);
+  }, [selectedDayKey, selectedLogs, summaryMap]);
   const activeRangeLabel = activeRange?.start && activeRange?.end ? `${format(activeRange.start, 'dd MMM yyyy')} to ${format(activeRange.end, 'dd MMM yyyy')}` : 'Interactive time range';
   const browseMonthLabel = format(browseDate, 'MMMM');
   const browseYearLabel = format(browseDate, 'yyyy');
@@ -244,41 +255,27 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
   useEffect(() => {
     if (!dragAnchor) {
       setDragHover(null);
+      pendingPointerRef.current = null;
+      dragRangeRef.current = null;
       ignoreClickRef.current = false;
     }
   }, [dragAnchor]);
 
   useEffect(() => {
+    const rangeKey = `${range?.start || ''}|${range?.end || ''}`;
+    if (syncedRangeKeyRef.current === rangeKey) return;
+    syncedRangeKeyRef.current = rangeKey;
     const nextSeed = getBrowseSeed(range, dailySummary);
-    if (pickerStage === 'calendar') {
+    if (pickerStage === 'calendar' && !isSameMonth(nextSeed, browseDate)) {
       setBrowseDate(nextSeed);
     }
-  }, [dailySummary, pickerStage, range?.end, range?.start]);
+  }, [browseDate, dailySummary, pickerStage, range?.end, range?.start]);
 
   useEffect(() => {
     setBrowseDate(getIndiaToday());
     setPickerStage('calendar');
     setFocusedDayKey(toIndiaDateKey(getIndiaToday()));
   }, [resetViewToken]);
-
-  useLayoutEffect(() => {
-    const element = calendarPanelRef.current;
-    if (!element) return undefined;
-
-    const updateHeight = () => {
-      setCalendarPanelHeight(Math.round(element.getBoundingClientRect().height));
-    };
-
-    updateHeight();
-
-    if (typeof ResizeObserver === 'undefined') {
-      return undefined;
-    }
-
-    const observer = new ResizeObserver(() => updateHeight());
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [browseDate, calendarDays.length, pickerStage, selectedLogs.length, selectedSummary?.date, topDays.length]);
 
   function commitRange(start, end) {
     if (!start || !end) return;
@@ -329,65 +326,96 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
   function chooseMonth(monthIndex) {
     const nextDate = new Date(selectedYearValue, monthIndex, 1);
     setBrowseDate(nextDate);
-    commitRange(startOfMonth(nextDate), endOfMonth(nextDate));
+    setFocusedDayKey(toIndiaDateKey(startOfMonth(nextDate)));
     setPickerStage('calendar');
   }
 
   function handleDayPointerDown(day, event) {
     ignoreClickRef.current = false;
-    setDragAnchor(day.date);
-    setDragHover(day.date);
+    pendingPointerRef.current = {
+      date: day.date,
+      key: day.key,
+      pointerId: event?.pointerId,
+      startX: event?.clientX ?? 0,
+      startY: event?.clientY ?? 0,
+    };
+    dragRangeRef.current = null;
     setHoveredDay(day);
 
-    if (event?.currentTarget?.setPointerCapture) {
-      try {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } catch {
-        // Ignore pointer capture failures on unsupported browsers.
-      }
-    }
+    event?.preventDefault?.();
   }
 
-  function handleDayPointerEnter(day) {
+  function hasMovedPastDragThreshold(event) {
+    const pending = pendingPointerRef.current;
+    if (!pending) return false;
+    const deltaX = Math.abs((event?.clientX ?? pending.startX) - pending.startX);
+    const deltaY = Math.abs((event?.clientY ?? pending.startY) - pending.startY);
+    return Math.max(deltaX, deltaY) >= DRAG_THRESHOLD_PX;
+  }
+
+  function handleDayPointerEnter(day, event) {
     setHoveredDay(day);
     if (dragAnchor) {
+      dragRangeRef.current = {
+        start: dragRangeRef.current?.start || dragAnchor,
+        end: day.date,
+      };
+      setDragHover(day.date);
+      return;
+    }
+
+    const pending = pendingPointerRef.current;
+    if (
+      pending &&
+      pending.key !== day.key &&
+      event?.buttons === 1 &&
+      (pending.pointerId === undefined || pending.pointerId === event?.pointerId) &&
+      hasMovedPastDragThreshold(event)
+    ) {
+      dragRangeRef.current = { start: pendingPointerRef.current.date, end: day.date };
+      setDragAnchor(pendingPointerRef.current.date);
       setDragHover(day.date);
     }
   }
 
+  function handleDayPointerMove(day, event) {
+    if (dragAnchor || !pendingPointerRef.current || pendingPointerRef.current.key === day.key) return;
+    if (event?.buttons !== 1 || !hasMovedPastDragThreshold(event)) return;
+    dragRangeRef.current = { start: pendingPointerRef.current.date, end: day.date };
+    setDragAnchor(pendingPointerRef.current.date);
+    setDragHover(day.date);
+  }
+
   function handleDayPointerUp(day, event) {
-    if (!dragAnchor) {
-      if (event?.shiftKey && range?.start) {
-        commitRange(range.start, day.date);
-      } else if (selectedDayCount === 1 && activeRange?.start && isSameDay(activeRange.start, day.date)) {
-        clearRange();
-      } else {
-        commitRange(day.date, day.date);
-      }
-    } else {
-      const endDate = dragHover || day.date;
+    const dragRange = dragRangeRef.current;
+    if (dragRange?.start) {
+      const endDate = dragRange.end || dragHover || day.date;
       if (event?.shiftKey && range?.start) {
         commitRange(range.start, endDate);
       } else {
-        commitRange(dragAnchor, endDate);
+        commitRange(dragRange.start, endDate);
+      }
+    } else {
+      if (event?.shiftKey && range?.start) {
+        commitRange(range.start, day.date);
+      } else {
+        setFocusedDayKey(toIndiaDateKey(day.date));
       }
     }
 
+    pendingPointerRef.current = null;
+    dragRangeRef.current = null;
     ignoreClickRef.current = true;
     setDragAnchor(null);
     setDragHover(null);
 
-    if (event?.currentTarget?.releasePointerCapture) {
-      try {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      } catch {
-        // Ignore pointer release failures.
-      }
-    }
+    event?.preventDefault?.();
   }
 
   function handleDayPointerCancel() {
     ignoreClickRef.current = false;
+    pendingPointerRef.current = null;
+    dragRangeRef.current = null;
     setDragAnchor(null);
     setDragHover(null);
   }
@@ -404,19 +432,12 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
     }
 
     if (!dragAnchor) {
-      if (selectedDayCount === 1 && activeRange?.start && isSameDay(activeRange.start, day.date)) {
-        setFocusedDayKey(toIndiaDateKey(day.date));
-        clearRange();
-        return;
-      }
-
       setFocusedDayKey(toIndiaDateKey(day.date));
-      commitRange(day.date, day.date);
     }
   }
 
   return (
-    <div className={cn('rounded-3xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.82)] p-4 shadow-sm backdrop-blur', className)}>
+    <div className={cn('rounded-3xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.82)] p-3 shadow-sm backdrop-blur sm:p-4', className)}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-4">
           <div>
@@ -462,12 +483,7 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
             </Button>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric label="Total hours" value={formatHours(totalHours)} icon={Clock3} />
-            <Metric label="Active days" value={String(activeDays)} icon={Flame} />
-            <Metric label="Average / day" value={formatHours(averageHours)} icon={TrendingUp} />
-            <Metric label="Peak day" value={peakDay?.duration ? formatHours(peakDay.duration) : '0h'} icon={CalendarDays} />
-          </div>
+          <CalendarMetrics totalHours={totalHours} activeDays={activeDays} averageHours={averageHours} peakDay={peakDay} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -482,202 +498,36 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
         </div>
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
         <div className="min-w-0">
           {pickerStage === 'year' ? (
-            <div ref={calendarPanelRef} className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-sm transition-all duration-300 sm:p-5">
-              <div className="mb-4">
-                <div className="text-base font-semibold text-[rgb(var(--text))] sm:text-lg">{browseYearLabel}</div>
-                <div className="mt-1 text-xs text-slate-500">Click a year to browse months.</div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                {yearWindow.map(({ year, active }) => (
-                  <button
-                    key={year}
-                    type="button"
-                    onClick={() => chooseYear(year)}
-                    className={cn(
-                      'rounded-2xl border px-4 py-5 text-center text-base font-semibold transition-all duration-300 ease-out hover:-translate-y-[1px] hover:shadow-sm',
-                      active
-                        ? 'border-sky-500 bg-sky-500 text-white shadow-lg shadow-sky-500/20'
-                        : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] text-[rgb(var(--text))] hover:border-sky-400/30 hover:bg-sky-500/10',
-                    )}
-                  >
-                    {year}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <YearPickerView browseYearLabel={browseYearLabel} years={yearWindow} onChooseYear={chooseYear} />
           ) : pickerStage === 'month' ? (
-            <div ref={calendarPanelRef} className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-sm transition-all duration-300 sm:p-5">
-              <div className="mb-4">
-                <div className="text-base font-semibold text-[rgb(var(--text))] sm:text-lg">{browseMonthLabel} {browseYearLabel}</div>
-                <div className="mt-1 text-xs text-slate-500">Click a month to return to the calendar.</div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {MONTH_NAMES.map((month, monthIndex) => {
-                  const active = monthIndex === selectedMonthIndex;
-                  return (
-                    <button
-                      key={month}
-                      type="button"
-                      onClick={() => chooseMonth(monthIndex)}
-                      className={cn(
-                        'rounded-2xl border px-4 py-5 text-center text-sm font-semibold transition-all duration-300 ease-out hover:-translate-y-[1px] hover:shadow-sm',
-                        active
-                          ? 'border-sky-500 bg-sky-500 text-white shadow-lg shadow-sky-500/20'
-                          : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] text-[rgb(var(--text))] hover:border-sky-400/30 hover:bg-sky-500/10',
-                      )}
-                    >
-                      {month}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <MonthPickerView
+              browseMonthLabel={browseMonthLabel}
+              browseYearLabel={browseYearLabel}
+              selectedMonthIndex={selectedMonthIndex}
+              onChooseMonth={chooseMonth}
+            />
           ) : (
-            <div ref={calendarPanelRef}>
-              <div className="mb-2 grid grid-cols-7 gap-1.5 px-0 text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400 sm:gap-2 sm:px-1 sm:text-[10px] sm:tracking-[0.18em]">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                  <span key={day} className="text-center">
-                    {day}
-                  </span>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                {calendarDays.map((day) => {
-                  const isHovered = hoveredDay?.key === day.key;
-                  const isSelected = activeRange ? isWithinRange(day.date, activeRange) : false;
-                  const isFocused = isSelected && selectedDayCount === 1;
-                  const weekend = isWeekend(day.date);
-                  return (
-                    <button
-                      key={day.key}
-                      type="button"
-                      onPointerDown={(event) => handleDayPointerDown(day, event)}
-                      onPointerEnter={() => handleDayPointerEnter(day)}
-                      onPointerUp={(event) => handleDayPointerUp(day, event)}
-                      onPointerCancel={handleDayPointerCancel}
-                      onPointerLeave={() => setHoveredDay(null)}
-                      onClick={(event) => handleDayClick(day, event)}
-                      title={`${format(day.date, 'dd MMM yyyy')} - ${formatDuration(day.duration)} across ${day.entries} entries and ${day.tasks} tasks`}
-                      className={cn(
-                        'group relative flex aspect-square flex-col items-center justify-center rounded-xl border text-[9px] transition-all duration-300 ease-out will-change-transform sm:rounded-2xl sm:text-[10px]',
-                        day.inMonth ? '' : 'opacity-45',
-                        day.level === 0
-                          ? 'border-slate-200 bg-slate-50 text-slate-500'
-                          : day.level === 1
-                            ? 'border-sky-200 bg-sky-50 text-sky-700'
-                            : day.level === 2
-                              ? 'border-sky-300 bg-sky-100 text-sky-800'
-                              : day.level === 3
-                                ? 'border-sky-400 bg-sky-200 text-sky-900'
-                                : 'border-sky-500 bg-sky-500 text-white',
-                        weekend ? 'ring-1 ring-amber-200/60' : '',
-                        isSelected ? 'shadow-md shadow-sky-200/40 ring-2 ring-sky-400/20' : '',
-                        isFocused ? '-translate-y-2 scale-[1.04] z-10 rounded-[28px] ring-4 ring-sky-300/40 shadow-[0_20px_38px_-22px_rgba(14,165,233,0.6)]' : '',
-                        isDragging ? 'cursor-grabbing' : 'cursor-pointer',
-                        isHovered ? 'scale-[1.02] shadow-md shadow-sky-200/40' : 'hover:-translate-y-[1px] hover:shadow-sm',
-                      )}
-                    >
-                      <span className="font-semibold leading-none">{format(day.date, 'dd')}</span>
-                      <span className="mt-0.5 opacity-80 leading-none">{formatHours(day.duration)}</span>
-                      {day.entries > 0 ? <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-white/80 sm:right-2 sm:top-2 sm:h-2 sm:w-2" /> : null}
-                      {day.entries > 1 ? <span className="absolute bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-current opacity-60 sm:h-1.5 sm:w-1.5" /> : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <DayGrid
+              days={calendarDays}
+              activeRange={activeRange}
+              focusedDayKey={focusedDayKey}
+              hoveredDayKey={hoveredDay?.key}
+              isDragging={isDragging}
+              onPointerDown={handleDayPointerDown}
+              onPointerEnter={handleDayPointerEnter}
+              onPointerMove={handleDayPointerMove}
+              onPointerUp={handleDayPointerUp}
+              onPointerCancel={handleDayPointerCancel}
+              onPointerLeave={() => setHoveredDay(null)}
+              onClick={handleDayClick}
+            />
           )}
         </div>
 
-        <aside
-          className="flex min-h-0 self-start flex-col overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] p-4 transition-all duration-300 sm:p-5"
-          style={calendarPanelHeight ? { height: `${calendarPanelHeight}px`, maxHeight: `${calendarPanelHeight}px` } : undefined}
-        >
-          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{selectedSummary ? 'Day details' : 'Top days'}</div>
-          <div className="mt-3 flex min-h-0 flex-col">
-            {selectedSummary ? (
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.88)] p-3 shadow-sm transition-all duration-300">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(selectedSummary.date, 'dd MMM yyyy')}</div>
-                    <div className="text-xs text-slate-500">{format(selectedSummary.date, 'EEEE')}</div>
-                  </div>
-                  <Badge tone="sky">{formatHours(selectedSummary.duration)}</Badge>
-                </div>
-                <div className="mt-3 grid gap-2 text-xs text-slate-600">
-                  <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
-                    <span>Entries</span>
-                    <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.entries || selectedLogs.length || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
-                    <span>Tasks</span>
-                    <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.tasks || selectedLogs.length || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
-                    <span>Billable</span>
-                    <span className="font-semibold text-[rgb(var(--text))]">{selectedSummary.billable ? `${formatHours(selectedSummary.billable)}` : selectedLogs.some((log) => log.isBillable) ? 'Yes' : 'No'}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
-                    <span>Avg start</span>
-                    <span className="font-semibold text-[rgb(var(--text))]">
-                      {Number.isFinite(selectedSummary.averageStartMinutes) && selectedSummary.averageStartMinutes > 0
-                        ? formatIndiaMinutesToTime(selectedSummary.averageStartMinutes)
-                        : selectedLogs.length
-                          ? formatIndiaTime(new Date(selectedLogs[0].startTime))
-                          : '-'}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 flex min-h-0 flex-1 flex-col">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Logs</div>
-                  <div className="scrollbar-none mt-1 flex-1 space-y-1.5 overflow-y-auto pr-0.5">
-                    {selectedLogs.length ? (
-                      selectedLogs.map((log) => {
-                        const actionLabel = getTimerActionLabel(log);
-                        const reason = getTimerReason(log);
-                        return (
-                        <div key={log.id} className="rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.74)] px-2.5 py-1.5 text-xs transition-all duration-200 hover:bg-[rgb(var(--panel)/0.9)]">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="truncate font-semibold text-[rgb(var(--text))]">{log.projectName}</div>
-                              <div className="truncate text-slate-500">{log.taskTitle}</div>
-                            </div>
-                            <Badge tone={log.isBillable ? 'green' : 'slate'}>{formatHours(log.duration)}</Badge>
-                          </div>
-                          <div className="mt-0.5 flex items-center justify-between gap-3 text-[11px] text-slate-500">
-                            <span>{log.startTime ? formatIndiaTime(new Date(log.startTime)) : '-'}</span>
-                            <span className="min-w-0 truncate text-right">{reason ? `${actionLabel}: ${reason}` : actionLabel}</span>
-                          </div>
-                        </div>
-                        );
-                      })
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logs for this day.</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : topDays.length ? (
-              <div className="grid content-start gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                {topDays.map((item) => (
-                  <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.78)] px-3 py-2 transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-sm">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(item.date, 'dd MMM')}</div>
-                      <div className="text-xs text-slate-500">{format(item.date, 'EEE')}</div>
-                    </div>
-                    <Badge tone="sky">{formatHours(item.duration)}</Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logged days yet.</div>
-            )}
-          </div>
-        </aside>
+        <DayDetailsPanel selectedSummary={selectedSummary} selectedLogs={selectedLogs} topDays={topDays} />
       </div>
 
       <div className="mt-4 text-xs leading-5 text-slate-500">
@@ -687,14 +537,259 @@ export function TimesheetCalendar({ dailySummary = [], allLogs = [], range, onRa
   );
 }
 
+const CalendarMetrics = memo(function CalendarMetrics({ totalHours, activeDays, averageHours, peakDay }) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      <Metric label="Total hours" value={formatHours(totalHours)} icon={Clock3} />
+      <Metric label="Active days" value={String(activeDays)} icon={Flame} />
+      <Metric label="Average / day" value={formatHours(averageHours)} icon={TrendingUp} />
+      <Metric label="Peak day" value={peakDay?.duration ? formatHours(peakDay.duration) : '0h'} icon={CalendarDays} />
+    </div>
+  );
+});
+
 function Metric({ label, value, icon: Icon }) {
   return (
-    <div className="rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.76)] p-4 shadow-sm transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-md">
+    <div className="rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.76)] p-3 shadow-sm transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-md">
       <div className="flex items-center justify-between gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
         <span>{label}</span>
         <Icon className="h-4 w-4 text-slate-400" />
       </div>
-      <div className="mt-3 text-2xl font-semibold text-[rgb(var(--text))]">{value}</div>
+      <div className="mt-2 text-2xl font-semibold text-[rgb(var(--text))]">{value}</div>
+    </div>
+  );
+}
+
+const YearPickerView = memo(function YearPickerView({ browseYearLabel, years, onChooseYear }) {
+  return (
+    <div className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-sm transition-all duration-300 sm:p-5">
+      <div className="mb-4">
+        <div className="text-base font-semibold text-[rgb(var(--text))] sm:text-lg">{browseYearLabel}</div>
+        <div className="mt-1 text-xs text-slate-500">Click a year to browse months.</div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+        {years.map(({ year, active }) => (
+          <button
+            key={year}
+            type="button"
+            onClick={() => onChooseYear(year)}
+            className={cn(
+              'rounded-2xl border px-4 py-5 text-center text-base font-semibold transition-all duration-300 ease-out hover:-translate-y-[1px] hover:shadow-sm',
+              active
+                ? 'border-sky-500 bg-sky-500 text-white shadow-lg shadow-sky-500/20'
+                : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] text-[rgb(var(--text))] hover:border-sky-400/30 hover:bg-sky-500/10',
+            )}
+          >
+            {year}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+const MonthPickerView = memo(function MonthPickerView({ browseMonthLabel, browseYearLabel, selectedMonthIndex, onChooseMonth }) {
+  return (
+    <div className="rounded-3xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.9)] p-4 shadow-sm transition-all duration-300 sm:p-5">
+      <div className="mb-4">
+        <div className="text-base font-semibold text-[rgb(var(--text))] sm:text-lg">{browseMonthLabel} {browseYearLabel}</div>
+        <div className="mt-1 text-xs text-slate-500">Click a month to browse without changing filters.</div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {MONTH_NAMES.map((month, monthIndex) => {
+          const active = monthIndex === selectedMonthIndex;
+          return (
+            <button
+              key={month}
+              type="button"
+              onClick={() => onChooseMonth(monthIndex)}
+              className={cn(
+                'rounded-2xl border px-4 py-5 text-center text-sm font-semibold transition-all duration-300 ease-out hover:-translate-y-[1px] hover:shadow-sm',
+                active
+                  ? 'border-sky-500 bg-sky-500 text-white shadow-lg shadow-sky-500/20'
+                  : 'border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] text-[rgb(var(--text))] hover:border-sky-400/30 hover:bg-sky-500/10',
+              )}
+            >
+              {month}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+const DayGrid = memo(function DayGrid({
+  days,
+  activeRange,
+  focusedDayKey,
+  hoveredDayKey,
+  isDragging,
+  onPointerDown,
+  onPointerEnter,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onPointerLeave,
+  onClick,
+}) {
+  return (
+    <div>
+      <div className="mb-2 grid grid-cols-7 gap-1.5 px-0 text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400 sm:gap-2 sm:px-1 sm:text-[10px] sm:tracking-[0.18em]">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+          <span key={day} className="text-center">
+            {day}
+          </span>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+        {days.map((day) => {
+          const isHovered = hoveredDayKey === day.key;
+          const isSelected = activeRange ? isWithinRange(day.date, activeRange) : false;
+          const isFocused = focusedDayKey === day.key;
+          const weekend = isWeekend(day.date);
+          return (
+            <button
+              key={day.key}
+              type="button"
+              onPointerDown={(event) => onPointerDown(day, event)}
+              onPointerEnter={(event) => onPointerEnter(day, event)}
+              onPointerMove={(event) => onPointerMove(day, event)}
+              onPointerUp={(event) => onPointerUp(day, event)}
+              onPointerCancel={onPointerCancel}
+              onPointerLeave={onPointerLeave}
+              onClick={(event) => onClick(day, event)}
+              title={`${format(day.date, 'dd MMM yyyy')} - ${formatDuration(day.duration)} across ${day.entries} entries and ${day.tasks} tasks`}
+              className={cn(
+                'group relative flex h-16 flex-col items-center justify-center rounded-xl border text-[9px] transition-all duration-300 ease-out will-change-transform sm:h-20 sm:rounded-2xl sm:text-[10px] 2xl:h-24',
+                day.inMonth ? '' : 'opacity-45',
+                day.level === 0
+                  ? 'border-slate-200 bg-slate-50 text-slate-500'
+                  : day.level === 1
+                    ? 'border-sky-200 bg-sky-50 text-sky-700'
+                    : day.level === 2
+                      ? 'border-sky-300 bg-sky-100 text-sky-800'
+                      : day.level === 3
+                        ? 'border-sky-400 bg-sky-200 text-sky-900'
+                        : 'border-sky-500 bg-sky-500 text-white',
+                weekend ? 'ring-1 ring-amber-200/60' : '',
+                isSelected || isFocused ? 'shadow-md shadow-sky-200/40 ring-2 ring-sky-400/20' : '',
+                isFocused ? '-translate-y-1 scale-[1.03] z-10 rounded-[24px] ring-4 ring-sky-300/40 shadow-[0_20px_38px_-22px_rgba(14,165,233,0.6)]' : '',
+                isDragging ? 'cursor-grabbing' : 'cursor-pointer',
+                isHovered ? 'scale-[1.02] shadow-md shadow-sky-200/40' : 'hover:-translate-y-[1px] hover:shadow-sm',
+              )}
+            >
+              <span className="font-semibold leading-none">{format(day.date, 'dd')}</span>
+              <span className="mt-0.5 opacity-80 leading-none">{formatHours(day.duration)}</span>
+              {day.entries > 0 ? <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-white/80 sm:right-2 sm:top-2 sm:h-2 sm:w-2" /> : null}
+              {day.entries > 1 ? <span className="absolute bottom-1.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-current opacity-60 sm:h-1.5 sm:w-1.5" /> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+const DayDetailsPanel = memo(function DayDetailsPanel({ selectedSummary, selectedLogs, topDays }) {
+  return (
+    <aside className="flex min-h-0 self-start flex-col overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel-2)/0.72)] p-4 transition-all duration-300 xl:sticky xl:top-24 xl:max-h-[calc(100vh-8rem)]">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{selectedSummary ? 'Day details' : 'Top days'}</div>
+      <div className="mt-3 flex min-h-0 flex-col">
+        {selectedSummary ? (
+          <SelectedDayDetails summary={selectedSummary} logs={selectedLogs} />
+        ) : topDays.length ? (
+          <TopDaysList topDays={topDays} />
+        ) : (
+          <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logged days yet.</div>
+        )}
+      </div>
+    </aside>
+  );
+});
+
+function SelectedDayDetails({ summary, logs }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.88)] p-3 shadow-sm transition-all duration-300">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(summary.date, 'dd MMM yyyy')}</div>
+          <div className="text-xs text-slate-500">{format(summary.date, 'EEEE')}</div>
+        </div>
+        <Badge tone="sky">{formatHours(summary.duration)}</Badge>
+      </div>
+      <div className="mt-3 grid gap-2 text-xs text-slate-600">
+        <DetailRow label="Entries" value={summary.entries || logs.length || 0} />
+        <DetailRow label="Tasks" value={summary.tasks || logs.length || 0} />
+        <DetailRow label="Billable" value={summary.billable ? formatHours(summary.billable) : logs.some((log) => log.isBillable) ? 'Yes' : 'No'} />
+        <DetailRow
+          label="Avg start"
+          value={
+            Number.isFinite(summary.averageStartMinutes) && summary.averageStartMinutes > 0
+              ? formatIndiaMinutesToTime(summary.averageStartMinutes)
+              : logs.length
+                ? formatIndiaTime(new Date(logs[0].startTime))
+                : '-'
+          }
+        />
+      </div>
+      <div className="mt-4 flex min-h-0 flex-1 flex-col">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Logs</div>
+        <div className="scrollbar-thin mt-1 flex-1 space-y-1.5 overflow-y-auto pr-0.5">
+          {logs.length ? (
+            logs.map((log) => <LogPreview key={log.id} log={log} />)
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[rgb(var(--line)/0.16)] bg-[rgb(var(--panel)/0.78)] px-3 py-4 text-sm text-[rgb(var(--muted))]">No logs for this day.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-[rgb(var(--panel-2)/0.74)] px-3 py-2">
+      <span>{label}</span>
+      <span className="font-semibold text-[rgb(var(--text))]">{value}</span>
+    </div>
+  );
+}
+
+function LogPreview({ log }) {
+  const actionLabel = getTimerActionLabel(log);
+  const reason = getTimerReason(log);
+
+  return (
+    <div className="rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel-2)/0.74)] px-2.5 py-1.5 text-xs transition-all duration-200 hover:bg-[rgb(var(--panel)/0.9)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate font-semibold text-[rgb(var(--text))]">{log.projectName}</div>
+          <div className="truncate text-slate-500">{log.taskTitle}</div>
+        </div>
+        <Badge tone={log.isBillable ? 'green' : 'slate'}>{formatHours(log.duration)}</Badge>
+      </div>
+      <div className="mt-0.5 flex items-center justify-between gap-3 text-[11px] text-slate-500">
+        <span>{log.startTime ? formatIndiaTime(new Date(log.startTime)) : '-'}</span>
+        <span className="min-w-0 truncate text-right">{reason ? `${actionLabel}: ${reason}` : actionLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+function TopDaysList({ topDays }) {
+  return (
+    <div className="grid content-start gap-2 sm:grid-cols-2 xl:grid-cols-1">
+      {topDays.map((item) => (
+        <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.78)] px-3 py-2 transition-transform duration-300 hover:-translate-y-[1px] hover:shadow-sm">
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold text-[rgb(var(--text))]">{format(item.date, 'dd MMM')}</div>
+            <div className="text-xs text-slate-500">{format(item.date, 'EEE')}</div>
+          </div>
+          <Badge tone="sky">{formatHours(item.duration)}</Badge>
+        </div>
+      ))}
     </div>
   );
 }

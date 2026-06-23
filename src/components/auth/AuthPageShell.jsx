@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/logo_2.png';
 import { cn } from '../../lib/utils';
+import { GlobalFooter } from '../shared/GlobalFooter';
 
 const pageVariants = {
   initial: { opacity: 0, y: 14 },
@@ -73,46 +74,59 @@ export function AuthPageShell({
 
       <div
         className={cn(
-          'relative mx-auto w-full px-5 py-8 lg:px-10 lg:py-10',
-          isSplit ? 'grid min-h-screen max-w-[1600px] gap-10 lg:grid-cols-[1.04fr_0.96fr] lg:gap-12' : 'flex min-h-screen max-w-3xl items-center justify-center',
+          'relative z-10 mx-auto flex min-h-screen w-full flex-col px-5 py-8 lg:px-10 lg:py-10',
+          isSplit ? 'max-w-[1600px]' : 'max-w-3xl',
         )}
       >
-        {isSplit ? hero : null}
-
-        <motion.section
+        <div
           className={cn(
-            'relative w-full rounded-[30px] border border-white/10 bg-slate-950/42 p-5 shadow-[0_30px_110px_rgba(0,0,0,0.38)] backdrop-blur-2xl will-change-transform sm:p-8 lg:p-10',
-            isSplit ? 'self-center' : 'max-w-[520px]',
+            'flex-1',
+            isSplit
+              ? 'grid gap-10 lg:grid-cols-[1.04fr_0.96fr] lg:gap-12'
+              : 'flex items-center justify-center',
           )}
-          variants={surfaceVariants}
         >
-          {backLink ? (
-            <Link
-              to={backLink.to}
-              className="inline-flex items-center gap-2 text-sm font-medium text-white/85 transition hover:text-white"
-            >
-              {backLink.label}
-            </Link>
-          ) : null}
+          {isSplit ? hero : null}
 
-          {badge ? <div className="mt-4">{badge}</div> : null}
+          <motion.section
+            className={cn(
+              'relative w-full rounded-[30px] border border-white/10 bg-slate-950/42 p-5 shadow-[0_30px_110px_rgba(0,0,0,0.38)] backdrop-blur-2xl will-change-transform sm:p-8 lg:p-10',
+              isSplit ? 'self-center' : 'max-w-[520px]',
+            )}
+            variants={surfaceVariants}
+          >
+            {backLink ? (
+              <Link
+                to={backLink.to}
+                className="inline-flex items-center gap-2 text-sm font-medium text-white/85 transition hover:text-white"
+              >
+                {backLink.label}
+              </Link>
+            ) : null}
 
-          <div className="mt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/95 shadow-lg shadow-black/20">
-                <img src={logo} alt="PG Infrastructure logo" className="h-9 w-9 object-contain" />
-              </div>
-              <div>
-                <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-white/78">{subtitle}</p>
+            {badge ? <div className="mt-4">{badge}</div> : null}
+
+            <div className="mt-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/95 shadow-lg shadow-black/20">
+                  <img src={logo} alt="PG Infrastructure logo" className="h-9 w-9 object-contain" />
+                </div>
+                <div>
+                  <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/78">{subtitle}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-8">{children}</div>
+            <div className="mt-8">{children}</div>
 
-          {footer ? <div className="mt-6">{footer}</div> : null}
-        </motion.section>
+            {footer ? <div className="mt-6">{footer}</div> : null}
+          </motion.section>
+        </div>
+
+        <div className="pt-8 pb-2">
+          <GlobalFooter />
+        </div>
       </div>
     </motion.div>
   );

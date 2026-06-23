@@ -71,3 +71,28 @@
     background-size: 20px 20px;
   }
 }
+
+.scrollbar-x {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(100 116 139) transparent;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
+}
+
+.scrollbar-x::-webkit-scrollbar {
+  height: 12px;
+}
+
+.scrollbar-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-x::-webkit-scrollbar-thumb {
+  background: rgb(100 116 139);
+  border-radius: 999px;
+}
+
+.scrollbar-x::-webkit-scrollbar-thumb:hover {
+  background: rgb(71 85 105);
+}

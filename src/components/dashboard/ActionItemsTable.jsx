@@ -9,6 +9,7 @@ import { TaskStatusBadge } from '../tasks/TaskStatusBadge';
 
 const VIRTUALIZE_THRESHOLD = 20;
 const GRID_TEMPLATE = '42px minmax(14rem, 1.5fr) minmax(11rem, 1fr) 118px 108px minmax(10rem, 1fr) minmax(12rem, 1.2fr) minmax(11rem, 1fr) minmax(10rem, 1fr) 126px';
+const GRID_MIN_WIDTH = '1120px';
 
 function formatDate(value) {
   if (!value) return '-';
@@ -67,64 +68,66 @@ export function ActionItemsTable({ tasks = [], showApproveButtons = false, onApp
       </CardHeader>
       <CardBody className="p-0">
         {shouldVirtualize ? (
-          <div className="overflow-hidden">
-            <div
-              className="grid border-b border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.98)] px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-slate-500 backdrop-blur-xl"
-              style={{ gridTemplateColumns: GRID_TEMPLATE }}
-            >
-              <span>#</span>
-              <span>Project</span>
-              <span>Client</span>
-              <span>Status</span>
-              <span>Priority</span>
-              <span>Stage</span>
-              <span>Next Action</span>
-              <span>Responsible Engineer</span>
-              <span>Target</span>
-              <span>Decision Needed</span>
-              <span className="text-right">Actions</span>
-            </div>
+          <div className="overflow-x-scroll overflow-y-hidden scrollbar-x pb-2">
+            <div className="min-w-[1120px]">
+              <div
+                className="grid border-b border-[rgb(var(--line)/0.12)] bg-[rgb(var(--panel)/0.98)] px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-slate-500 backdrop-blur-xl"
+                style={{ gridTemplateColumns: GRID_TEMPLATE, minWidth: GRID_MIN_WIDTH }}
+              >
+                <span>#</span>
+                <span>Project</span>
+                <span>Client</span>
+                <span>Status</span>
+                <span>Priority</span>
+                <span>Stage</span>
+                <span>Next Action</span>
+                <span>Responsible Engineer</span>
+                <span>Target</span>
+                <span>Decision Needed</span>
+                <span className="text-right">Actions</span>
+              </div>
 
-            <VirtualList
-              items={rows}
-              estimateSize={98}
-              className="scrollbar-none h-[72vh] max-h-[72vh] overscroll-contain"
-              renderItem={(row, index) => (
-                <div className="px-2 py-2">
-                  <div
-                    className="grid items-start gap-3 rounded-3xl border border-[rgb(var(--line)/0.08)] bg-[rgb(var(--panel-2)/0.72)] px-4 py-4 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.38)] transition duration-300 hover:-translate-y-0.5 hover:bg-[rgb(var(--panel-2)/0.86)] hover:shadow-[0_22px_52px_-36px_rgba(15,23,42,0.44)]"
-                    style={{ gridTemplateColumns: GRID_TEMPLATE }}
-                  >
-                    <div className="text-sm font-semibold text-[rgb(var(--text))]">{String(index + 1).padStart(2, '0')}</div>
-                    <div className="min-w-0">
-                      <div className="truncate font-semibold text-[rgb(var(--text))]">{row.projectName}</div>
-                    </div>
-                    <div className="min-w-0 text-sm text-slate-500">{row.projectClient || '-'}</div>
-                    <div><TaskStatusBadge value={row.status} /></div>
-                    <div><TaskPriorityBadge value={row.priority} /></div>
-                    <div className="min-w-0 text-sm text-slate-600">{row.projectStage || '-'}</div>
-                    <div className="min-w-0 text-sm text-slate-600">{row.description || row.nextAction || '-'}</div>
-                    <div className="min-w-0 text-sm text-slate-600">{row.assigneeName || row.projectEngineer || 'Unassigned'}</div>
-                    <div className="whitespace-nowrap text-sm text-slate-500">{formatDate(row.dueDate || row.targetDate)}</div>
-                    <div className="min-w-0 text-sm text-slate-600">{row.decision || row.comment || 'Pending'}</div>
-                    <div className="flex justify-end">
-                      {showApproveButtons ? (
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="secondary" onClick={() => onApprove?.(row)}>
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="danger" onClick={() => onReject?.(row)}>
-                            Reject
-                          </Button>
-                        </div>
-                      ) : (
-                        <Badge tone="slate">Review</Badge>
-                      )}
+              <VirtualList
+                items={rows}
+                estimateSize={98}
+                className="scrollbar-none h-[72vh] max-h-[72vh] overscroll-contain"
+                renderItem={(row, index) => (
+                  <div className="px-2 py-2">
+                    <div
+                      className="grid items-start gap-3 rounded-3xl border border-[rgb(var(--line)/0.08)] bg-[rgb(var(--panel-2)/0.72)] px-4 py-4 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.38)] transition duration-300 hover:-translate-y-0.5 hover:bg-[rgb(var(--panel-2)/0.86)] hover:shadow-[0_22px_52px_-36px_rgba(15,23,42,0.44)]"
+                      style={{ gridTemplateColumns: GRID_TEMPLATE, minWidth: GRID_MIN_WIDTH }}
+                    >
+                      <div className="text-sm font-semibold text-[rgb(var(--text))]">{String(index + 1).padStart(2, '0')}</div>
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-[rgb(var(--text))]">{row.projectName}</div>
+                      </div>
+                      <div className="min-w-0 text-sm text-slate-500">{row.projectClient || '-'}</div>
+                      <div><TaskStatusBadge value={row.status} /></div>
+                      <div><TaskPriorityBadge value={row.priority} /></div>
+                      <div className="min-w-0 text-sm text-slate-600">{row.projectStage || '-'}</div>
+                      <div className="min-w-0 text-sm text-slate-600">{row.description || row.nextAction || '-'}</div>
+                      <div className="min-w-0 text-sm text-slate-600">{row.assigneeName || row.projectEngineer || 'Unassigned'}</div>
+                      <div className="whitespace-nowrap text-sm text-slate-500">{formatDate(row.dueDate || row.targetDate)}</div>
+                      <div className="min-w-0 text-sm text-slate-600">{row.decision || row.comment || 'Pending'}</div>
+                      <div className="flex justify-end">
+                        {showApproveButtons ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="secondary" onClick={() => onApprove?.(row)}>
+                              Approve
+                            </Button>
+                            <Button size="sm" variant="danger" onClick={() => onReject?.(row)}>
+                              Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <Badge tone="slate">Review</Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            />
+                )}
+              />
+            </div>
           </div>
         ) : (
           <DataTable
@@ -132,9 +135,10 @@ export function ActionItemsTable({ tasks = [], showApproveButtons = false, onApp
             rows={rows}
             rowKey={(row, index) => row.id || `${row.projectName}-${index}`}
             emptyMessage="No action items yet."
-            scrollClassName="scrollbar-none max-h-[72vh] overscroll-contain pr-1"
+            scrollClassName="scrollbar-x max-h-[72vh] overscroll-contain pr-1 pb-2"
             stickyHeader
-            scrollAxis="y"
+            scrollAxis="x"
+            tableClassName="min-w-[1120px]"
             rowClassName="transition duration-200 hover:bg-[rgb(var(--panel-2)/0.72)]"
           />
         )}

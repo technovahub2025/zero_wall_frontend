@@ -36,6 +36,7 @@ import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead,
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { NotificationPanel } from '../notifications/NotificationPanel';
+import { GlobalFooter } from '../shared/GlobalFooter';
 
 export function AppShell() {
   const location = useLocation();
@@ -307,6 +308,10 @@ export function AppShell() {
               <Outlet />
             </div>
           </main>
+
+          <div className="px-3 pb-4 sm:px-6 lg:px-8">
+            <GlobalFooter />
+          </div>
         </div>
 
         <NotificationPanel

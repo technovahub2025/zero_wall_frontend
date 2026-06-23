@@ -109,7 +109,7 @@ export function ProjectTable({
             <Button
               size="sm"
               variant="secondary"
-              className="h-10 w-10 rounded-xl border border-[rgb(var(--line)/0.18)] bg-white/95 px-0 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+              className="h-9 w-11 rounded-[14px] border border-slate-200 bg-white px-0 text-slate-950 shadow-sm ring-1 ring-slate-100 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 focus-visible:ring-2 focus-visible:ring-sky-400"
               onClick={(event) => {
                 event.stopPropagation();
                 if (openMenuId === row.id) {
@@ -135,7 +135,7 @@ export function ProjectTable({
               aria-label="Project actions"
               title="Project actions"
             >
-              <MoreVertical className="h-5 w-5" />
+              <MoreVertical className="h-[18px] w-[18px] stroke-[3.2]" />
             </Button>
           </div>
         );

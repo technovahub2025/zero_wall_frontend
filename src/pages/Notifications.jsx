@@ -9,6 +9,7 @@ import { EmptyState } from '../components/shared/EmptyState';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { useNotificationStore } from '../store/notificationStore';
+import { useAuthStore } from '../store/authStore';
 import { VirtualList } from '../components/shared/VirtualList';
 import { formatIndiaDateTime } from '../utils/formatters';
 import { resolveAppHref } from '../lib/utils';
@@ -31,6 +32,8 @@ export default function Notifications() {
   const markAllRead = useMarkAllNotificationsRead();
   const deleteNotification = useDeleteNotification();
   const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canDelete = userRole === 'superadmin';
 
   const notifications = useMemo(() => query.data?.notifications || [], [query.data]);
   const unreadVisible = useMemo(
@@ -118,7 +121,7 @@ export default function Notifications() {
                 className="h-[calc(100vh-26rem)] px-4 py-3"
                 renderItem={(notification) => (
                   <div className="pb-3">
-                    <NotificationRow notification={notification} onMarkRead={markRead} onDelete={deleteNotification} />
+                    <NotificationRow notification={notification} onMarkRead={markRead} onDelete={canDelete ? deleteNotification : null} />
                   </div>
                 )}
               />
@@ -126,7 +129,7 @@ export default function Notifications() {
               <div className="max-h-[calc(100vh-26rem)] overflow-y-auto px-4 py-3 pr-1">
                 <div className="space-y-3">
                   {notifications.map((notification) => (
-                    <NotificationRow key={notification.id} notification={notification} onMarkRead={markRead} onDelete={deleteNotification} />
+                    <NotificationRow key={notification.id} notification={notification} onMarkRead={markRead} onDelete={canDelete ? deleteNotification : null} />
                   ))}
                 </div>
               </div>
@@ -235,17 +238,19 @@ function NotificationRow({ notification, onMarkRead, onDelete }) {
               Mark read
             </Button>
           ) : null}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete.mutate(notification.id);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
+          {onDelete ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete.mutate(notification.id);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          ) : null}
         </div>
       </div>
     </div>

@@ -68,7 +68,7 @@ export default function TaskDetail() {
   const projectId = task?.projectId || task?.project?.id || task?.project?._id || task?.project || '';
   const stageId = task?.stageId || task?.stage?.id || task?.stage?._id || task?.stage || '';
   const canManage = ['superadmin', 'admin', 'project_manager'].includes(currentUser?.role);
-  const canDelete = ['superadmin', 'admin'].includes(currentUser?.role);
+  const canDelete = currentUser?.role === 'superadmin';
   const canStart = useMemo(() => {
     if (!task || !currentUser?.id) return false;
     const assigneeId = task.assignee?._id || task.assignee?.id || task.assignee;

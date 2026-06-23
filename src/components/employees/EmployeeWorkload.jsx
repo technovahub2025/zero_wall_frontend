@@ -12,6 +12,7 @@ import { ProjectForm } from '../projects/ProjectForm';
 import { useUpdateProject, useDeleteProject } from '../../hooks/useProjects';
 import { useEmployees } from '../../hooks/useEmployees';
 import { useUiStore } from '../../store/uiStore';
+import { useAuthStore } from '../../store/authStore';
 
 const WORKLOAD_BASELINE_HOURS = 40;
 
@@ -23,6 +24,8 @@ export function EmployeeWorkload({ data, employeeId = '' }) {
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
   const openConfirm = useUiStore((state) => state.openConfirm);
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canDelete = userRole === 'superadmin';
   const [editingProject, setEditingProject] = useState(null);
   const { rows, totalHours, totalTasks, loadPct, activeProjects, idleProjects, averagePerProject, topProject } = useMemo(() => {
     const normalizedRows = (data?.projects || [])
@@ -192,7 +195,7 @@ export function EmployeeWorkload({ data, employeeId = '' }) {
                           items={[
                             { key: 'open', label: 'Open project', icon: FolderKanban, onClick: () => navigate(`/projects/${row.id}`) },
                             { key: 'edit', label: 'Edit project', icon: PencilLine, onClick: () => setEditingProject(row) },
-                            { key: 'delete', label: 'Delete project', icon: Trash2, tone: 'danger', onClick: () => handleDeleteProject(row) },
+                            ...(canDelete ? [{ key: 'delete', label: 'Delete project', icon: Trash2, tone: 'danger', onClick: () => handleDeleteProject(row) }] : []),
                           ]}
                         />
                       </div>

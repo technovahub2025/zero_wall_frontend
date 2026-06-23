@@ -51,18 +51,20 @@ export function NotificationItem({ notification, onRead, onDelete, onClick }) {
                 Mark read
               </Button>
             ) : null}
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete?.(notification.id);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
+            {onDelete ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(notification.id);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>

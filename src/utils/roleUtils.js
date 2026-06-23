@@ -31,7 +31,7 @@ export function canDo(userRole, action) {
     viewClients: ['superadmin', 'admin'],
     createClient: ['superadmin', 'admin', 'project_manager'],
     editClient: ['superadmin', 'admin', 'project_manager'],
-    deleteClient: ['superadmin', 'admin'],
+    deleteClient: ['superadmin'],
     viewCEODash: ['superadmin'],
     viewAllProjects: ['superadmin', 'admin', 'project_manager'],
     viewReports: ['superadmin', 'admin', 'project_manager'],

@@ -12,6 +12,7 @@ import { SkeletonCard } from '../components/shared/SkeletonCard';
 import { EmptyState } from '../components/shared/EmptyState';
 import { Button } from '../components/ui/button';
 import { Card, CardBody } from '../components/ui/card';
+import { useAuthStore } from '../store/authStore';
 
 export default function BillingPage() {
   const [editingInvoice, setEditingInvoice] = useState(null);
@@ -22,6 +23,8 @@ export default function BillingPage() {
   const createInvoice = useCreateInvoice();
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canDelete = userRole === 'superadmin';
 
   const invoices = useMemo(() => invoicesQuery.data || [], [invoicesQuery.data]);
   const projects = useMemo(() => projectsQuery.data || [], [projectsQuery.data]);
@@ -106,7 +109,7 @@ export default function BillingPage() {
               setEditingInvoice(row);
               setFormOpen(true);
             }}
-            onDelete={(row) => deleteInvoice.mutate(row.id)}
+            onDelete={canDelete ? ((row) => deleteInvoice.mutate(row.id)) : undefined}
           />
         ) : (
           <EmptyState title="No invoices yet" description="Create the first project invoice to start billing." action={<Button onClick={() => setFormOpen(true)}>Create Invoice</Button>} />

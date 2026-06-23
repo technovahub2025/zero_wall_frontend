@@ -11,10 +11,13 @@ import { FilePreview } from './FilePreview';
 import { ModalShell } from '../shared/ModalShell';
 import { DropdownField } from '../shared/DropdownField';
 import { KanbanActionsMenu } from '../kanban/KanbanActionsMenu';
+import { useAuthStore } from '../../store/authStore';
 
 export function DocumentList({ projectId, employeeId, category = 'all' }) {
   const queryClient = useQueryClient();
   const openConfirm = useUiStore((state) => state.openConfirm);
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canDelete = userRole === 'superadmin';
   const [uploading, setUploading] = useState(false);
   const [editingDocument, setEditingDocument] = useState(null);
 
@@ -101,24 +104,28 @@ export function DocumentList({ projectId, employeeId, category = 'all' }) {
                 triggerClassName="h-8 w-8 rounded-xl"
                 items={[
                   { key: 'edit', label: 'Edit details', icon: PencilLine, onClick: () => setEditingDocument(document) },
-                  {
-                    key: 'delete',
-                    label: 'Delete document',
-                    icon: Trash2,
-                    tone: 'danger',
-                    onClick: () =>
-                      openConfirm({
-                        title: 'Delete document',
-                        message: `Delete ${document.originalName}?`,
-                        confirmLabel: 'Delete',
-                        tone: 'rose',
-                        onConfirm: async () => {
-                          await uploadService.deleteDocument(document.publicId);
-                          toast.success('Document deleted');
-                          queryClient.invalidateQueries({ queryKey });
+                  ...(canDelete
+                    ? [
+                        {
+                          key: 'delete',
+                          label: 'Delete document',
+                          icon: Trash2,
+                          tone: 'danger',
+                          onClick: () =>
+                            openConfirm({
+                              title: 'Delete document',
+                              message: `Delete ${document.originalName}?`,
+                              confirmLabel: 'Delete',
+                              tone: 'rose',
+                              onConfirm: async () => {
+                                await uploadService.deleteDocument(document.publicId);
+                                toast.success('Document deleted');
+                                queryClient.invalidateQueries({ queryKey });
+                              },
+                            }),
                         },
-                      }),
-                  },
+                      ]
+                    : []),
                 ]}
               />
             </div>

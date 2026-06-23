@@ -192,7 +192,7 @@ export default function App() {
                 <Route
                   path="/settings"
                   element={
-                    <RoleGuard roles={['superadmin']} fallback={<Navigate to="/my-tasks" replace />}>
+                    <RoleGuard fallback={<Navigate to="/my-tasks" replace />}>
                       <SettingsPage />
                     </RoleGuard>
                   }

@@ -31,6 +31,7 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const canManageColumns = ['superadmin', 'admin', 'project_manager'].includes(role);
+  const canDelete = role === 'superadmin';
 
   useEffect(() => {
     setLocalProjects(projects);
@@ -220,9 +221,9 @@ export function KanbanOverviewBoard({ projects = [], columns = [], employees = [
                 count={groupedProjects[column.id]?.length || 0}
                 showProject
                 onEditColumn={handleEditColumn}
-                onDeleteColumn={handleDeleteColumn}
+                onDeleteColumn={canDelete ? handleDeleteColumn : undefined}
                 onEditTask={handleEditProject}
-                onDeleteTask={handleDeleteProject}
+                onDeleteTask={canDelete ? handleDeleteProject : undefined}
               />
             ))}
             {canManageColumns ? <KanbanAddColumn onAdd={(title) => {

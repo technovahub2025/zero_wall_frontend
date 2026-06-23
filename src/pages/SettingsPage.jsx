@@ -43,6 +43,7 @@ export default function SettingsPage() {
   const orgQuery = useQuery({
     queryKey: ['settings-org'],
     queryFn: () => settingsService.getOrg().catch(() => null),
+    enabled: currentUser?.role === 'superadmin',
   });
 
   useEffect(() => {
@@ -56,9 +57,9 @@ export default function SettingsPage() {
       { label: 'Profile', icon: UserCircle2, tone: 'blue' },
       { label: 'Password', icon: LockKeyhole, tone: 'rose' },
       { label: 'Theme', icon: Palette, tone: 'amber' },
-      { label: 'Org', icon: Building2, tone: 'green' },
+      ...(currentUser?.role === 'superadmin' ? [{ label: 'Org', icon: Building2, tone: 'green' }] : []),
     ],
-    [],
+    [currentUser?.role],
   );
   const profileCompleteness = useMemo(() => {
     const fields = [profile.name, profile.phone, profile.designation, profile.department].filter(Boolean).length;

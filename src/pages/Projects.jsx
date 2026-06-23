@@ -7,6 +7,7 @@ import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } fro
 import { useEmployees } from '../hooks/useEmployees';
 import { useProjectStore } from '../store/projectStore';
 import { useUiStore } from '../store/uiStore';
+import { useAuthStore } from '../store/authStore';
 import { exportProjectsToExcel } from '../lib/export';
 import { ProjectTable } from '../components/projects/ProjectTable';
 import { ProjectFilters } from '../components/projects/ProjectFilters';
@@ -27,6 +28,8 @@ export default function Projects() {
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canDelete = userRole === 'superadmin';
   const { filters, setFilter, resetFilters } = useProjectStore();
   const { activeModal, modalData, openModal, closeModal, openConfirm } = useUiStore();
   const [searchInput, setSearchInput] = useState(filters.search);
@@ -160,7 +163,7 @@ export default function Projects() {
             selectedCount={selectedProjectIds.length}
             allSelected={filtered.length > 0 && selectedProjectIds.length === filtered.length}
             onToggleAllSelection={(allSelected) => handleToggleAllProjects(allSelected)}
-            onDeleteSelected={handleDeleteSelected}
+            onDeleteSelected={canDelete ? handleDeleteSelected : undefined}
           />
 
           {projectsQuery.isLoading ? (
@@ -169,7 +172,7 @@ export default function Projects() {
             <ProjectTable
               rows={filtered}
               onEdit={(project) => openModal('project', project)}
-              onDelete={handleDelete}
+              onDelete={canDelete ? handleDelete : undefined}
               selectedIds={selectedProjectIds}
               onToggleRowSelection={handleToggleProjectSelection}
               showSelection={showFilters}

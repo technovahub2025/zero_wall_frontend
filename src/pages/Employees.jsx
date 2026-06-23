@@ -23,6 +23,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardBody } from '../components/ui/card';
 import { useUiStore } from '../store/uiStore';
+import { useAuthStore } from '../store/authStore';
 import { useDebouncedValue } from '../utils/performance';
 import { useNavigate } from 'react-router-dom';
 
@@ -48,6 +49,8 @@ export default function Employees() {
   const updateEmployee = useUpdateEmployee();
   const deleteEmployeeMutation = useDeleteEmployee();
   const openConfirm = useUiStore((state) => state.openConfirm);
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canDelete = userRole === 'superadmin';
 
   const employees = useMemo(() => employeesQuery.data || [], [employeesQuery.data]);
   const stats = useMemo(() => {
@@ -225,7 +228,7 @@ export default function Employees() {
               onOpen={openEmployee}
               onEdit={editEmployee}
               onToggleStatus={toggleEmployeeStatus}
-              onDelete={deleteEmployee}
+              onDelete={canDelete ? deleteEmployee : undefined}
             />
           ) : (
             <div className="px-5 py-8">

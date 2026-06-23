@@ -177,10 +177,15 @@ export function AppShell() {
                     </p>
                     <div className="space-y-1">
                       <SidebarLink item={{ label: 'CEO / MD View', path: '/ceo', icon: 'ChartPie' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
-                      <SidebarLink item={{ label: 'Settings', path: '/settings', icon: 'Settings2' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
                     </div>
                   </div>
                 </RoleGuard>
+
+                <div>
+                  <div className="space-y-1">
+                    <SidebarLink item={{ label: 'Settings', path: '/settings', icon: 'Settings2' }} collapsed={sidebarCollapsed} onTooltip={showSidebarTooltip} onTooltipHide={hideSidebarTooltip} />
+                  </div>
+                </div>
               </div>
             </nav>
 
@@ -319,7 +324,7 @@ export function AppShell() {
           notifications={notifications}
           onClose={() => useNotificationStore.getState().setPanelOpen(false)}
           onRead={(id) => markRead.mutate(id)}
-          onDelete={(id) => deleteNotification.mutate(id)}
+          onDelete={user?.role === 'superadmin' ? ((id) => deleteNotification.mutate(id)) : undefined}
           onMarkAllRead={() => markAllRead.mutate()}
         />
         {sidebarTooltip ? (

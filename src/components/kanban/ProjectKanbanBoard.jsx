@@ -40,6 +40,7 @@ export function ProjectKanbanBoard({ project, tasks = [], employees = [], teams 
   const [editingColumn, setEditingColumn] = useState(null);
   const [columnTitle, setColumnTitle] = useState('');
   const canManageColumns = ['superadmin', 'admin', 'project_manager'].includes(user?.role);
+  const canDelete = user?.role === 'superadmin';
 
   useEffect(() => {
     setLocalTasks(tasks);
@@ -307,9 +308,9 @@ export function ProjectKanbanBoard({ project, tasks = [], employees = [], teams 
                   projectId: project?.id,
                 }}
                 onEditTask={handleEditTask}
-                onDeleteTask={handleDeleteTask}
+                onDeleteTask={canDelete ? handleDeleteTask : undefined}
                 onEditColumn={canManageColumns ? handleEditColumn : undefined}
-                onDeleteColumn={canManageColumns ? handleDeleteColumn : undefined}
+                onDeleteColumn={canDelete ? handleDeleteColumn : undefined}
               />
             ))}
             {canManageColumns ? <KanbanAddColumn onAdd={handleAddColumn} /> : null}

@@ -18,6 +18,7 @@ import { timesheetService } from '../../services/timesheetService';
 import { timerService } from '../../services/timerService';
 import { formatDuration } from '../../store/timerStore';
 import { useUiStore } from '../../store/uiStore';
+import { useAuthStore } from '../../store/authStore';
 
 const DEFAULT_FILTERS = {
   preset: 'last-30-days',
@@ -212,6 +213,8 @@ function getExportFileName(responseHeader, fallbackName) {
 export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry = false }) {
   const queryClient = useQueryClient();
   const openConfirm = useUiStore((state) => state.openConfirm);
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canDelete = userRole === 'superadmin';
   const searchRef = useRef(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
@@ -822,7 +825,9 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                     className="w-auto min-w-[200px]"
                   />
                   <Button variant="secondary" size="sm" onClick={handleApplySavedFilter} disabled={!savedFilterId}>Apply</Button>
-                  <Button variant="secondary" size="sm" onClick={handleDeleteSavedFilter} disabled={!savedFilterId}>Delete</Button>
+                  {canDelete ? (
+                    <Button variant="secondary" size="sm" onClick={handleDeleteSavedFilter} disabled={!savedFilterId}>Delete</Button>
+                  ) : null}
                   <input className="input w-auto min-w-[220px]" value={saveName} onChange={(event) => setSaveName(event.target.value)} placeholder="Save current filter as..." />
                   <Button size="sm" onClick={handleSaveFilter}>Save</Button>
                 </div>
@@ -899,7 +904,9 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                         {billableUpdatePending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         Mark non-billable
                       </Button>
-                      <Button size="sm" variant="danger" onClick={handleBulkDelete} disabled={!selectedIds.length}>Delete</Button>
+                      {canDelete ? (
+                        <Button size="sm" variant="danger" onClick={handleBulkDelete} disabled={!selectedIds.length}>Delete</Button>
+                      ) : null}
                       <Button size="sm" variant="secondary" onClick={() => handleExport(true)} disabled={!selectedIds.length}>
                         <Download className="h-4 w-4" />
                         Export selected
@@ -967,7 +974,7 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                         </Button>
                       </>
                     ) : null}
-                    {hasSelection ? (
+                    {hasSelection && canDelete ? (
                       <Button size="sm" variant="danger" onClick={handleBulkDelete} className="gap-2">
                         <Trash2 className="h-4 w-4" />
                         Delete
@@ -1005,10 +1012,10 @@ export function TimesheetExplorer({ scope = 'mine', employeeId, allowManualEntry
                 selectedIds={selectedIds}
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAllPage}
-                onDelete={handleRowDelete}
+                onDelete={canDelete ? handleRowDelete : undefined}
                 onToggleBillable={handleRowBillable}
                 canEditBillable
-                canDelete
+                canDelete={canDelete}
                 billableUpdatingIds={billableUpdatingIds}
                 showSelectionColumn={hasSelection}
                 scrollClassName="scrollbar-x max-h-[62vh] pb-2"

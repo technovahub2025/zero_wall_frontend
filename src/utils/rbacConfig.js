@@ -3,13 +3,13 @@ export const ROLE_PERMISSIONS = {
     routes: ['/dashboard', '/projects', '/projects/:id', '/kanban', '/stages', '/ceo', '/employees', '/employees/:id', '/monitor', '/team', '/billing', '/reports', '/settings', '/clients', '/clients/:id'],
   },
   admin: {
-    routes: ['/dashboard', '/projects', '/projects/:id', '/kanban', '/stages', '/employees', '/employees/:id', '/monitor', '/team', '/billing', '/reports', '/clients', '/clients/:id'],
+    routes: ['/dashboard', '/projects', '/projects/:id', '/kanban', '/stages', '/employees', '/employees/:id', '/monitor', '/team', '/billing', '/reports', '/settings', '/clients', '/clients/:id'],
   },
   project_manager: {
-    routes: ['/dashboard', '/projects', '/projects/:id', '/kanban', '/stages', '/employees', '/employees/:id', '/team', '/reports'],
+    routes: ['/dashboard', '/projects', '/projects/:id', '/kanban', '/stages', '/employees', '/employees/:id', '/team', '/reports', '/settings'],
   },
   employee: {
-    routes: ['/my-tasks', '/my-timesheets', '/profile', '/notifications'],
+    routes: ['/my-tasks', '/my-timesheets', '/profile', '/notifications', '/settings'],
   },
 };
 

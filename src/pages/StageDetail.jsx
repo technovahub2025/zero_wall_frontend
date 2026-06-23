@@ -16,6 +16,7 @@ import { Badge } from '../components/ui/badge';
 import { EmptyState } from '../components/shared/EmptyState';
 import { ModalShell } from '../components/shared/ModalShell';
 import { DropdownField } from '../components/shared/DropdownField';
+import { useAuthStore } from '../store/authStore';
 
 export default function StageDetail() {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export default function StageDetail() {
   const updateStage = useUpdateStage();
   const deleteStage = useDeleteStage();
   const approveStage = useApproveStage();
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canDelete = userRole === 'superadmin';
   const employeesQuery = useEmployees();
   const urlProjectId = searchParams.get('project') || '';
   const selectedId = useMemo(() => urlProjectId || projects[0]?.id || '', [projects, urlProjectId]);
@@ -178,7 +181,7 @@ export default function StageDetail() {
             onApprove={(row) => approveStage.mutate({ id: row.id, payload: { action: 'approve' } })}
             onReject={(row) => approveStage.mutate({ id: row.id, payload: { action: 'reject' } })}
             onEdit={(row) => openModal('stage', row)}
-            onDelete={handleDelete}
+            onDelete={canDelete ? handleDelete : undefined}
           />
         </div>
       )}

@@ -106,6 +106,7 @@ export default function ProjectDetail() {
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
   const currentUser = useAuthStore((state) => state.user);
+  const canDelete = currentUser?.role === 'superadmin';
   const employeesQuery = useEmployees();
   const teamsQuery = useTeams();
   const createStage = useCreateStage();
@@ -371,10 +372,12 @@ export default function ProjectDetail() {
               <PencilLine className="h-4 w-4" />
               Edit Project
             </Button>
-            <Button variant="danger" onClick={handleDeleteProject}>
-              <Trash2 className="h-4 w-4" />
-              Delete Project
-            </Button>
+            {canDelete ? (
+              <Button variant="danger" onClick={handleDeleteProject}>
+                <Trash2 className="h-4 w-4" />
+                Delete Project
+              </Button>
+            ) : null}
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -482,7 +485,7 @@ export default function ProjectDetail() {
           <StageTable
             rows={stages}
             onEdit={(row) => openModal('stage', row)}
-            onDelete={handleDeleteStage}
+            onDelete={canDelete ? handleDeleteStage : undefined}
             onApprove={(row) => approveStage.mutate({ id: row.id, payload: { action: 'approve' } })}
             onReject={(row) => approveStage.mutate({ id: row.id, payload: { action: 'reject' } })}
           />
@@ -622,10 +625,12 @@ export default function ProjectDetail() {
                         <PencilLine className="h-4 w-4" />
                         Edit
                       </Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDeleteTask(selectedTask)}>
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </Button>
+                      {canDelete ? (
+                        <Button size="sm" variant="danger" onClick={() => handleDeleteTask(selectedTask)}>
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                   <TaskComments

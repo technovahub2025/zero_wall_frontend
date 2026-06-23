@@ -58,7 +58,7 @@ export default function StageGuidePage() {
 
   const role = normalizeRole(user?.role);
   const canManage = ['superadmin', 'admin', 'project_manager'].includes(role);
-  const canDelete = ['superadmin', 'admin'].includes(role);
+  const canDelete = role === 'superadmin';
 
   useEffect(() => {
     if (!editor) return undefined;

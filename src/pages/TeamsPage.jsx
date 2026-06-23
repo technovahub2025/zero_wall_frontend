@@ -72,6 +72,7 @@ export default function TeamsPage() {
   const resendInvite = useResendInvite();
   const revokeInvite = useRevokeInvite();
   const projectsQuery = useProjects({ limit: 100 }, { enabled: inviteOpen || Boolean(manageProjectsTeam) || teamModalOpen });
+  const canDelete = currentUserRole === 'superadmin';
 
   const teams = teamsQuery.data || [];
   const rosterMembers = membersQuery.data || [];
@@ -479,13 +480,15 @@ export default function TeamsPage() {
                                 icon: PencilLine,
                                 onClick: () => openTeamModal(team),
                               },
-                              {
-                                key: 'delete',
-                                label: 'Delete team',
-                                icon: Trash2,
-                                tone: 'danger',
-                                onClick: () => handleDeleteTeam(team),
-                              },
+                              ...(canDelete
+                                ? [{
+                                    key: 'delete',
+                                    label: 'Delete team',
+                                    icon: Trash2,
+                                    tone: 'danger',
+                                    onClick: () => handleDeleteTeam(team),
+                                  }]
+                                : []),
                             ]}
                           />
                         </div>
@@ -520,13 +523,15 @@ export default function TeamsPage() {
                             icon: PencilLine,
                             onClick: () => openTeamModal(selectedTeam),
                           },
-                          {
-                            key: 'delete',
-                            label: 'Delete team',
-                            icon: Trash2,
-                            tone: 'danger',
-                            onClick: () => handleDeleteTeam(selectedTeam),
-                          },
+                          ...(canDelete
+                            ? [{
+                                key: 'delete',
+                                label: 'Delete team',
+                                icon: Trash2,
+                                tone: 'danger',
+                                onClick: () => handleDeleteTeam(selectedTeam),
+                              }]
+                            : []),
                         ]}
                       />
                     </div>
@@ -858,13 +863,15 @@ export default function TeamsPage() {
                               icon: Mail,
                               onClick: () => resendInvite.mutate(invite.id),
                             },
-                            {
-                              key: 'revoke',
-                              label: 'Revoke invite',
-                              icon: Trash2,
-                              tone: 'danger',
-                              onClick: () => handleRevokePending(invite),
-                            },
+                            ...(canDelete
+                              ? [{
+                                  key: 'revoke',
+                                  label: 'Revoke invite',
+                                  icon: Trash2,
+                                  tone: 'danger',
+                                  onClick: () => handleRevokePending(invite),
+                                }]
+                              : []),
                           ]}
                         />
                       </div>

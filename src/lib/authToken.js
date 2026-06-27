@@ -1,20 +1,13 @@
-const ACCESS_TOKEN_KEY = 'pg-access-token';
+let accessToken = null;
 
 export function getStoredAccessToken() {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  return accessToken;
 }
 
 export function setStoredAccessToken(token) {
-  if (typeof window === 'undefined') return;
-  if (token) {
-    window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
-  } else {
-    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-  }
+  accessToken = token || null;
 }
 
 export function clearStoredAccessToken() {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  accessToken = null;
 }

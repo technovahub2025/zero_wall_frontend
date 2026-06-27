@@ -24,8 +24,6 @@ export function useSocket() {
 
     const handleNotification = (notification) => {
       prependNotification(notification);
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notification-count'] });
     };
 
     const handleUnreadCount = (payload) => {
@@ -54,28 +52,20 @@ export function useSocket() {
       queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['project-summary'] });
       queryClient.invalidateQueries({ queryKey: ['project-stages'] });
-      queryClient.invalidateQueries({ queryKey: ['report-status'] });
-      queryClient.invalidateQueries({ queryKey: ['report-priority'] });
-      queryClient.invalidateQueries({ queryKey: ['report-task-status'] });
-      queryClient.invalidateQueries({ queryKey: ['report-task-progress'] });
-      queryClient.invalidateQueries({ queryKey: ['report-revenue-trend'] });
-      queryClient.invalidateQueries({ queryKey: ['report-stage-completion'] });
-      queryClient.invalidateQueries({ queryKey: ['report-engineer'] });
-      queryClient.invalidateQueries({ queryKey: ['report-client-contribution'] });
-      queryClient.invalidateQueries({ queryKey: ['report-timesheet-analytics'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-counts'] });
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['my-tasks-kanban'] });
       queryClient.invalidateQueries({ queryKey: ['employee'] });
       queryClient.invalidateQueries({ queryKey: ['employee-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-workload'] });
       queryClient.invalidateQueries({ queryKey: ['task-time-extension-requests'] });
       queryClient.invalidateQueries({ queryKey: ['timer-active'] });
       queryClient.invalidateQueries({ queryKey: ['stages'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['kanban-overview'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
-      queryClient.invalidateQueries({ queryKey: ['billing'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      queryClient.invalidateQueries({ queryKey: ['activity-logs'] });
-      queryClient.invalidateQueries({ queryKey: ['monitor'] });
     };
 
     const handleTimerChanged = (payload) => {
@@ -88,7 +78,10 @@ export function useSocket() {
       if (isCurrentTimer) {
         queryClient.invalidateQueries({ queryKey: ['timer-active'] });
       }
-      handleProjectChanged();
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     };
 
     const handleTimerStopped = (payload) => {
@@ -99,7 +92,10 @@ export function useSocket() {
       }
       queryClient.invalidateQueries({ queryKey: ['timer-logs'] });
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
-      handleProjectChanged();
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     };
 
     const handleMonitorPresenceChanged = () => {

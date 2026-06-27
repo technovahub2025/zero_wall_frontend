@@ -27,7 +27,14 @@ const schema = z.object({
   duration: z.string().optional(),
 });
 
-export function StageForm({ initialValues, employees = [], onSubmit, onCancel }) {
+export function StageForm({
+  initialValues,
+  employees = [],
+  onSubmit,
+  onCancel,
+  submitLabel = 'Save Stage',
+  submitDisabled = false,
+}) {
   const [submitError, setSubmitError] = useState('');
   const {
     register,
@@ -135,7 +142,7 @@ export function StageForm({ initialValues, employees = [], onSubmit, onCancel })
       <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save stage" />
       <div className="sm:col-span-2 flex justify-end gap-3 border-t border-[rgb(var(--line)/0.16)] pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" disabled={isSubmitting}>Save Stage</Button>
+        <Button type="submit" disabled={isSubmitting || submitDisabled}>{submitLabel}</Button>
       </div>
     </form>
   );

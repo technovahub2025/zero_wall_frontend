@@ -481,14 +481,31 @@ export default function ProjectDetail() {
           <div className="flex justify-end">
             <Button onClick={() => openModal('stage', { project: id })}>Add Stage</Button>
           </div>
-          <StageTimeline stages={stages} />
-          <StageTable
-            rows={stages}
-            onEdit={(row) => openModal('stage', row)}
-            onDelete={canDelete ? handleDeleteStage : undefined}
-            onApprove={(row) => approveStage.mutate({ id: row.id, payload: { action: 'approve' } })}
-            onReject={(row) => approveStage.mutate({ id: row.id, payload: { action: 'reject' } })}
-          />
+          {stagesQuery.isError ? (
+            <Card>
+              <CardBody className="flex items-center gap-3 py-10">
+                <AlertCircle className="h-5 w-5 text-rose-400" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-[rgb(var(--text))]">
+                    Could not load stages - please try again
+                  </div>
+                  <div className="text-xs text-slate-500">{stagesQuery.error?.message || 'The stage list could not be loaded.'}</div>
+                </div>
+                <Button variant="secondary" onClick={() => stagesQuery.refetch()}>Retry</Button>
+              </CardBody>
+            </Card>
+          ) : (
+            <>
+              <StageTimeline stages={stages} />
+              <StageTable
+                rows={stages}
+                onEdit={(row) => openModal('stage', row)}
+                onDelete={canDelete ? handleDeleteStage : undefined}
+                onApprove={(row) => approveStage.mutate({ id: row.id, payload: { action: 'approve' } })}
+                onReject={(row) => approveStage.mutate({ id: row.id, payload: { action: 'reject' } })}
+              />
+            </>
+          )}
         </div>
       ) : null}
 

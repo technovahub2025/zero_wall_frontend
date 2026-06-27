@@ -23,6 +23,7 @@ const refreshClient = axios.create({
 });
 
 let refreshPromise = null;
+const CSRF_COOKIE = 'pg-csrf-token';
 
 const NON_REFRESHABLE_PATHS = [
   '/auth/login',
@@ -43,15 +44,25 @@ api.interceptors.request.use((config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
+
+  if (typeof document !== 'undefined') {
+    const csrfToken = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith(`${CSRF_COOKIE}=`))
+      ?.split('=')
+      .slice(1)
+      .join('=');
+
+    if (csrfToken) {
+      config.headers = config.headers || {};
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
+
   return config;
 });
 
 async function refreshAccessToken() {
-  if (!getStoredAccessToken()) {
-    clearStoredAccessToken();
-    return null;
-  }
-
   if (!refreshPromise) {
     refreshPromise = refreshClient
       .post('/auth/refresh-token')
@@ -87,7 +98,7 @@ api.interceptors.response.use(
       !originalRequest ||
       originalRequest._retry ||
       shouldSkipRefresh ||
-      !getStoredAccessToken()
+      (requestUrl && requestUrl.includes('/auth/refresh-token'))
     ) {
       return Promise.reject(error);
     }

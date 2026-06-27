@@ -28,15 +28,16 @@ import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../store/authStore';
 import { RoleGuard } from './RoleGuard';
 import { ROLE_LABELS } from '../../utils/roleUtils';
-import logo from '../../assets/logo.png';
 import { ConfirmModal } from '../shared/ConfirmModal';
 import { TimerWidget } from '../timer/TimerWidget';
 import { useSocket } from '../../hooks/useSocket';
-import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead, useDeleteNotification } from '../../hooks/useNotifications';
+import { useNotifications, useUnreadNotificationCount, useMarkAllNotificationsRead, useMarkNotificationRead, useDeleteNotification } from '../../hooks/useNotifications';
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { NotificationPanel } from '../notifications/NotificationPanel';
 import { GlobalFooter } from '../shared/GlobalFooter';
+
+const logo = `${import.meta.env.BASE_URL}icon-192.png`;
 
 export function AppShell() {
   const location = useLocation();
@@ -53,7 +54,13 @@ export function AppShell() {
   const markRead = useMarkNotificationRead();
   const deleteNotification = useDeleteNotification();
   useSocket();
-  useNotifications();
+  useUnreadNotificationCount({ staleTime: 60_000, refetchOnWindowFocus: false, refetchOnReconnect: false });
+  const notificationsQuery = useNotifications({}, {
+    enabled: panelOpen,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -321,7 +328,7 @@ export function AppShell() {
 
         <NotificationPanel
           open={panelOpen}
-          notifications={notifications}
+          notifications={panelOpen ? notificationsQuery.data?.notifications || notifications : notifications}
           onClose={() => useNotificationStore.getState().setPanelOpen(false)}
           onRead={(id) => markRead.mutate(id)}
           onDelete={user?.role === 'superadmin' ? ((id) => deleteNotification.mutate(id)) : undefined}

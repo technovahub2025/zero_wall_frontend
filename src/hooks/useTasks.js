@@ -10,6 +10,10 @@ import { useAuthStore } from '../store/authStore';
 export function useTasks(filters = {}) {
   return useQuery({
     queryKey: ['tasks', filters],
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       const rows = await taskService.list(filters);
       return rows.map(normalizeTask);
@@ -22,6 +26,10 @@ export function useProjectTasks(projectId) {
   return useQuery({
     queryKey: ['project-tasks', projectId],
     enabled: Boolean(projectId && user?.id),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       const rows = await taskService.list({ project: projectId, limit: 50 });
       return rows.map(normalizeTask);
@@ -34,6 +42,10 @@ export function useMyTasks() {
   return useQuery({
     queryKey: ['my-tasks', user?.id],
     enabled: Boolean(user?.id),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       const rows = await taskService.mine();
       return rows.map(normalizeTask);
@@ -46,6 +58,10 @@ export function useMyTasksKanban() {
   return useQuery({
     queryKey: ['my-tasks-kanban', user?.id],
     enabled: Boolean(user?.id),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       const rows = await taskService.mine({ limit: 50 });
       return rows.map(normalizeTask);
@@ -58,6 +74,10 @@ export function useTaskCounts(projectId) {
   return useQuery({
     queryKey: ['task-counts', projectId],
     enabled: Boolean(projectId && user?.id),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => taskService.counts({ project: projectId }),
   });
 }
@@ -67,6 +87,10 @@ export function useKanbanOverview() {
   return useQuery({
     queryKey: ['kanban-overview'],
     enabled: Boolean(user?.id && ['superadmin', 'admin', 'project_manager'].includes(user?.role)),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       const payload = await projectService.kanbanOverview();
       return {
@@ -82,6 +106,10 @@ export function useKanbanColumns(boardType) {
   return useQuery({
     queryKey: ['kanban-columns', boardType],
     enabled: Boolean(user?.id && boardType),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => kanbanService.getColumns(boardType),
   });
 }
@@ -107,7 +135,9 @@ export function useTask(id, queryOptions = {}) {
       return normalizeTask(payload);
     },
     staleTime: 30_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     ...queryOptions,
   });
 }
@@ -122,7 +152,9 @@ export function useTaskTimerLogs(taskId, queryOptions = {}) {
       return payload.logs || payload.items || [];
     },
     staleTime: 15_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     ...queryOptions,
   });
 }
@@ -199,6 +231,10 @@ export function usePendingTaskTimeExtensionRequests() {
   return useQuery({
     queryKey: ['task-time-extension-requests', user?.id],
     enabled: Boolean(user?.id),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: () => taskService.pendingTimeExtensionRequests(),
   });
 }

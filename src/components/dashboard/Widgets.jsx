@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react';
-import { format, formatDistanceToNowStrict, parseISO } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import {
   ArrowRight,
@@ -47,6 +47,22 @@ function useClockTick(intervalMs = 60000) {
   return now;
 }
 
+function safeDate(value) {
+  if (!value || value === '-') return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatSafeDate(value) {
+  const date = safeDate(value);
+  if (!date) return '-';
+  return format(date, 'dd MMM yyyy');
+}
+
 function getTaskCountdownMeta(dueDate, now = Date.now()) {
   if (!dueDate) {
     return {
@@ -56,8 +72,8 @@ function getTaskCountdownMeta(dueDate, now = Date.now()) {
     };
   }
 
-  const due = parseISO(dueDate);
-  if (Number.isNaN(due.getTime())) {
+  const due = safeDate(dueDate);
+  if (!due) {
     return {
       label: 'No due date',
       tone: 'slate',
@@ -365,7 +381,7 @@ function ProjectCard({ item }) {
           </div>
           <div className="flex items-center gap-2">
             <CalendarDays className="h-3.5 w-3.5" />
-            <span>{format(parseISO(item.end), 'dd MMM yyyy')}</span>
+            <span>{formatSafeDate(item.end)}</span>
           </div>
           <div className="flex items-center gap-2">
             <UserRound className="h-3.5 w-3.5" />
@@ -506,7 +522,7 @@ export function ActionItemsCard({ items = [], showActions = false }) {
                   <td className="px-4 py-4 text-slate-300">{item.stage}</td>
                   <td className="px-4 py-4 text-slate-400">{item.action}</td>
                   <td className="px-4 py-4 text-slate-300">{item.resp}</td>
-                  <td className="px-4 py-4 text-slate-500">{format(parseISO(item.target), 'dd MMM yyyy')}</td>
+                  <td className="px-4 py-4 text-slate-500">{formatSafeDate(item.target)}</td>
                   <td className="px-4 py-4 text-slate-400">{item.decision}</td>
                   {showActions ? (
                     <td className="px-4 py-4">
@@ -543,7 +559,7 @@ export function ActionItemsCard({ items = [], showActions = false }) {
               <div className="mt-3 space-y-2 text-xs text-slate-400">
                 <div>{item.action}</div>
                 <div>{item.resp}</div>
-                <div>{format(parseISO(item.target), 'dd MMM yyyy')}</div>
+                <div>{formatSafeDate(item.target)}</div>
               </div>
             </div>
           ))}
@@ -688,7 +704,7 @@ export function TaskQueueCard({ tasks = [], title = 'Task Queue', subtitle = 'As
                       <span>{task.assignee}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-slate-400">{format(parseISO(task.dueDate), 'dd MMM yyyy')}</td>
+                  <td className="px-4 py-4 text-slate-400">{formatSafeDate(task.dueDate)}</td>
                   <td className="px-4 py-4">
                     <TaskCountdownPill dueDate={task.dueDate} compact />
                   </td>

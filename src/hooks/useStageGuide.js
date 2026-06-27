@@ -17,6 +17,7 @@ export function useCreateStageGuide() {
   return useMutation({
     mutationFn: (payload) => stageGuideService.create(payload),
     onSuccess: () => toast.success('Stage guide row created'),
+    onError: (error) => toast.error(error?.response?.data?.message || 'Failed to create stage guide row'),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['stage-guide'] }),
   });
 }
@@ -26,6 +27,7 @@ export function useUpdateStageGuide() {
   return useMutation({
     mutationFn: ({ id, payload }) => stageGuideService.update(id, payload),
     onSuccess: () => toast.success('Stage guide row updated'),
+    onError: (error) => toast.error(error?.response?.data?.message || 'Failed to update stage guide row'),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['stage-guide'] }),
   });
 }
@@ -35,6 +37,7 @@ export function useDeleteStageGuide() {
   return useMutation({
     mutationFn: (id) => stageGuideService.remove(id),
     onSuccess: () => toast.success('Stage guide row deleted'),
+    onError: (error) => toast.error(error?.response?.data?.message || 'Failed to delete stage guide row'),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['stage-guide'] }),
   });
 }

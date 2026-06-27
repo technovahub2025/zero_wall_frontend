@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import logo from '../../assets/logo_2.png';
 import { cn } from '../../lib/utils';
 import { GlobalFooter } from '../shared/GlobalFooter';
+
+const logo = `${import.meta.env.BASE_URL}icon-512.png`;
 
 const pageVariants = {
   initial: { opacity: 0, y: 14 },

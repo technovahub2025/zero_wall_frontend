@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from '../lib/api';
 
 function unwrap(response) {
   return response.data?.data ?? response.data;

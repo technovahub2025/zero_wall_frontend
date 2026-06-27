@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Check, CircleX, MoreVertical, PencilLine, Trash2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -8,13 +8,24 @@ import { DataTable } from '../shared/DataTable';
 import { cn } from '../../lib/utils';
 
 function formatDate(value) {
-  if (!value) return '-';
-  const date = typeof value === 'string' ? parseISO(value) : new Date(value);
-  if (Number.isNaN(date.getTime())) return '-';
+  if (value === undefined || value === null || value === '' || value === '-') return '—';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
   return format(date, 'dd MMM yyyy');
 }
 
-export function StageTable({ rows = [], onEdit, onDelete, onApprove, onReject }) {
+export function StageTable({
+  rows = [],
+  onEdit,
+  onDelete,
+  onApprove,
+  onReject,
+  stickyHeader = false,
+  scrollAxis = 'x',
+  scrollClassName = '',
+  showProject = false,
+  rowKey,
+}) {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
   const menuRef = useRef(null);
@@ -64,69 +75,85 @@ export function StageTable({ rows = [], onEdit, onDelete, onApprove, onReject })
   return (
     <>
       <DataTable
-      columns={[
-        { key: 'stageNo', label: 'Stage No', render: (row) => <span className="whitespace-nowrap font-medium">{row.stageNo}</span> },
-        { key: 'stageName', label: 'Stage Name', render: (row) => <span className="font-semibold text-[rgb(var(--text))]">{row.stageName}</span> },
-        { key: 'stageDescription', label: 'Description', render: (row) => <span className="block max-w-[180px] truncate text-[rgb(var(--muted))]">{row.stageDescription || '-'}</span> },
-        { key: 'stageStart', label: 'Start', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageStart)}</span> },
-        { key: 'stageEndPlanned', label: 'End (Planned)', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageEndPlanned)}</span> },
-        { key: 'stageEndActual', label: 'End (Actual)', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageEndActual)}</span> },
-        {
-          key: 'stageStatus',
-          label: 'Status',
-          render: (row) => <Badge tone={row.stageStatus === 'Completed' ? 'green' : row.stageStatus === 'In Progress' ? 'blue' : 'amber'}>{row.stageStatus}</Badge>,
-        },
-        { key: 'responsibleEngineer', label: 'Responsible Engineer', hideOnMobile: true, render: (row) => <span className="block max-w-[160px] truncate font-medium text-[rgb(var(--text))]">{row.responsibleEngineer?.name || '-'}</span> },
-        { key: 'approvalRequired', label: 'Approval Req.', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate font-medium text-[rgb(var(--text))]">{row.approvalRequired || '-'}</span> },
-        { key: 'disciplines', label: 'Disciplines', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate font-medium text-[rgb(var(--text))]">{row.disciplines || '-'}</span> },
-        { key: 'duration', label: 'Duration', hideOnMobile: true, render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--text))]">{row.duration || '-'}</span> },
-        { key: 'deliverable', label: 'Deliverable', render: (row) => <span className="block max-w-[160px] truncate font-medium text-[rgb(var(--text))]">{row.deliverable || '-'}</span> },
-        { key: 'submittedToClientOn', label: 'Submitted On', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.submittedToClientOn)}</span> },
-        { key: 'clientApprovalStatus', label: 'Client Approval', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--text))]">{row.clientApprovalStatus || '-'}</span> },
-        { key: 'clientApprovalDate', label: 'Approval Date', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.clientApprovalDate)}</span> },
-        { key: 'clientComments', label: 'Client Comments', render: (row) => <span className="block max-w-[180px] truncate text-[rgb(var(--muted))]">{row.clientComments || '-'}</span> },
-        { key: 'nextAction', label: 'Next Action', render: (row) => <span className="block max-w-[160px] truncate text-[rgb(var(--muted))]">{row.nextAction || '-'}</span> },
-        {
-          key: 'actions',
-          label: 'Actions',
-          render: (row) => (
-            <div className="relative inline-flex justify-end" ref={openMenuId === row.id ? menuRef : null}>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-10 w-10 rounded-xl border border-[rgb(var(--line)/0.18)] bg-[rgb(var(--panel)/0.94)] px-0 text-[rgb(var(--text))] shadow-sm transition hover:border-[rgb(var(--line)/0.28)] hover:bg-[rgb(var(--panel-2)/0.92)] hover:text-[rgb(var(--text))]"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (openMenuId === row.id) {
-                    setOpenMenuId(null);
-                    setMenuPosition(null);
-                    return;
-                  }
+        columns={[
+          showProject
+            ? {
+                key: 'projectName',
+                label: 'Project',
+                render: (row) => (
+                  <span className="block max-w-[180px] truncate font-semibold text-[rgb(var(--text))]">
+                    {row.project?.projectName || row.projectName || '-'}
+                  </span>
+                ),
+              }
+            : null,
+          { key: 'stageNo', label: 'Stage No', render: (row) => <span className="whitespace-nowrap font-medium">{row.stageNo}</span> },
+          { key: 'stageName', label: 'Stage Name', render: (row) => <span className="font-semibold text-[rgb(var(--text))]">{row.stageName}</span> },
+          { key: 'stageDescription', label: 'Description', render: (row) => <span className="block max-w-[180px] truncate text-[rgb(var(--muted))]">{row.stageDescription || '-'}</span> },
+          { key: 'stageStart', label: 'Start', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageStart)}</span> },
+          { key: 'stageEndPlanned', label: 'End (Planned)', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageEndPlanned)}</span> },
+          { key: 'stageEndActual', label: 'End (Actual)', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.stageEndActual)}</span> },
+          {
+            key: 'stageStatus',
+            label: 'Status',
+            render: (row) => <Badge tone={row.stageStatus === 'Completed' ? 'green' : row.stageStatus === 'In Progress' ? 'blue' : 'amber'}>{row.stageStatus}</Badge>,
+          },
+          { key: 'responsibleEngineer', label: 'Responsible Engineer', hideOnMobile: true, render: (row) => <span className="block max-w-[160px] truncate font-medium text-[rgb(var(--text))]">{row.responsibleEngineer?.name || '-'}</span> },
+          { key: 'approvalRequired', label: 'Approval Req.', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate font-medium text-[rgb(var(--text))]">{row.approvalRequired || '-'}</span> },
+          { key: 'disciplines', label: 'Disciplines', hideOnMobile: true, render: (row) => <span className="block max-w-[180px] truncate font-medium text-[rgb(var(--text))]">{row.disciplines || '-'}</span> },
+          { key: 'duration', label: 'Duration', hideOnMobile: true, render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--text))]">{row.duration || '-'}</span> },
+          { key: 'deliverable', label: 'Deliverable', render: (row) => <span className="block max-w-[160px] truncate font-medium text-[rgb(var(--text))]">{row.deliverable || '-'}</span> },
+          { key: 'submittedToClientOn', label: 'Submitted On', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.submittedToClientOn)}</span> },
+          { key: 'clientApprovalStatus', label: 'Client Approval', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--text))]">{row.clientApprovalStatus || '-'}</span> },
+          { key: 'clientApprovalDate', label: 'Approval Date', render: (row) => <span className="whitespace-nowrap font-medium text-[rgb(var(--muted))]">{formatDate(row.clientApprovalDate)}</span> },
+          { key: 'clientComments', label: 'Client Comments', render: (row) => <span className="block max-w-[180px] truncate text-[rgb(var(--muted))]">{row.clientComments || '-'}</span> },
+          { key: 'nextAction', label: 'Next Action', render: (row) => <span className="block max-w-[160px] truncate text-[rgb(var(--muted))]">{row.nextAction || '-'}</span> },
+          menuItems.length
+            ? {
+                key: 'actions',
+                label: 'Actions',
+                render: (row) => (
+                  <div className="relative inline-flex justify-end" ref={openMenuId === row.id ? menuRef : null}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-10 w-10 rounded-xl border border-[rgb(var(--line)/0.18)] bg-[rgb(var(--panel)/0.94)] px-0 text-[rgb(var(--text))] shadow-sm transition hover:border-[rgb(var(--line)/0.28)] hover:bg-[rgb(var(--panel-2)/0.92)] hover:text-[rgb(var(--text))]"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (openMenuId === row.id) {
+                          setOpenMenuId(null);
+                          setMenuPosition(null);
+                          return;
+                        }
 
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  const menuHeight = menuItems.length * 48;
-                  const estimatedLeft = rect.right - 46;
-                  const estimatedTop =
-                    rect.bottom + menuHeight < window.innerHeight - 12
-                      ? rect.bottom + 10
-                      : Math.max(12, rect.top - menuHeight - 10);
-                  const clampedLeft = Math.min(Math.max(estimatedLeft, 8), window.innerWidth - 62);
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const menuHeight = menuItems.length * 48;
+                        const estimatedLeft = rect.right - 46;
+                        const estimatedTop =
+                          rect.bottom + menuHeight < window.innerHeight - 12
+                            ? rect.bottom + 10
+                            : Math.max(12, rect.top - menuHeight - 10);
+                        const clampedLeft = Math.min(Math.max(estimatedLeft, 8), window.innerWidth - 62);
 
-                  setMenuPosition({ top: estimatedTop, left: clampedLeft });
-                  setOpenMenuId(row.id);
-                }}
-                aria-label="Stage actions"
-                title="Stage actions"
-              >
-                <MoreVertical className="h-5 w-5" />
-              </Button>
-            </div>
-          ),
-        },
-      ]}
-      rows={rows}
-      rowKey={(row) => row.id}
-      emptyMessage="No stage records yet."
+                        setMenuPosition({ top: estimatedTop, left: clampedLeft });
+                        setOpenMenuId(row.id);
+                      }}
+                      aria-label="Stage actions"
+                      title="Stage actions"
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </Button>
+                  </div>
+                ),
+              }
+            : null,
+        ].filter(Boolean)}
+        rows={rows}
+        rowKey={rowKey || ((row, index) => row.id || row._id || `${row.projectId || row.projectName || 'stage'}-${row.stageNo}-${row.stageName}-${index}`)}
+        emptyMessage="No stage records yet."
+        stickyHeader={stickyHeader}
+        scrollAxis={scrollAxis}
+        scrollClassName={scrollClassName}
       />
       {openMenuId && menuPosition
         ? createPortal(

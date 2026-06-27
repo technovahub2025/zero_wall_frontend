@@ -8,6 +8,7 @@ import { SubmitErrorAlert } from '../shared/SubmitErrorAlert';
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   phone: z.string().optional().default(''),
+  emergencyPhone: z.string().optional().default(''),
   designation: z.string().optional().default(''),
   department: z.string().optional().default(''),
 });
@@ -19,6 +20,7 @@ export function ProfileSettings({ initialValues, onSubmit }) {
     defaultValues: {
       name: initialValues?.name || '',
       phone: initialValues?.phone || '',
+      emergencyPhone: initialValues?.emergencyPhone || '',
       designation: initialValues?.designation || '',
       department: initialValues?.department || '',
     },
@@ -28,6 +30,7 @@ export function ProfileSettings({ initialValues, onSubmit }) {
     form.reset({
       name: initialValues?.name || '',
       phone: initialValues?.phone || '',
+      emergencyPhone: initialValues?.emergencyPhone || '',
       designation: initialValues?.designation || '',
       department: initialValues?.department || '',
     });
@@ -47,6 +50,7 @@ export function ProfileSettings({ initialValues, onSubmit }) {
     >
       <Field label="Name" error={form.formState.errors.name?.message}><input className="input" {...form.register('name')} /></Field>
       <Field label="Phone" error={form.formState.errors.phone?.message}><input className="input" {...form.register('phone')} /></Field>
+      <Field label="Emergency Phone" error={form.formState.errors.emergencyPhone?.message}><input className="input" {...form.register('emergencyPhone')} /></Field>
       <Field label="Designation" error={form.formState.errors.designation?.message}><input className="input" {...form.register('designation')} /></Field>
       <Field label="Department" error={form.formState.errors.department?.message}><input className="input" {...form.register('department')} /></Field>
       <SubmitErrorAlert className="sm:col-span-2" message={submitError} title="Could not save profile" />

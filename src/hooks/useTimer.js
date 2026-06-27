@@ -45,6 +45,10 @@ export function useTimer() {
   const activeQuery = useQuery({
     queryKey: ['timer-active', userId || 'guest'],
     queryFn: timerService.active,
+    staleTime: 15_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const applyActivePayload = (payload) => {
@@ -202,6 +206,10 @@ export function useTimer() {
   const logsQuery = useQuery({
     queryKey: ['timer-logs', userId || 'guest'],
     queryFn: () => timerService.mine({ preset: 'last-30-days', page: 1, limit: 100 }),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const logs = logsQuery.data?.items || [];

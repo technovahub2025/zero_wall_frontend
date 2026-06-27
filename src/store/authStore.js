@@ -27,23 +27,22 @@ export const useAuthStore = create((set, get) => ({
     if (get().initialized || get().initializing) return;
 
     const storedToken = getStoredAccessToken();
-    if (!storedToken) {
-      set({
-        ...emptyState,
-        loading: false,
-        initialized: true,
-        initializing: false,
-      });
-      return;
-    }
-
     set({ loading: true, initializing: true });
 
     try {
+      let currentToken = storedToken;
+      if (!currentToken) {
+        const refreshResponse = await authService.refreshToken();
+        currentToken = normalizeAccessToken(refreshResponse) || getStoredAccessToken();
+        if (currentToken) {
+          setStoredAccessToken(currentToken);
+        }
+      }
+
       const meResponse = await authService.me();
       set({
         user: normalizeUser(meResponse),
-        accessToken: normalizeAccessToken(meResponse) || getStoredAccessToken(),
+        accessToken: normalizeAccessToken(meResponse) || currentToken || getStoredAccessToken(),
         isAuthenticated: true,
         loading: false,
         initialized: true,
@@ -94,6 +93,11 @@ export const useAuthStore = create((set, get) => ({
         initialized: true,
       });
     },
+
+  updateUser: (updates) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...updates } : state.user,
+    })),
 
   login: async ({ identifier, password }) => {
     const response = await authService.login({ identifier, password });

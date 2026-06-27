@@ -12,6 +12,10 @@ export function useEmployees(params = {}, queryOptions = {}) {
   return useQuery({
     queryKey: ['employees', params],
     enabled: Boolean(role && canReadEmployees(role)) && (queryOptions.enabled ?? true),
+    staleTime: queryOptions.staleTime ?? 5 * 60_000,
+    refetchOnMount: queryOptions.refetchOnMount ?? false,
+    refetchOnWindowFocus: queryOptions.refetchOnWindowFocus ?? false,
+    refetchOnReconnect: queryOptions.refetchOnReconnect ?? false,
     queryFn: () => employeeService.list(params),
     ...queryOptions,
   });
@@ -21,6 +25,10 @@ export function useEmployee(id) {
   return useQuery({
     queryKey: ['employee', id],
     enabled: Boolean(id),
+    staleTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: () => employeeService.get(id),
   });
 }
@@ -92,6 +100,10 @@ export function useEmployeeTasks(id) {
   return useQuery({
     queryKey: ['employee-tasks', id],
     enabled: Boolean(id),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: () => employeeService.tasks(id),
   });
 }
@@ -100,6 +112,10 @@ export function useEmployeeWorkload(id) {
   return useQuery({
     queryKey: ['employee-workload', id],
     enabled: Boolean(id),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: () => employeeService.workload(id),
   });
 }
@@ -108,6 +124,10 @@ export function useEmployeeDocuments(id) {
   return useQuery({
     queryKey: ['employee-documents', id],
     enabled: Boolean(id),
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: () => employeeService.documents(id),
   });
 }

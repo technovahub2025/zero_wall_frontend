@@ -5,8 +5,9 @@ import { LoginForm } from '../components/auth/LoginForm';
 import { AuthPageShell } from '../components/auth/AuthPageShell';
 import { useAuthStore } from '../store/authStore';
 import { getHomePathForRole } from '../utils/roleUtils';
-import logo from '../assets/logo_2.png';
 import { staggerContainer, staggerItem } from '../utils/motionVariants';
+
+const logo = `${import.meta.env.BASE_URL}icon-512.png`;
 
 function FeatureItem({ children }) {
   return (

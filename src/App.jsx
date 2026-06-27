@@ -21,6 +21,7 @@ const Projects = lazy(() => import('./pages/Projects'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const TaskDetail = lazy(() => import('./pages/TaskDetail'));
 const Kanban = lazy(() => import('./pages/Kanban'));
+const StagesPage = lazy(() => import('./pages/StagesPage'));
 const StageDetail = lazy(() => import('./pages/StageDetail'));
 const StageGuidePage = lazy(() => import('./pages/StageGuidePage'));
 const CeoDashboard = lazy(() => import('./pages/CeoDashboard'));
@@ -41,7 +42,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
+      refetchOnMount: false,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
       retry: 1,
       gcTime: 5 * 60 * 1000,
     },
@@ -118,6 +121,14 @@ export default function App() {
                 />
                 <Route
                   path="/stages"
+                  element={
+                    <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
+                      <StagesPage />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/stage-detail"
                   element={
                     <RoleGuard roles={['superadmin', 'admin', 'project_manager']} fallback={<Navigate to="/my-tasks" replace />}>
                       <StageDetail />

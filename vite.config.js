@@ -4,6 +4,16 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   base: '/test_pg_infrastructure/',
   plugins: [react()],
+  server: {
+    host: 'localhost',
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      host: 'localhost',
+      port: 5173,
+      path: '/test_pg_infrastructure/',
+    },
+  },
   build: {
     target: 'esnext',
     minify: 'esbuild',

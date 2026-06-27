@@ -103,13 +103,12 @@ export function ProjectTable({
       render: (row) => {
         const isOpen = openMenuId === row.id;
         const menuHeight = 156;
-        const triggerHeight = 40;
         return (
           <div className="relative inline-flex justify-end" ref={isOpen ? menuRef : null}>
             <Button
               size="sm"
               variant="secondary"
-              className="h-9 w-11 rounded-[14px] border border-slate-200 bg-white px-0 text-slate-950 shadow-sm ring-1 ring-slate-100 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 focus-visible:ring-2 focus-visible:ring-sky-400"
+              className="h-10 w-10 rounded-[16px] border border-[rgb(var(--line)/0.14)] bg-[rgb(var(--panel)/0.82)] px-0 text-[rgb(var(--muted))] shadow-sm ring-0 transition hover:border-[rgb(var(--line)/0.22)] hover:bg-[rgb(var(--panel-2)/0.72)] hover:text-[rgb(var(--text))] focus-visible:ring-2 focus-visible:ring-sky-400/70"
               onClick={(event) => {
                 event.stopPropagation();
                 if (openMenuId === row.id) {
@@ -135,7 +134,7 @@ export function ProjectTable({
               aria-label="Project actions"
               title="Project actions"
             >
-              <MoreVertical className="h-[18px] w-[18px] stroke-[3.2]" />
+              <MoreVertical className="h-4 w-4" strokeWidth={2} />
             </Button>
           </div>
         );

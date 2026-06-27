@@ -14,6 +14,19 @@ if (import.meta.env.PROD) {
   console.info = () => {};
 }
 
+async function registerServiceWorker() {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register(`${import.meta.env.BASE_URL || '/'}service-worker.js`);
+    window.__PWA_READY__ = Boolean(registration);
+  } catch (error) {
+    window.__PWA_READY__ = false;
+  }
+}
+
 function ThemeSync() {
   const theme = useUiStore((state) => state.theme);
   const resolvedTheme = useUiStore((state) => state.resolvedTheme);
@@ -57,3 +70,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
+
+window.__PWA_READY__ = false;
+registerServiceWorker();

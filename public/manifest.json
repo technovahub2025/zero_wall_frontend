@@ -1,0 +1,21 @@
+{
+  "name": "PG Infrastructure",
+  "short_name": "PG Infra",
+  "start_url": "/test_pg_infrastructure/",
+  "scope": "/test_pg_infrastructure/",
+  "display": "standalone",
+  "theme_color": "#f8fafc",
+  "background_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/test_pg_infrastructure/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/test_pg_infrastructure/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

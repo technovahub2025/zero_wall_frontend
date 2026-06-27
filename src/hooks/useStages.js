@@ -4,6 +4,16 @@ import { normalizeStage } from '../lib/phase2';
 import { stageService } from '../services/stageService';
 
 export function useStages(projectId) {
+  if (!projectId) {
+    return {
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: async () => ({ data: [] }),
+    };
+  }
+
   return useQuery({
     queryKey: ['stages', projectId || 'all'],
     queryFn: async () => {

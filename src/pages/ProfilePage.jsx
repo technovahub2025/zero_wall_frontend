@@ -2,27 +2,33 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { pageVariants } from '../utils/motionVariants';
 import { useAuthStore } from '../store/authStore';
 import { buildAvatarUrl } from '../utils/avatarUrl';
 import { useMyTasks } from '../hooks/useTasks';
 import { useTeams } from '../hooks/useTeams';
 import { useTimer } from '../hooks/useTimer';
+import { settingsService } from '../services/settingsService';
 import { TimesheetCalendar } from '../components/timer/TimesheetCalendar';
 import { TaskCard } from '../components/tasks/TaskCard';
 import { AvatarUpload } from '../components/upload/AvatarUpload';
+import { ProfileSettings } from '../components/settings/ProfileSettings';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardBody } from '../components/ui/card';
 import { EmptyState } from '../components/shared/EmptyState';
+import { ModalShell } from '../components/shared/ModalShell';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const navigate = useNavigate();
   const tasksQuery = useMyTasks();
   const teamsQuery = useTeams();
   const timer = useTimer();
   const [activeTab, setActiveTab] = useState('Profile');
+  const [editOpen, setEditOpen] = useState(false);
 
   const myTasks = tasksQuery.data || [];
   const teams = teamsQuery.data || [];
@@ -61,7 +67,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setActiveTab('Profile')}>Edit Profile</Button>
+            <Button variant="secondary" onClick={() => setEditOpen(true)}>Edit Profile</Button>
             <Button variant="secondary" onClick={() => navigate('/my-tasks')}>My Tasks</Button>
             <Button variant="secondary" onClick={() => navigate('/my-timesheets')}>My Timesheets</Button>
           </div>
@@ -117,6 +123,9 @@ export default function ProfilePage() {
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Quick Actions</div>
                 <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+                    Edit Profile
+                  </Button>
                   <Button size="sm" variant="secondary" onClick={() => navigate('/my-tasks')}>View Tasks</Button>
                   <Button size="sm" variant="secondary" onClick={() => navigate('/my-timesheets')}>View Timesheets</Button>
                 </div>
@@ -176,6 +185,20 @@ export default function ProfilePage() {
       ) : null}
 
       {activeTab === 'My Timesheets' ? <TimesheetCalendar dailySummary={timer.dailySummary || []} /> : null}
+
+      {editOpen ? (
+        <ModalShell title="Edit Profile" description="Update your profile details." onClose={() => setEditOpen(false)}>
+          <ProfileSettings
+            initialValues={user}
+            onSubmit={async (payload) => {
+              const updatedProfile = await settingsService.updateProfile(payload);
+              updateUser(updatedProfile);
+              toast.success('Profile updated');
+              setEditOpen(false);
+            }}
+          />
+        </ModalShell>
+      ) : null}
     </motion.div>
   );
 }

@@ -3,25 +3,41 @@ import toast from 'react-hot-toast';
 import { notificationService } from '../services/notificationService';
 import { useNotificationStore } from '../store/notificationStore';
 
-export function useNotifications(params = {}) {
+export function useNotifications(params = {}, queryOptions = {}) {
   const setNotifications = useNotificationStore((state) => state.setNotifications);
   const setUnreadCount = useNotificationStore((state) => state.setUnreadCount);
 
   return useQuery({
     queryKey: ['notifications', params],
+    enabled: queryOptions.enabled ?? true,
+    staleTime: queryOptions.staleTime ?? 60_000,
+    refetchOnMount: queryOptions.refetchOnMount ?? false,
+    refetchOnWindowFocus: queryOptions.refetchOnWindowFocus ?? false,
+    refetchOnReconnect: queryOptions.refetchOnReconnect ?? false,
     queryFn: async () => {
       const payload = await notificationService.list(params);
       setNotifications(payload.notifications || []);
       setUnreadCount(payload.unreadCount || 0);
       return payload;
     },
+    ...queryOptions,
   });
 }
 
-export function useUnreadNotificationCount() {
+export function useUnreadNotificationCount(queryOptions = {}) {
+  const setUnreadCount = useNotificationStore((state) => state.setUnreadCount);
   return useQuery({
     queryKey: ['notification-count'],
-    queryFn: async () => notificationService.unreadCount(),
+    staleTime: queryOptions.staleTime ?? 60_000,
+    refetchOnMount: queryOptions.refetchOnMount ?? false,
+    refetchOnWindowFocus: queryOptions.refetchOnWindowFocus ?? false,
+    refetchOnReconnect: queryOptions.refetchOnReconnect ?? false,
+    queryFn: async () => {
+      const payload = await notificationService.unreadCount();
+      setUnreadCount(payload?.unreadCount ?? 0);
+      return payload;
+    },
+    ...queryOptions,
   });
 }
 

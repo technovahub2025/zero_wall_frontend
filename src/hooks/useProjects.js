@@ -32,6 +32,10 @@ export function useProjects(extraFilters = {}, queryOptions = {}) {
   return useQuery({
     queryKey: ['projects', merged],
     enabled: Boolean(role && canReadProjectList(role)) && (queryOptions.enabled ?? true),
+    staleTime: queryOptions.staleTime ?? 5 * 60_000,
+    refetchOnMount: queryOptions.refetchOnMount ?? false,
+    refetchOnWindowFocus: queryOptions.refetchOnWindowFocus ?? false,
+    refetchOnReconnect: queryOptions.refetchOnReconnect ?? false,
     queryFn: () => loadProjects(merged),
     ...queryOptions,
   });
@@ -41,6 +45,10 @@ export function useProject(id) {
   return useQuery({
     queryKey: ['project', id],
     enabled: Boolean(id),
+    staleTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       const payload = await projectService.get(id);
       return normalizeProject(payload);
@@ -52,6 +60,10 @@ export function useProjectSummary(id) {
   return useQuery({
     queryKey: ['project-summary', id],
     enabled: Boolean(id),
+    staleTime: 5 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => projectService.summary(id),
   });
 }
@@ -60,16 +72,11 @@ export function useProjectStages(id, queryOptions = {}) {
   return useQuery({
     queryKey: ['project-stages', id],
     enabled: Boolean(id),
-    queryFn: async () => {
-      try {
-        const rows = await projectService.stages(id);
-        return rows.map((row) => row);
-      } catch {
-        return [];
-      }
-    },
+    queryFn: async () => projectService.stages(id),
     staleTime: 60_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     ...queryOptions,
   });
 }

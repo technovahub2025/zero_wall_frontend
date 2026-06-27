@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, BookOpen, CheckCircle2, Clock3, Layers3, MapPin, Users } from 'lucide-react';
@@ -31,7 +31,7 @@ export default function StageDetail() {
   const canDelete = userRole === 'superadmin';
   const employeesQuery = useEmployees();
   const urlProjectId = searchParams.get('project') || '';
-  const selectedId = useMemo(() => urlProjectId || projects[0]?.id || '', [projects, urlProjectId]);
+  const selectedId = useMemo(() => urlProjectId || '', [urlProjectId]);
   const stagesQuery = useStages(selectedId);
   const employees = employeesQuery.data || [];
   const selectedProject = projects.find((project) => String(project.id) === String(selectedId)) || null;
@@ -40,15 +40,6 @@ export default function StageDetail() {
     completed: (stagesQuery.data || []).filter((stage) => String(stage.stageStatus).toLowerCase() === 'completed').length,
     inProgress: (stagesQuery.data || []).filter((stage) => String(stage.stageStatus).toLowerCase() === 'in progress').length,
   };
-
-  useEffect(() => {
-    if (!urlProjectId && projects[0]?.id) {
-      const fallbackId = String(projects[0].id);
-      const next = new URLSearchParams(searchParams);
-      next.set('project', fallbackId);
-      setSearchParams(next, { replace: true });
-    }
-  }, [projects, searchParams, setSearchParams, urlProjectId]);
 
   function handleProjectChange(nextValue) {
     const projectId = String(nextValue || '');
@@ -152,7 +143,7 @@ export default function StageDetail() {
               <BookOpen className="h-4 w-4" />
               Stage Guide
             </Button>
-            <Button onClick={() => openModal('stage', { project: selectedId })}>
+            <Button onClick={() => openModal('stage', { project: selectedId })} disabled={!selectedId}>
               <Layers3 className="h-4 w-4" />
               Add Stage
             </Button>
@@ -160,7 +151,12 @@ export default function StageDetail() {
         </CardBody>
       </Card>
 
-      {stagesQuery.isLoading ? (
+      {!selectedId ? (
+        <EmptyState
+          title="Select a project"
+          description="Choose a project from the dropdown to view its stages and approvals."
+        />
+      ) : stagesQuery.isLoading ? (
         <EmptyState title="Loading stages" description="Fetching stage data from the API." />
       ) : stagesQuery.isError ? (
         <Card>

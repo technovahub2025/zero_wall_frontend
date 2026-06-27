@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   ChartPie,
@@ -42,6 +43,7 @@ const logo = `${import.meta.env.BASE_URL}icon-192.png`;
 export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleSidebarCollapsed, resolvedTheme, toggleTheme } = useUiStore();
@@ -88,10 +90,13 @@ export function AppShell() {
 
   async function handleLogout() {
     try {
+      await queryClient.cancelQueries();
       await logout();
+      queryClient.clear();
       toast.success('Logged out');
       navigate('/login', { replace: true });
     } catch {
+      queryClient.clear();
       toast.error('Logout failed');
     }
   }
@@ -283,9 +288,7 @@ export function AppShell() {
                   New Project
                 </Button>
 
-                <div className="hidden md:block">
-                  <TimerWidget />
-                </div>
+                <TimerWidget />
 
                 <NotificationBell count={unreadCount} onClick={togglePanel} />
 
@@ -307,9 +310,6 @@ export function AppShell() {
                   <Settings2 className="h-4 w-4" />
                 </button>
 
-                <div className="md:hidden">
-                  <TimerWidget />
-                </div>
               </div>
             </div>
           </header>

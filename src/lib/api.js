@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { clearStoredAccessToken, getStoredAccessToken, setStoredAccessToken } from './authToken';
+import { clearStoredAccessToken, getStoredAccessToken, isAuthRefreshBlocked, setStoredAccessToken } from './authToken';
 
 function resolveApiBaseUrl() {
   const explicit = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_BACKEND_URL;
@@ -105,6 +105,7 @@ api.interceptors.response.use(
       !originalRequest ||
       originalRequest._retry ||
       shouldSkipRefresh ||
+      isAuthRefreshBlocked() ||
       !hasStoredToken ||
       (requestUrl && requestUrl.includes('/auth/refresh-token'))
     ) {
@@ -123,6 +124,7 @@ api.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${token}`;
       return api(originalRequest);
     } catch (refreshError) {
+      clearStoredAccessToken();
       return Promise.reject(error);
     }
   },

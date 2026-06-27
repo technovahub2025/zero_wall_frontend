@@ -27,6 +27,30 @@ async function registerServiceWorker() {
   }
 }
 
+async function cleanupDevServiceWorkers() {
+  if (typeof window === 'undefined') return;
+
+  window.__PWA_READY__ = false;
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+
+    if ('caches' in window) {
+      const cacheNames = await window.caches.keys();
+      await Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName.startsWith('pg-infra-') || cacheName.includes('pg-infra'))
+          .map((cacheName) => window.caches.delete(cacheName)),
+      );
+    }
+  } catch (error) {
+    window.__PWA_READY__ = false;
+  }
+}
+
 function ThemeSync() {
   const theme = useUiStore((state) => state.theme);
   const resolvedTheme = useUiStore((state) => state.resolvedTheme);
@@ -72,4 +96,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 );
 
 window.__PWA_READY__ = false;
-registerServiceWorker();
+if (import.meta.env.PROD) {
+  registerServiceWorker();
+} else {
+  cleanupDevServiceWorkers();
+}

@@ -13,6 +13,22 @@ export function useSocket() {
   useEffect(() => {
     if (!user?.id) return undefined;
 
+    const pendingInvalidations = new Map();
+    let invalidationTimer = null;
+
+    const scheduleInvalidation = (queryKey, options = {}) => {
+      const key = JSON.stringify(queryKey);
+      pendingInvalidations.set(key, { queryKey, ...options });
+      if (invalidationTimer) return;
+
+      invalidationTimer = window.setTimeout(() => {
+        const invalidations = Array.from(pendingInvalidations.values());
+        pendingInvalidations.clear();
+        invalidationTimer = null;
+        invalidations.forEach((payload) => queryClient.invalidateQueries(payload));
+      }, 750);
+    };
+
     if (!socket.connected) {
       socket.connect();
     }
@@ -48,24 +64,27 @@ export function useSocket() {
     };
 
     const handleProjectChanged = () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['project'] });
-      queryClient.invalidateQueries({ queryKey: ['project-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['project-stages'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['task-counts'] });
-      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['my-tasks-kanban'] });
-      queryClient.invalidateQueries({ queryKey: ['employee'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-workload'] });
-      queryClient.invalidateQueries({ queryKey: ['task-time-extension-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['timer-active'] });
-      queryClient.invalidateQueries({ queryKey: ['stages'] });
-      queryClient.invalidateQueries({ queryKey: ['kanban-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      [
+        ['dashboard'],
+        ['projects'],
+        ['project'],
+        ['project-summary'],
+        ['project-stages'],
+        ['tasks'],
+        ['project-tasks'],
+        ['task-counts'],
+        ['my-tasks'],
+        ['my-tasks-kanban'],
+        ['employee'],
+        ['employee-tasks'],
+        ['employee-workload'],
+        ['task-time-extension-requests'],
+        ['timer-active'],
+        ['stages'],
+        ['kanban-overview'],
+        ['reports'],
+        ['clients'],
+      ].forEach((queryKey) => scheduleInvalidation(queryKey));
     };
 
     const handleTimerChanged = (payload) => {
@@ -73,33 +92,40 @@ export function useSocket() {
       if (isCurrentTimer) {
         updateActiveTimerCache(payload);
       }
-      queryClient.invalidateQueries({ queryKey: ['timer-logs'] });
-      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      scheduleInvalidation(['timer-logs']);
+      scheduleInvalidation(['timesheets']);
       if (isCurrentTimer) {
-        queryClient.invalidateQueries({ queryKey: ['timer-active'] });
+        scheduleInvalidation(['timer-active']);
       }
-      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['task-counts'] });
-      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      scheduleInvalidation(['my-tasks']);
+      scheduleInvalidation(['task-counts']);
+      scheduleInvalidation(['project-tasks']);
+      scheduleInvalidation(['reports']);
+      scheduleInvalidation(['dashboard']);
     };
 
     const handleTimerStopped = (payload) => {
       const isCurrentTimer = isCurrentUsersTimer(payload);
       if (isCurrentTimer) {
         clearActiveTimerCache(payload);
-        queryClient.invalidateQueries({ queryKey: ['timer-active'] });
+        scheduleInvalidation(['timer-active']);
       }
-      queryClient.invalidateQueries({ queryKey: ['timer-logs'] });
-      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
-      queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['task-counts'] });
-      queryClient.invalidateQueries({ queryKey: ['project-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      scheduleInvalidation(['timer-logs']);
+      scheduleInvalidation(['timesheets']);
+      scheduleInvalidation(['my-tasks']);
+      scheduleInvalidation(['task-counts']);
+      scheduleInvalidation(['project-tasks']);
+      scheduleInvalidation(['reports']);
+      scheduleInvalidation(['dashboard']);
     };
 
     const handleMonitorPresenceChanged = () => {
-      queryClient.invalidateQueries({ queryKey: ['monitor'] });
+      scheduleInvalidation(['monitor']);
+    };
+
+    const handleActivityCreated = () => {
+      scheduleInvalidation(['activity-logs']);
+      scheduleInvalidation(['dashboard']);
     };
 
     socket.on('notification:new', handleNotification);
@@ -119,10 +145,14 @@ export function useSocket() {
     socket.on('timer:stopped', handleTimerStopped);
     socket.on('timer:manual', handleProjectChanged);
     socket.on('timer:deleted', handleTimerStopped);
-    socket.on('activity:created', handleProjectChanged);
+    socket.on('activity:created', handleActivityCreated);
     socket.on('monitor:presence:changed', handleMonitorPresenceChanged);
 
     return () => {
+      if (invalidationTimer) {
+        window.clearTimeout(invalidationTimer);
+      }
+      pendingInvalidations.clear();
       socket.off('notification:new', handleNotification);
       socket.off('notification:count', handleUnreadCount);
       socket.off('project:created', handleProjectChanged);
@@ -140,7 +170,7 @@ export function useSocket() {
       socket.off('timer:stopped', handleTimerStopped);
       socket.off('timer:manual', handleProjectChanged);
       socket.off('timer:deleted', handleTimerStopped);
-      socket.off('activity:created', handleProjectChanged);
+      socket.off('activity:created', handleActivityCreated);
       socket.off('monitor:presence:changed', handleMonitorPresenceChanged);
       socket.emit('leave:user', user.id);
       if (['superadmin', 'admin', 'project_manager'].includes(user.role)) {

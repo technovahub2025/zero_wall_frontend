@@ -51,25 +51,7 @@ export const useAuthStore = create((set, get) => ({
       return;
     } catch (error) {
       if (error?.response?.status === 401) {
-        try {
-          const refreshResponse = await authService.refreshToken();
-          const refreshedToken = normalizeAccessToken(refreshResponse);
-          if (refreshedToken) {
-            setStoredAccessToken(refreshedToken);
-          }
-          const retry = await authService.me();
-          set({
-            user: normalizeUser(retry),
-            accessToken: normalizeAccessToken(retry) || getStoredAccessToken(),
-            isAuthenticated: true,
-            loading: false,
-            initialized: true,
-            initializing: false,
-          });
-          return;
-        } catch (refreshError) {
-          // fall through to clear state
-        }
+        clearStoredAccessToken();
       }
     }
 

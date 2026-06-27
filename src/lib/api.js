@@ -6,6 +6,12 @@ function resolveApiBaseUrl() {
   if (explicit) return explicit;
 
   if (typeof window !== 'undefined' && window.location?.origin) {
+    if (/^https:\/\/([a-z0-9-]+\.)?technovahub\.in$/i.test(window.location.origin)) {
+      return 'https://pg-infra-backend.onrender.com/api';
+    }
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(window.location.origin)) {
+      return 'http://localhost:5000/api';
+    }
     return `${window.location.origin}/api`;
   }
 
@@ -92,12 +98,14 @@ api.interceptors.response.use(
     const status = error?.response?.status;
     const requestUrl = originalRequest?.url || '';
     const shouldSkipRefresh = NON_REFRESHABLE_PATHS.some((path) => requestUrl.includes(path));
+    const hasStoredToken = Boolean(getStoredAccessToken());
 
     if (
       status !== 401 ||
       !originalRequest ||
       originalRequest._retry ||
       shouldSkipRefresh ||
+      !hasStoredToken ||
       (requestUrl && requestUrl.includes('/auth/refresh-token'))
     ) {
       return Promise.reject(error);

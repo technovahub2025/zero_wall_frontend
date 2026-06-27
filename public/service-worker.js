@@ -35,10 +35,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (url.pathname.includes('/api/')) {
-    event.respondWith(
-      fetch(request).catch(() => serviceUnavailableResponse()),
-    );
+  if (url.origin !== self.location.origin) {
     return;
   }
 

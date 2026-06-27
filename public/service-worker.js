@@ -6,6 +6,17 @@ const APP_SHELL = [
   '/test_pg_infrastructure/icon-512.png',
 ];
 
+function serviceUnavailableResponse() {
+  return new Response(JSON.stringify({
+    success: false,
+    message: 'Network unavailable',
+  }), {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()),
@@ -26,12 +37,7 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.includes('/api/')) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          return copy.ok ? response : response;
-        })
-        .catch(() => caches.match(request)),
+      fetch(request).catch(() => serviceUnavailableResponse()),
     );
     return;
   }
@@ -39,17 +45,19 @@ self.addEventListener('fetch', (event) => {
   if (request.destination === 'script' || request.destination === 'style' || request.destination === 'image' || request.destination === 'font') {
     event.respondWith(
       caches.match(request).then((cached) =>
-        cached || fetch(request).then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          return response;
-        }),
+        cached || fetch(request)
+          .then((response) => {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            return response;
+          })
+          .catch(() => serviceUnavailableResponse()),
       ),
     );
     return;
   }
 
   event.respondWith(
-    fetch(request).catch(() => caches.match('/test_pg_infrastructure/')),
+    fetch(request).catch(() => caches.match('/test_pg_infrastructure/').then((cached) => cached || serviceUnavailableResponse())),
   );
 });
